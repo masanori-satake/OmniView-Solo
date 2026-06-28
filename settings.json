@@ -1,0 +1,11 @@
+{
+  // ターミナルを開いたときに選択されているPython環境を自動でアクティベートします。
+  "python.terminal.activateEnvironment": true,
+
+  // 仮想環境が格納されている可能性のあるフォルダをVSCodeに伝えます。
+  // これにより、VSCodeがプロジェクト内の仮想環境を検出しやすくなります。
+  // 一般的な ".venv" や "venv" はデフォルトで検索対象ですが、明示的に設定しておくと確実です。
+  "python.venvPath": [
+    "${workspaceFolder}/.venv"
+  ]
+}
