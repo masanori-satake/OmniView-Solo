@@ -5,7 +5,9 @@
   "description": "Hybrid meeting assistant for whiteboard enhancement.",
   "permissions": [
     "sidePanel",
-    "storage"
+    "storage",
+    "clipboardWrite",
+    "videoCapture"
   ],
   "host_permissions": [],
   "side_panel": {

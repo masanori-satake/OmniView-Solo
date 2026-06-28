@@ -117,7 +117,7 @@ class App {
             <option value="whiteboard" ${setting.role === 'whiteboard' ? 'selected' : ''}>Whiteboard</option>
             <option value="person" ${setting.role === 'person' ? 'selected' : ''}>Person</option>
           </select>
-          <input type="text" class="m3-textfield label-input" value="${setting.customLabel}">
+          <input type="text" class="m3-textfield label-input">
         </div>
         <div class="control-row whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}">
             <button class="m3-button-filled copy-btn">
@@ -130,6 +130,7 @@ class App {
 
     const video = element.querySelector('video');
     const canvas = element.querySelector('.overlay-canvas');
+    element.querySelector('.label-input').value = setting.customLabel;
     let processor = null;
     let stream = null;
 

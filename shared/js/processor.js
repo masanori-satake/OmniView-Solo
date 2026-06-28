@@ -159,14 +159,20 @@ export class MedianStacker {
 
     enhance(src) {
         const cv = window.cv;
-        const gray = new cv.Mat();
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-        const dst = new cv.Mat();
-        cv.adaptiveThreshold(gray, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
-
-        gray.delete();
-        return dst;
+        let gray, dst;
+        try {
+            gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            dst = new cv.Mat();
+            cv.adaptiveThreshold(gray, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
+            return dst;
+        } catch (e) {
+            console.error("Error in enhance:", e);
+            if (dst) dst.delete();
+            return src.clone();
+        } finally {
+            if (gray) gray.delete();
+        }
     }
 
     matToBlob(mat) {
