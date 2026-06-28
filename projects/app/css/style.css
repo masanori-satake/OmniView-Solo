@@ -8,15 +8,6 @@
     box-sizing: border-box;
 }
 
-header {
-    text-align: center;
-    padding: 4px;
-}
-
-.title {
-    font-size: 1.2rem;
-    color: var(--md-sys-color-primary);
-}
 
 .camera-slot {
     background-color: var(--md-sys-color-surface-variant);
@@ -70,6 +61,23 @@ video {
 }
 
 .m3-textfield { flex-grow: 1; }
+
+#initial-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--md-sys-color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#initial-overlay.hidden {
+    display: none;
+}
 
 .m3-button-filled {
     background-color: var(--md-sys-color-primary);
