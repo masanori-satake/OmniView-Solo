@@ -1,0 +1,14 @@
+# .pre-commit-config.yaml
+repos:
+- repo: local
+  hooks:
+  - id: check-version
+    name: check-version
+    entry: python3 scripts/check_version.py
+    language: system
+    files: ^(package\.json|projects/app/version\.json|projects/app/manifest\.chrome\.json)$
+  - id: create-package
+    name: create-package
+    entry: python3 scripts/create_package.py
+    language: system
+    stages: [push]

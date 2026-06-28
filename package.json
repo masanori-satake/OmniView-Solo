@@ -1,0 +1,14 @@
+{
+  "name": "omniview-solo",
+  "version": "0.1.0",
+  "description": "ハイブリッド会議の視認性を向上させるローカル完結型Chrome拡張機能",
+  "type": "module",
+  "scripts": {
+    "test": "python3 scripts/check_version.py && node scripts/verify_build.js",
+    "build": "python3 scripts/check_version.py && python3 scripts/create_package.py",
+    "version:bump": "python3 scripts/bump_version.py"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.2"
+  }
+}

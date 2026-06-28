@@ -1,0 +1,123 @@
+/* style.css */
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 8px;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+header {
+    text-align: center;
+    padding: 4px;
+}
+
+.title {
+    font-size: 1.2rem;
+    color: var(--md-sys-color-primary);
+}
+
+.camera-slot {
+    background-color: var(--md-sys-color-surface-variant);
+    border-radius: var(--md-sys-shape-medium);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.overlay-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.slot-controls {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.m3-select, .m3-textfield {
+    padding: 8px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-extra-small);
+    background: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+}
+
+.m3-textfield { flex-grow: 1; }
+
+.m3-button-filled {
+    background-color: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none;
+    border-radius: var(--md-sys-shape-full);
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.layout-narrow #camera-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+}
+
+.layout-wide #camera-container {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: 100%;
+    gap: 8px;
+}
+
+.layout-wide .main-region { grid-row: 1; }
+.layout-wide .sub-region {
+    grid-row: 2;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+}
+
+.layout-wide .sub-region .camera-slot {
+    width: 200px;
+    flex-shrink: 0;
+}
+
+#snackbar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    padding: 8px 16px;
+    border-radius: var(--md-sys-shape-small);
+}
