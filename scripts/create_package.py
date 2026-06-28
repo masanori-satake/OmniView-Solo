@@ -9,6 +9,10 @@ def create_package():
     output_filename = f"OmniView-Solo-v{version}.zip"
     os.makedirs('releases', exist_ok=True)
 
+    opencv_path = os.path.join('projects', 'app', 'shared', 'js', 'lib', 'opencv.js')
+    if not os.path.exists(opencv_path):
+        raise FileNotFoundError(f"Critical dependency missing: {opencv_path}. Please ensure OpenCV.js is downloaded before packaging.")
+
     with zipfile.ZipFile(os.path.join('releases', output_filename), 'w') as zipf:
         # App files
         for root, dirs, files in os.walk('projects/app'):

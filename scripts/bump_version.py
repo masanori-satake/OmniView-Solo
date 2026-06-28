@@ -19,13 +19,12 @@ def bump_version(part='patch'):
     new_version = '.'.join(version)
 
     # Update all files
-    # Update all files
     for filepath in ['package.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, 'r') as f:
             data = json.load(f)
         data['version'] = new_version
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2)
             f.write('\n')
 
     print(f"Bumped version to {new_version}")

@@ -3,17 +3,18 @@ import sys
 import os
 
 def check_versions():
-    with open('package.json', 'r', encoding='utf-8') as f:
+    with open('package.json', 'r') as f:
         pkg = json.load(f)
         pkg_version = pkg['version']
 
-    with open('projects/app/version.json', 'r', encoding='utf-8') as f:
+    with open('projects/app/version.json', 'r') as f:
         ver_file = json.load(f)
         ver_file_version = ver_file['version']
 
-    with open('projects/app/manifest.chrome.json', 'r', encoding='utf-8') as f:
+    with open('projects/app/manifest.chrome.json', 'r') as f:
         manifest = json.load(f)
         manifest_version = manifest['version']
+
     if pkg_version == ver_file_version == manifest_version:
         print(f"Version check passed: {pkg_version}")
         return True

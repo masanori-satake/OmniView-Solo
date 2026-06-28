@@ -7,6 +7,8 @@ class App {
     this.cameras = [];
     this.settings = {};
     this.slots = new Map();
+    this.currentLayout = null;
+    this.snackbarTimeout = null;
   }
 
   async init() {
@@ -21,14 +23,19 @@ class App {
       for (let entry of entries) {
         const width = entry.contentRect.width;
         const app = document.getElementById('app');
-        if (width > 500) {
-          app.classList.remove('layout-narrow');
-          app.classList.add('layout-wide');
-          this.reorganizeForWide();
-        } else {
-          app.classList.remove('layout-wide');
-          app.classList.add('layout-narrow');
-          this.reorganizeForNarrow();
+        const nextLayout = width > 500 ? 'wide' : 'narrow';
+
+        if (this.currentLayout !== nextLayout) {
+          this.currentLayout = nextLayout;
+          if (nextLayout === 'wide') {
+            app.classList.remove('layout-narrow');
+            app.classList.add('layout-wide');
+            this.reorganizeForWide();
+          } else {
+            app.classList.remove('layout-wide');
+            app.classList.add('layout-narrow');
+            this.reorganizeForNarrow();
+          }
         }
       }
     });
@@ -76,6 +83,15 @@ class App {
   }
 
   async render() {
+    this.slots.forEach(slot => {
+      if (slot.stream) {
+        slot.stream.getTracks().forEach(track => track.stop());
+      }
+      if (slot.processor) {
+        slot.processor.stop();
+      }
+    });
+    this.slots.clear();
     this.container.innerHTML = '';
     for (const camera of this.cameras) {
       const slot = await this.createCameraSlot(camera);
@@ -115,9 +131,10 @@ class App {
     const video = element.querySelector('video');
     const canvas = element.querySelector('.overlay-canvas');
     let processor = null;
+    let stream = null;
 
     try {
-      const stream = await startCamera(deviceId);
+      stream = await startCamera(deviceId);
       video.srcObject = stream;
 
       if (setting.role === 'whiteboard') {
@@ -153,11 +170,19 @@ class App {
     const copyBtn = element.querySelector('.copy-btn');
     copyBtn.addEventListener('click', async () => {
         if (processor) {
-            const blob = await processor.capture();
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]);
-            this.showSnackbar('クリップボードにコピーしました');
+            try {
+                const blob = await processor.capture();
+                if (!blob) {
+                    throw new Error('Failed to capture frame.');
+                }
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                this.showSnackbar('クリップボードにコピーしました');
+            } catch (err) {
+                console.error('Clipboard copy failed:', err);
+                this.showSnackbar('コピーに失敗しました: ' + err.message);
+            }
         }
     });
 
@@ -168,7 +193,7 @@ class App {
       this.settings[deviceId] = { ...this.settings[deviceId], customLabel };
     });
 
-    return { element, video, processor };
+    return { element, video, processor, stream };
   }
 
   initProcessor(video, canvas, deviceId) {
@@ -188,11 +213,20 @@ class App {
       loop();
 
       return {
-          stop: () => cancelAnimationFrame(animationFrame),
+          stop: () => {
+              cancelAnimationFrame(animationFrame);
+              transformer.destroy();
+              stacker.cleanup();
+          },
           capture: async () => {
               const baseFrame = await transformer.getWarpedFrame();
-              const cleanFrame = await stacker.getMedianFrame(baseFrame);
-              return cleanFrame;
+              if (!baseFrame) return null;
+              try {
+                  const cleanFrame = await stacker.getMedianFrame(baseFrame);
+                  return cleanFrame;
+              } finally {
+                  baseFrame.delete();
+              }
           }
       };
   }
@@ -202,8 +236,13 @@ class App {
       const snackbarMsg = document.getElementById('snackbar-message');
       snackbarMsg.textContent = message;
       snackbar.classList.remove('hidden');
-      setTimeout(() => {
+
+      if (this.snackbarTimeout) {
+          clearTimeout(this.snackbarTimeout);
+      }
+      this.snackbarTimeout = setTimeout(() => {
           snackbar.classList.add('hidden');
+          this.snackbarTimeout = null;
       }, 3000);
   }
 }

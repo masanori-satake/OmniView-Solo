@@ -14,17 +14,22 @@ export async function loadCameraSettings() {
   });
 }
 
+let saveQueue = Promise.resolve();
+
 export async function saveCameraSetting(deviceId, settings) {
-  const currentSettings = await loadCameraSettings();
-  currentSettings[deviceId] = {
-    ...(currentSettings[deviceId] || {}),
-    ...settings
-  };
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ camera_settings: currentSettings }, () => {
-      resolve();
+  saveQueue = saveQueue.then(async () => {
+    const currentSettings = await loadCameraSettings();
+    currentSettings[deviceId] = {
+      ...(currentSettings[deviceId] || {}),
+      ...settings
+    };
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ camera_settings: currentSettings }, () => {
+        resolve();
+      });
     });
   });
+  return saveQueue;
 }
 
 export async function startCamera(deviceId) {
