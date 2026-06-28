@@ -40,7 +40,11 @@ class App {
   loadOpenCV() {
     return new Promise((resolve, reject) => {
       if (window.cv) {
-        resolve();
+        if (window.cv instanceof Promise) {
+          window.cv.then(() => resolve());
+        } else {
+          resolve();
+        }
         return;
       }
       const script = document.createElement('script');

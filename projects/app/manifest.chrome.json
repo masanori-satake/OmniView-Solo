@@ -6,7 +6,8 @@
   "permissions": [
     "sidePanel",
     "storage",
-    "clipboardWrite"
+    "clipboardWrite",
+    "videoCapture"
   ],
   "host_permissions": [],
   "side_panel": {
