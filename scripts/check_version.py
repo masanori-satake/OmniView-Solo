@@ -7,6 +7,10 @@ def check_versions():
         pkg = json.load(f)
         pkg_version = pkg['version']
 
+    with open('package-lock.json', 'r') as f:
+        lock = json.load(f)
+        lock_version = lock['version']
+
     with open('projects/app/version.json', 'r') as f:
         ver_file = json.load(f)
         ver_file_version = ver_file['version']
@@ -24,11 +28,11 @@ def check_versions():
             if match:
                 readme_version = match.group(1)
 
-    if pkg_version == ver_file_version == manifest_version == readme_version:
+    if pkg_version == lock_version == ver_file_version == manifest_version == readme_version:
         print(f"Version check passed: {pkg_version}")
         return True
     else:
-        print(f"Version mismatch! package.json: {pkg_version}, version.json: {ver_file_version}, manifest: {manifest_version}, README: {readme_version}")
+        print(f"Version mismatch! package.json: {pkg_version}, package-lock.json: {lock_version}, version.json: {ver_file_version}, manifest: {manifest_version}, README: {readme_version}")
         return False
 
 if __name__ == "__main__":

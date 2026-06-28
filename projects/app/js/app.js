@@ -186,8 +186,16 @@ class App {
           processor = this.initProcessor(video, canvas, deviceId);
       }
     } catch (e) {
-      console.error('Failed to start camera', e);
-      this.showSnackbar(`カメラの起動に失敗しました (${setting.customLabel}): ${e.message}`);
+      console.error('Failed to start camera:', e.name, e.message, e);
+      if (e.name === 'NotAllowedError') {
+          this.showSnackbar(
+              `カメラの権限がありません (${setting.customLabel})`,
+              '許可する',
+              () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
+          );
+      } else {
+          this.showSnackbar(`カメラの起動に失敗しました (${setting.customLabel}): ${e.message}`);
+      }
     }
 
     const roleSelect = element.querySelector('.role-select');
@@ -277,19 +285,36 @@ class App {
       };
   }
 
-  showSnackbar(message) {
+  showSnackbar(message, actionLabel = null, actionCallback = null) {
       const snackbar = document.getElementById('snackbar');
       const snackbarMsg = document.getElementById('snackbar-message');
       snackbarMsg.textContent = message;
+
+      // Clear existing action button
+      const oldBtn = snackbar.querySelector('.snackbar-action');
+      if (oldBtn) oldBtn.remove();
+
+      if (actionLabel && actionCallback) {
+          const btn = document.createElement('button');
+          btn.className = 'snackbar-action';
+          btn.textContent = actionLabel;
+          btn.onclick = () => {
+              actionCallback();
+              snackbar.classList.add('hidden');
+          };
+          snackbar.appendChild(btn);
+      }
+
       snackbar.classList.remove('hidden');
 
       if (this.snackbarTimeout) {
           clearTimeout(this.snackbarTimeout);
       }
+      const duration = actionLabel ? 10000 : 3000;
       this.snackbarTimeout = setTimeout(() => {
           snackbar.classList.add('hidden');
           this.snackbarTimeout = null;
-      }, 3000);
+      }, duration);
   }
 }
 
