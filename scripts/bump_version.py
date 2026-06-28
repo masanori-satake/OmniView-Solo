@@ -27,6 +27,14 @@ def bump_version(part='patch'):
             json.dump(data, f, indent=2)
             f.write('\n')
 
+    # Update README.md badge
+    import re
+    with open('README.md', 'r') as f:
+        content = f.read()
+    new_content = re.sub(r'version-\d+\.\d+\.\d+-blue', f'version-{new_version}-blue', content)
+    with open('README.md', 'w') as f:
+        f.write(new_content)
+
     print(f"Bumped version to {new_version}")
 
 if __name__ == "__main__":
