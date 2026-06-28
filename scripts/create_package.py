@@ -21,6 +21,7 @@ def create_package():
                 arcname = os.path.relpath(filepath, 'projects/app')
                 if arcname == 'manifest.chrome.json':
                     arcname = 'manifest.json'
+                arcname = arcname.replace(os.path.sep, '/')
                 zipf.write(filepath, arcname)
 
 
