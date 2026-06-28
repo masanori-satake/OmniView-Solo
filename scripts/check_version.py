@@ -15,11 +15,20 @@ def check_versions():
         manifest = json.load(f)
         manifest_version = manifest['version']
 
-    if pkg_version == ver_file_version == manifest_version:
+    readme_version = None
+    if os.path.exists('README.md'):
+        with open('README.md', 'r') as f:
+            content = f.read()
+            import re
+            match = re.search(r'version-(\d+\.\d+\.\d+)-blue', content)
+            if match:
+                readme_version = match.group(1)
+
+    if pkg_version == ver_file_version == manifest_version == readme_version:
         print(f"Version check passed: {pkg_version}")
         return True
     else:
-        print(f"Version mismatch! package.json: {pkg_version}, version.json: {ver_file_version}, manifest: {manifest_version}")
+        print(f"Version mismatch! package.json: {pkg_version}, version.json: {ver_file_version}, manifest: {manifest_version}, README: {readme_version}")
         return False
 
 if __name__ == "__main__":
