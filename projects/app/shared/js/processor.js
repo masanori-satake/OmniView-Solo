@@ -212,11 +212,13 @@ export class MedianStacker {
         if (this.history.length > this.maxHistory) {
             this.history.shift();
         }
-
-        this.computeMedian();
     }
 
     computeMedian() {
+        if (this.history.length === 0) {
+            this.lastMedian = null;
+            return;
+        }
         if (this.history.length < 2) {
             this.lastMedian = this.history[0];
             return;
@@ -227,15 +229,23 @@ export class MedianStacker {
         const size = w * h * 4;
         const result = new ImageData(w, h);
         const len = this.history.length;
+        const vals = new Uint8Array(len);
 
         for (let i = 0; i < size; i += 4) {
-            // Median for R, G, B. Alpha keep 255.
             for (let c = 0; c < 3; c++) {
-                const vals = [];
                 for (let j = 0; j < len; j++) {
-                    vals.push(this.history[j].data[i + c]);
+                    vals[j] = this.history[j].data[i + c];
                 }
-                vals.sort((a, b) => a - b);
+                // In-place insertion sort
+                for (let k = 1; k < len; k++) {
+                    const key = vals[k];
+                    let l = k - 1;
+                    while (l >= 0 && vals[l] > key) {
+                        vals[l + 1] = vals[l];
+                        l--;
+                    }
+                    vals[l + 1] = key;
+                }
                 result.data[i + c] = vals[Math.floor(len / 2)];
             }
             result.data[i + 3] = 255;
@@ -249,7 +259,8 @@ export class MedianStacker {
     }
 
     async getMedianFrame(transformer) {
-        const base = this.lastMedian || this.history[this.history.length - 1];
+        this.computeMedian();
+        const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
         if (!base) return null;
 
         // Apply perspective warp

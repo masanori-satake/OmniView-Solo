@@ -21,6 +21,9 @@ function solve(A, b) {
         [A[i], A[max]] = [A[max], A[i]];
         [b[i], b[max]] = [b[max], b[i]];
 
+        if (Math.abs(A[i][i]) < 1e-9) {
+            return null;
+        }
         // Eliminate
         for (let j = i + 1; j < n; j++) {
             const factor = A[j][i] / A[i][i];
@@ -61,6 +64,9 @@ export function getHomography(src, dst) {
     }
 
     const res = solve(A, b);
+    if (!res) {
+        return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    }
     return [
         res[0], res[1], res[2],
         res[3], res[4], res[5],
