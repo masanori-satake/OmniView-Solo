@@ -103,24 +103,27 @@ class App {
     this.slots.clear();
     this.container.innerHTML = '';
 
-    // Request permission first if labels are empty, then refresh camera list to get labels
-    if (this.cameras.length > 0 && !this.cameras[0].label) {
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        tempStream.getTracks().forEach(track => track.stop());
-      } catch (e) {
-        console.warn('Temporary permission request failed:', e);
-      }
-    }
-    // Refresh camera list to get labels (which are available after permission is granted)
+    // Refresh camera list to check latest permission state
     this.cameras = await getCameras();
+
+    // Check if labels are empty. If so, prompt the user to grant permission via permission.html.
+    if (this.cameras.length > 0 && !this.cameras[0].label) {
+        this.showSnackbar(
+            'カメラの権限が必要です',
+            '許可する',
+            () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
+        );
+        // Automatically re-render when user returns to side panel after granting permission
+        window.addEventListener('focus', () => this.render(), { once: true });
+        return;
+    }
 
     for (const camera of this.cameras) {
       const slot = await this.createCameraSlot(camera);
       this.slots.set(camera.deviceId, slot);
       this.container.appendChild(slot.element);
       // Small delay to prevent resource contention when starting multiple cameras
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 250));
     }
   }
 
@@ -236,7 +239,7 @@ class App {
 
   initProcessor(video, canvas, deviceId) {
       const pts = (this.settings[deviceId] && this.settings[deviceId].points) || [
-          {x: 50, y: 50}, {x: 250, y: 50}, {x: 250, y: 150}, {x: 50, y: 150}
+          {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
           saveCameraSetting(deviceId, { points: newPts });
