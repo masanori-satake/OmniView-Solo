@@ -172,14 +172,21 @@ class App {
       // Sequential initialization: Wait for the stream to actually start playing
       // to ensure OS/hardware resources are fully allocated before the next camera request.
       await new Promise((resolve, reject) => {
-          const onPlaying = () => {
+          const timeoutId = setTimeout(() => {
+              cleanup();
+              reject(new Error('Timeout waiting for video to play'));
+          }, 5000);
+          const cleanup = () => {
+              clearTimeout(timeoutId);
               video.removeEventListener('playing', onPlaying);
               video.removeEventListener('error', onError);
+          };
+          const onPlaying = () => {
+              cleanup();
               resolve();
           };
           const onError = (e) => {
-              video.removeEventListener('playing', onPlaying);
-              video.removeEventListener('error', onError);
+              cleanup();
               reject(new Error('Video element error'));
           };
           video.addEventListener('playing', onPlaying);
