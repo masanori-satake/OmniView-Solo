@@ -22,43 +22,8 @@ class App {
     const overlay = document.getElementById('initial-overlay');
     const btn = document.getElementById('start-btn');
     btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      btn.textContent = 'Loading...';
-
-      try {
-        await this.loadOpenCV();
-      } catch (err) {
-        console.error('OpenCV load failed:', err);
-        this.showSnackbar('画像処理ライブラリの読み込みに失敗しました。一部機能が制限されます。');
-      }
-
       overlay.classList.add('hidden');
       await this.render();
-    });
-  }
-
-  loadOpenCV() {
-    return new Promise((resolve, reject) => {
-      if (window.cv) {
-        if (window.cv instanceof Promise) {
-          window.cv.then(() => resolve());
-        } else {
-          resolve();
-        }
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'shared/js/lib/opencv.js';
-      script.async = true;
-      script.onload = () => {
-        if (window.cv instanceof Promise) {
-          window.cv.then(() => resolve());
-        } else {
-          resolve();
-        }
-      };
-      script.onerror = () => reject(new Error('Failed to load opencv.js'));
-      document.head.appendChild(script);
     });
   }
 
@@ -292,14 +257,7 @@ class App {
               stacker.cleanup();
           },
           capture: async () => {
-              const baseFrame = await transformer.getWarpedFrame();
-              if (!baseFrame) return null;
-              try {
-                  const cleanFrame = await stacker.getMedianFrame(baseFrame);
-                  return cleanFrame;
-              } finally {
-                  baseFrame.delete();
-              }
+              return await stacker.getMedianFrame(transformer);
           }
       };
   }
