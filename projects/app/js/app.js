@@ -103,14 +103,13 @@ class App {
     this.slots.clear();
     this.container.innerHTML = '';
 
-    // Request permission first if labels are empty, then refresh camera list to get labels
+    // Check if labels are empty. If so, prompt the user to grant permission via permission.html.
     if (this.cameras.length > 0 && !this.cameras[0].label) {
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        tempStream.getTracks().forEach(track => track.stop());
-      } catch (e) {
-        console.warn('Temporary permission request failed:', e);
-      }
+        this.showSnackbar(
+            'カメラの権限が必要です',
+            '許可する',
+            () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
+        );
     }
     // Refresh camera list to get labels (which are available after permission is granted)
     this.cameras = await getCameras();
@@ -120,7 +119,7 @@ class App {
       this.slots.set(camera.deviceId, slot);
       this.container.appendChild(slot.element);
       // Small delay to prevent resource contention when starting multiple cameras
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 250));
     }
   }
 
@@ -236,7 +235,7 @@ class App {
 
   initProcessor(video, canvas, deviceId) {
       const pts = (this.settings[deviceId] && this.settings[deviceId].points) || [
-          {x: 50, y: 50}, {x: 250, y: 50}, {x: 250, y: 150}, {x: 50, y: 150}
+          {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
           saveCameraSetting(deviceId, { points: newPts });
