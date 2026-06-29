@@ -169,6 +169,27 @@ class App {
       stream = await startCamera(deviceId);
       video.srcObject = stream;
 
+      // Sequential initialization: Wait for the stream to actually start playing
+      // to ensure OS/hardware resources are fully allocated before the next camera request.
+      await new Promise((resolve, reject) => {
+          const onPlaying = () => {
+              video.removeEventListener('playing', onPlaying);
+              video.removeEventListener('error', onError);
+              resolve();
+          };
+          const onError = (e) => {
+              video.removeEventListener('playing', onPlaying);
+              video.removeEventListener('error', onError);
+              reject(new Error('Video element error'));
+          };
+          video.addEventListener('playing', onPlaying);
+          video.addEventListener('error', onError);
+          // If the browser/OS is extremely fast, it might already be playing.
+          if (video.readyState >= 3) { // HAVE_FUTURE_DATA
+              onPlaying();
+          }
+      });
+
       if (setting.role === 'whiteboard') {
           processor = this.initProcessor(video, canvas, deviceId);
       }
@@ -181,7 +202,8 @@ class App {
               () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
           );
       } else {
-          this.showSnackbar(`カメラの起動に失敗しました (${setting.customLabel}): ${e.message}`);
+          // Explicitly mention bandwidth/contention as a possible cause for multiple cameras.
+          this.showSnackbar(`カメラ [${setting.customLabel}] の起動に失敗しました（帯域不足または競合の可能性があります）: ${e.message}`);
       }
     }
 

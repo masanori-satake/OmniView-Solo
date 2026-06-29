@@ -35,10 +35,14 @@ export async function saveCameraSetting(deviceId, settings) {
 export async function startCamera(deviceId) {
   const constraints = {
     video: {
-      deviceId: deviceId ? { exact: deviceId } : undefined,
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    }
+      deviceId: { exact: deviceId },
+      // USB bandwidth contention is a common issue with multiple high-res cameras.
+      // Start with a lower resolution and frame rate to increase success rate.
+      width: { ideal: 640 },
+      height: { ideal: 480 },
+      frameRate: { ideal: 15 }
+    },
+    audio: false
   };
   return await navigator.mediaDevices.getUserMedia(constraints);
 }
