@@ -138,6 +138,15 @@ class App {
     this.slots.clear();
     this.container.innerHTML = '';
 
+    // Request permission first if labels are empty, then refresh camera list to get labels
+    if (this.cameras.length > 0 && !this.cameras[0].label) {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop());
+      } catch (e) {
+        console.warn('Temporary permission request failed:', e);
+      }
+    }
     // Refresh camera list to get labels (which are available after permission is granted)
     this.cameras = await getCameras();
 
