@@ -6,7 +6,8 @@ repos:
     name: check-version
     entry: python3 scripts/check_version.py
     language: system
-    files: ^(package\.json|projects/app/version\.json|projects/app/manifest\.chrome\.json|README\.md)$
+    # Always run version check when source files change
+    files: ^(package\.json|projects/app/.*|shared/.*|README\.md)$
   - id: create-package
     name: create-package
     entry: python3 scripts/create_package.py
