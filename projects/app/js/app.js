@@ -103,6 +103,9 @@ class App {
     this.slots.clear();
     this.container.innerHTML = '';
 
+    // Refresh camera list to check latest permission state
+    this.cameras = await getCameras();
+
     // Check if labels are empty. If so, prompt the user to grant permission via permission.html.
     if (this.cameras.length > 0 && !this.cameras[0].label) {
         this.showSnackbar(
@@ -110,9 +113,10 @@ class App {
             '許可する',
             () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
         );
+        // Automatically re-render when user returns to side panel after granting permission
+        window.addEventListener('focus', () => this.render(), { once: true });
+        return;
     }
-    // Refresh camera list to get labels (which are available after permission is granted)
-    this.cameras = await getCameras();
 
     for (const camera of this.cameras) {
       const slot = await this.createCameraSlot(camera);
