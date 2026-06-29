@@ -19,10 +19,14 @@ def bump_version(part='patch'):
     new_version = '.'.join(version)
 
     # Update all files
-    for filepath in ['package.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
+    for filepath in ['package.json', 'package-lock.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
         with open(filepath, 'r') as f:
             data = json.load(f)
+
         data['version'] = new_version
+        if filepath == 'package-lock.json' and 'packages' in data and '' in data['packages']:
+            data['packages']['']['version'] = new_version
+
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
             f.write('\n')
