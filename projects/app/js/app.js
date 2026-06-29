@@ -137,16 +137,26 @@ class App {
     });
     this.slots.clear();
     this.container.innerHTML = '';
+
+    // Refresh camera list to get labels (which are available after permission is granted)
+    this.cameras = await getCameras();
+
     for (const camera of this.cameras) {
       const slot = await this.createCameraSlot(camera);
       this.slots.set(camera.deviceId, slot);
       this.container.appendChild(slot.element);
+      // Small delay to prevent resource contention when starting multiple cameras
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
   async createCameraSlot(camera) {
     const deviceId = camera.deviceId;
-    const setting = this.settings[deviceId] || { role: 'person', customLabel: camera.label || 'Camera' };
+    const savedSetting = this.settings[deviceId] || {};
+    const setting = {
+      role: savedSetting.role || 'person',
+      customLabel: savedSetting.customLabel || camera.label || 'Camera'
+    };
 
     const element = document.createElement('div');
     element.className = 'camera-slot';
