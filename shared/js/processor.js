@@ -29,11 +29,7 @@ export class PerspectiveTransformer {
             }
         };
 
-        this.initEvents();
-    }
-
-    initEvents() {
-        this.canvas.addEventListener('mousedown', (e) => {
+        this.boundMouseDown = (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -43,13 +39,19 @@ export class PerspectiveTransformer {
                 const py = (p.y / 100) * rect.height;
                 return Math.hypot(px - x, py - y) < 20;
             });
-        });
+        };
 
+        this.initEvents();
+    }
+
+    initEvents() {
+        this.canvas.addEventListener('mousedown', this.boundMouseDown);
         window.addEventListener('mousemove', this.boundMouseMove);
         window.addEventListener('mouseup', this.boundMouseUp);
     }
 
     destroy() {
+        this.canvas.removeEventListener('mousedown', this.boundMouseDown);
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
     }
