@@ -262,7 +262,13 @@ class App {
         freezeCanvas.width = video.videoWidth;
         freezeCanvas.height = video.videoHeight;
         const ctx = freezeCanvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+        if (ctx) {
+            ctx.drawImage(video, 0, 0);
+        }
+        freezeCanvas.style.transform = video.style.transform;
+        freezeCanvas.style.transformOrigin = video.style.transformOrigin;
+        freezeCanvas.style.width = video.style.width;
+        freezeCanvas.style.height = video.style.height;
     }
 
     // Stop processor
