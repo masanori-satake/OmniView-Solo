@@ -65,6 +65,10 @@ class App {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
         intervalInput.value = this.globalSettings.interval;
         await saveGlobalSettings(this.globalSettings);
+        if (this.cycleTimeoutId) {
+            clearTimeout(this.cycleTimeoutId);
+            this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
+        }
     };
 
     intervalInput.addEventListener('change', (e) => updateInterval(e.target.value));
