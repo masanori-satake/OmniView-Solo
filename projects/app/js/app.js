@@ -65,10 +65,6 @@ class App {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
         intervalInput.value = this.globalSettings.interval;
         await saveGlobalSettings(this.globalSettings);
-        if (this.cycleTimeoutId) {
-            clearTimeout(this.cycleTimeoutId);
-            this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
-        }
     };
 
     intervalInput.addEventListener('change', (e) => updateInterval(e.target.value));
@@ -199,17 +195,6 @@ class App {
   async nextCamera() {
     if (this.slotOrder.length === 0) return;
 
-    if (this.slotOrder.length === 1) {
-        const deviceId = this.slotOrder[0];
-        const slot = this.slots.get(deviceId);
-        if (slot && !slot.element.classList.contains('active')) {
-            await this.activateSlot(slot, deviceId);
-            this.activeSlotIndex = 0;
-        }
-        this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
-        return;
-    }
-
     // 1. Capture and stop current active slot
     if (this.activeSlotIndex !== -1) {
         const currentDeviceId = this.slotOrder[this.activeSlotIndex];
@@ -241,8 +226,28 @@ class App {
         slot.element.classList.add('active');
 
         await new Promise((resolve) => {
-            slot.video.onplaying = resolve;
-            if (slot.video.readyState >= 3) resolve();
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                resolve();
+            }, 5000);
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                slot.video.removeEventListener('playing', onPlaying);
+                slot.video.removeEventListener('error', onError);
+            };
+            const onPlaying = () => {
+                cleanup();
+                resolve();
+            };
+            const onError = () => {
+                cleanup();
+                resolve();
+            };
+            slot.video.addEventListener('playing', onPlaying);
+            slot.video.addEventListener('error', onError);
+            if (slot.video.readyState >= 3) {
+                onPlaying();
+            }
         });
 
         const setting = this.settings[deviceId] || {};
@@ -262,13 +267,7 @@ class App {
         freezeCanvas.width = video.videoWidth;
         freezeCanvas.height = video.videoHeight;
         const ctx = freezeCanvas.getContext('2d');
-        if (ctx) {
-            ctx.drawImage(video, 0, 0);
-        }
-        freezeCanvas.style.transform = video.style.transform;
-        freezeCanvas.style.transformOrigin = video.style.transformOrigin;
-        freezeCanvas.style.width = video.style.width;
-        freezeCanvas.style.height = video.style.height;
+        ctx.drawImage(video, 0, 0);
     }
 
     // Stop processor
