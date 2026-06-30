@@ -158,8 +158,8 @@ class App {
         const option = document.createElement('option');
         option.value = camera.deviceId;
         const label = camera.label || 'Camera';
-        const suffix = camera.deviceId.slice(0, 4);
-        option.textContent = `${label} (${suffix})`;
+        const suffix = camera.deviceId ? camera.deviceId.slice(0, 4) : '';
+        option.textContent = suffix ? label + ' (' + suffix + ')' : label;
         dropdown.appendChild(option);
     });
 
