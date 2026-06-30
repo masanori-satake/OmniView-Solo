@@ -199,6 +199,17 @@ class App {
   async nextCamera() {
     if (this.slotOrder.length === 0) return;
 
+    if (this.slotOrder.length === 1) {
+        const deviceId = this.slotOrder[0];
+        const slot = this.slots.get(deviceId);
+        if (slot && !slot.element.classList.contains('active')) {
+            await this.activateSlot(slot, deviceId);
+            this.activeSlotIndex = 0;
+        }
+        this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
+        return;
+    }
+
     // 1. Capture and stop current active slot
     if (this.activeSlotIndex !== -1) {
         const currentDeviceId = this.slotOrder[this.activeSlotIndex];
