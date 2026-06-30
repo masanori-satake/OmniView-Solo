@@ -1,4 +1,4 @@
-import { getCameras, loadCameraSettings, saveCameraSetting, startCamera } from './camera.js';
+import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings } from './camera.js';
 import { PerspectiveTransformer, MedianStacker } from '../shared/js/processor.js';
 
 class App {
@@ -6,25 +6,70 @@ class App {
     this.container = document.getElementById('camera-container');
     this.cameras = [];
     this.settings = {};
+    this.globalSettings = { interval: 5 };
     this.slots = new Map();
+    this.slotOrder = []; // Array of deviceIds
+    this.activeSlotIndex = -1;
+    this.cycleTimeoutId = null;
     this.currentLayout = null;
     this.snackbarTimeout = null;
   }
 
   async init() {
     this.settings = await loadCameraSettings();
+    this.globalSettings = await loadGlobalSettings();
     this.cameras = await getCameras();
     this.setupStartButton();
     this.setupResizeObserver();
+    this.setupSettingsPanel();
   }
 
   setupStartButton() {
     const overlay = document.getElementById('initial-overlay');
     const btn = document.getElementById('start-btn');
+    const selectionUI = document.getElementById('camera-selection-ui');
     btn.addEventListener('click', async () => {
       overlay.classList.add('hidden');
-      await this.render();
+      selectionUI.classList.remove('hidden');
+      await this.setupCameraSelection();
     });
+  }
+
+  setupSettingsPanel() {
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const overlay = document.getElementById('settings-overlay');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const intervalInput = document.getElementById('interval-input');
+    const intervalUp = document.getElementById('interval-up');
+    const intervalDown = document.getElementById('interval-down');
+
+    settingsBtn.addEventListener('click', () => {
+        settingsPanel.classList.remove('hidden');
+        intervalInput.value = this.globalSettings.interval;
+    });
+
+    overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.add('hidden'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+        });
+    });
+
+    const updateInterval = async (val) => {
+        this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
+        intervalInput.value = this.globalSettings.interval;
+        await saveGlobalSettings(this.globalSettings);
+    };
+
+    intervalInput.addEventListener('change', (e) => updateInterval(e.target.value));
+    intervalUp.addEventListener('click', () => updateInterval(this.globalSettings.interval + 1));
+    intervalDown.addEventListener('click', () => updateInterval(this.globalSettings.interval - 1));
   }
 
   setupResizeObserver() {
@@ -77,7 +122,9 @@ class App {
         this.container.appendChild(subRegion);
     }
 
-    this.slots.forEach((slot, deviceId) => {
+    this.slotOrder.forEach((deviceId) => {
+        const slot = this.slots.get(deviceId);
+        if (!slot) return;
         const setting = this.settings[deviceId] || {};
         if (setting.role === 'whiteboard') {
             mainRegion.appendChild(slot.element);
@@ -91,39 +138,160 @@ class App {
     });
   }
 
-  async render() {
-    this.slots.forEach(slot => {
-      if (slot.stream) {
-        slot.stream.getTracks().forEach(track => track.stop());
-      }
-      if (slot.processor) {
-        slot.processor.stop();
-      }
-    });
-    this.slots.clear();
-    this.container.innerHTML = '';
+  async setupCameraSelection() {
+    const dropdown = document.getElementById('camera-dropdown');
+    const addBtn = document.getElementById('add-camera-btn');
 
-    // Refresh camera list to check latest permission state
     this.cameras = await getCameras();
-
-    // Check if labels are empty. If so, prompt the user to grant permission via permission.html.
     if (this.cameras.length > 0 && !this.cameras[0].label) {
         this.showSnackbar(
             'カメラの権限が必要です',
             '許可する',
             () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
         );
-        // Automatically re-render when user returns to side panel after granting permission
-        window.addEventListener('focus', () => this.render(), { once: true });
+        window.addEventListener('focus', () => this.setupCameraSelection(), { once: true });
         return;
     }
 
-    for (const camera of this.cameras) {
-      const slot = await this.createCameraSlot(camera);
-      this.slots.set(camera.deviceId, slot);
-      this.container.appendChild(slot.element);
-      // Small delay to prevent resource contention when starting multiple cameras
-      await new Promise(resolve => setTimeout(resolve, 250));
+    dropdown.innerHTML = '';
+    this.cameras.forEach(camera => {
+        const option = document.createElement('option');
+        option.value = camera.deviceId;
+        option.textContent = camera.label || `Camera ${camera.deviceId.slice(0, 4)}`;
+        dropdown.appendChild(option);
+    });
+
+    addBtn.onclick = async () => {
+        const deviceId = dropdown.value;
+        if (this.slots.has(deviceId)) {
+            this.showSnackbar('このカメラは既に追加されています');
+            return;
+        }
+        const camera = this.cameras.find(c => c.deviceId === deviceId);
+        await this.addCamera(camera);
+    };
+  }
+
+  async addCamera(camera) {
+    const slot = await this.createCameraSlot(camera);
+    this.slots.set(camera.deviceId, slot);
+    this.slotOrder.push(camera.deviceId);
+    this.container.appendChild(slot.element);
+
+    if (this.currentLayout === 'wide') {
+        this.reorganizeForWide();
+    }
+
+    if (this.slotOrder.length === 1) {
+        await this.startCycling();
+    }
+  }
+
+  async startCycling() {
+    if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
+    await this.nextCamera();
+  }
+
+  async nextCamera() {
+    if (this.slotOrder.length === 0) return;
+
+    // 1. Capture and stop current active slot
+    if (this.activeSlotIndex !== -1) {
+        const currentDeviceId = this.slotOrder[this.activeSlotIndex];
+        const slot = this.slots.get(currentDeviceId);
+        if (slot) {
+            await this.deactivateSlot(slot);
+        }
+    }
+
+    // 2. Advance index
+    this.activeSlotIndex = (this.activeSlotIndex + 1) % this.slotOrder.length;
+
+    // 3. Start next slot
+    const nextDeviceId = this.slotOrder[this.activeSlotIndex];
+    const nextSlot = this.slots.get(nextDeviceId);
+    if (nextSlot) {
+        await this.activateSlot(nextSlot, nextDeviceId);
+    }
+
+    // 4. Schedule next switch
+    this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
+  }
+
+  async activateSlot(slot, deviceId) {
+    try {
+        const stream = await startCamera(deviceId);
+        slot.stream = stream;
+        slot.video.srcObject = stream;
+        slot.element.classList.add('active');
+
+        await new Promise((resolve) => {
+            slot.video.onplaying = resolve;
+            if (slot.video.readyState >= 3) resolve();
+        });
+
+        const setting = this.settings[deviceId] || {};
+        if (setting.role === 'whiteboard') {
+            slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+        }
+    } catch (e) {
+        console.error('Failed to start camera:', e);
+        this.showSnackbar(`カメラの起動に失敗しました: ${e.message}`);
+    }
+  }
+
+  async deactivateSlot(slot) {
+    // Capture current frame to freezeCanvas
+    const { video, freezeCanvas, processor } = slot;
+    if (video.videoWidth > 0) {
+        freezeCanvas.width = video.videoWidth;
+        freezeCanvas.height = video.videoHeight;
+        const ctx = freezeCanvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+    }
+
+    // Stop processor
+    if (processor) {
+        processor.stop();
+        slot.processor = null;
+    }
+
+    // Stop stream
+    if (slot.stream) {
+        slot.stream.getTracks().forEach(track => track.stop());
+        slot.stream = null;
+    }
+    video.srcObject = null;
+    slot.element.classList.remove('active');
+  }
+
+  async moveCamera(deviceId, direction) {
+    const index = this.slotOrder.indexOf(deviceId);
+    if (index === -1) return;
+
+    const oldActiveDeviceId = this.slotOrder[this.activeSlotIndex];
+
+    if (direction === 'up' && index > 0) {
+        [this.slotOrder[index], this.slotOrder[index - 1]] = [this.slotOrder[index - 1], this.slotOrder[index]];
+    } else if (direction === 'down' && index < this.slotOrder.length - 1) {
+        [this.slotOrder[index], this.slotOrder[index + 1]] = [this.slotOrder[index + 1], this.slotOrder[index]];
+    } else {
+        return;
+    }
+
+    // Update index of active slot if it moved
+    if (oldActiveDeviceId) {
+        this.activeSlotIndex = this.slotOrder.indexOf(oldActiveDeviceId);
+    }
+
+    // Re-render order
+    if (this.currentLayout === 'wide') {
+        this.reorganizeForWide();
+    } else {
+        this.slotOrder.forEach(id => {
+            const slot = this.slots.get(id);
+            if (slot) this.container.appendChild(slot.element);
+        });
     }
   }
 
@@ -140,10 +308,19 @@ class App {
     element.innerHTML = `
       <div class="video-wrapper">
         <video autoplay playsinline muted></video>
+        <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
       </div>
       <div class="slot-controls">
         <div class="control-row">
+          <div class="slot-move-controls">
+              <button class="m3-icon-button-small move-up-btn" title="上へ移動">
+                  <span class="material-symbols-outlined">arrow_upward</span>
+              </button>
+              <button class="m3-icon-button-small move-down-btn" title="下へ移動">
+                  <span class="material-symbols-outlined">arrow_downward</span>
+              </button>
+          </div>
           <select class="m3-select role-select">
             <option value="whiteboard" ${setting.role === 'whiteboard' ? 'selected' : ''}>Whiteboard</option>
             <option value="person" ${setting.role === 'person' ? 'selected' : ''}>Person</option>
@@ -161,58 +338,11 @@ class App {
 
     const video = element.querySelector('video');
     const canvas = element.querySelector('.overlay-canvas');
+    const freezeCanvas = element.querySelector('.freeze-canvas');
     element.querySelector('.label-input').value = setting.customLabel;
-    let processor = null;
-    let stream = null;
 
-    try {
-      stream = await startCamera(deviceId);
-      video.srcObject = stream;
-
-      // Sequential initialization: Wait for the stream to actually start playing
-      // to ensure OS/hardware resources are fully allocated before the next camera request.
-      await new Promise((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-              cleanup();
-              reject(new Error('Timeout waiting for video to play'));
-          }, 5000);
-          const cleanup = () => {
-              clearTimeout(timeoutId);
-              video.removeEventListener('playing', onPlaying);
-              video.removeEventListener('error', onError);
-          };
-          const onPlaying = () => {
-              cleanup();
-              resolve();
-          };
-          const onError = (e) => {
-              cleanup();
-              reject(new Error('Video element error'));
-          };
-          video.addEventListener('playing', onPlaying);
-          video.addEventListener('error', onError);
-          // If the browser/OS is extremely fast, it might already be playing.
-          if (video.readyState >= 3) { // HAVE_FUTURE_DATA
-              onPlaying();
-          }
-      });
-
-      if (setting.role === 'whiteboard') {
-          processor = this.initProcessor(video, canvas, deviceId);
-      }
-    } catch (e) {
-      console.error('Failed to start camera:', e.name, e.message, e);
-      if (e.name === 'NotAllowedError') {
-          this.showSnackbar(
-              `カメラの権限がありません (${setting.customLabel})`,
-              '許可する',
-              () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
-          );
-      } else {
-          // Explicitly mention bandwidth/contention as a possible cause for multiple cameras.
-          this.showSnackbar(`カメラ [${setting.customLabel}] の起動に失敗しました（帯域不足または競合の可能性があります）: ${e.message}`);
-      }
-    }
+    element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
+    element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
     const roleSelect = element.querySelector('.role-select');
     roleSelect.addEventListener('change', async (e) => {
@@ -223,25 +353,21 @@ class App {
       const wbControls = element.querySelector('.whiteboard-only');
       if (role === 'whiteboard') {
           wbControls.classList.remove('hidden');
-          if (!processor) processor = this.initProcessor(video, canvas, deviceId);
       } else {
           wbControls.classList.add('hidden');
-          if (processor) {
-              processor.stop();
-              processor = null;
-          }
       }
 
-      if (document.getElementById('app').classList.contains('layout-wide')) {
+      if (this.currentLayout === 'wide') {
           this.reorganizeForWide();
       }
     });
 
     const copyBtn = element.querySelector('.copy-btn');
     copyBtn.addEventListener('click', async () => {
-        if (processor) {
+        const slot = this.slots.get(deviceId);
+        if (slot && slot.processor) {
             try {
-                const blob = await processor.capture();
+                const blob = await slot.processor.capture();
                 if (!blob) {
                     throw new Error('Failed to capture frame.');
                 }
@@ -263,7 +389,7 @@ class App {
       this.settings[deviceId] = { ...this.settings[deviceId], customLabel };
     });
 
-    return { element, video, processor, stream };
+    return { element, video, canvas, freezeCanvas, processor: null, stream: null };
   }
 
   initProcessor(video, canvas, deviceId) {

@@ -10,12 +10,65 @@
 </head>
 <body class="theme-light">
     <div id="app" class="layout-narrow">
+        <header id="app-header">
+            <span class="m3-title">OmniView-Solo</span>
+            <button id="settings-btn" class="m3-icon-button" title="設定">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+        </header>
+
+        <div id="settings-panel" class="hidden">
+            <div id="settings-overlay"></div>
+            <div class="settings-content m3-surface">
+                <nav class="settings-tabs">
+                    <button class="tab-btn active" data-tab="general">
+                        <span class="material-symbols-outlined">tune</span>
+                    </button>
+                    <button class="tab-btn" data-tab="about">
+                        <span class="material-symbols-outlined">info</span>
+                    </button>
+                </nav>
+                <div class="tab-content" id="tab-general">
+                    <div class="settings-row">
+                        <label for="interval-input">表示間隔 (秒)</label>
+                        <div class="m3-spinbox">
+                            <input type="number" id="interval-input" value="5" min="1" step="1">
+                            <div class="spinbox-controls">
+                                <button type="button" id="interval-up" class="spin-btn">
+                                    <span class="material-symbols-outlined">arrow_drop_up</span>
+                                </button>
+                                <button type="button" id="interval-down" class="spin-btn">
+                                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content hidden" id="tab-about">
+                    <div class="about-info">
+                        <p><strong>OmniView-Solo</strong></p>
+                        <p>Version: 0.1.10</p>
+                        <p>© 2024 OmniView-Solo Team</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="initial-overlay">
             <button id="start-btn" class="m3-button-filled">
                 <span class="material-symbols-outlined">videocam</span>
                 カメラを起動
             </button>
         </div>
+
+        <div id="camera-selection-ui" class="hidden">
+            <select id="camera-dropdown" class="m3-select"></select>
+            <button id="add-camera-btn" class="m3-button-filled">
+                <span class="material-symbols-outlined">add</span>
+                追加
+            </button>
+        </div>
+
         <main id="camera-container">
             <!-- Camera slots will be injected here -->
         </main>

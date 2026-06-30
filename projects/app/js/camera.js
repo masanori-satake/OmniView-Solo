@@ -14,6 +14,22 @@ export async function loadCameraSettings() {
   });
 }
 
+export async function loadGlobalSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['global_settings'], (result) => {
+      resolve(result.global_settings || { interval: 5 });
+    });
+  });
+}
+
+export async function saveGlobalSettings(settings) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ global_settings: settings }, () => {
+      resolve();
+    });
+  });
+}
+
 let saveQueue = Promise.resolve();
 
 export async function saveCameraSetting(deviceId, settings) {
