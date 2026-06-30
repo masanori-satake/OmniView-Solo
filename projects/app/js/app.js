@@ -11,6 +11,7 @@ class App {
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
     this.cycleTimeoutId = null;
+    this.cycleCount = 0;
     this.currentLayout = null;
     this.snackbarTimeout = null;
   }
@@ -157,7 +158,9 @@ class App {
     this.cameras.forEach(camera => {
         const option = document.createElement('option');
         option.value = camera.deviceId;
-        option.textContent = camera.label || `Camera ${camera.deviceId.slice(0, 4)}`;
+        const label = camera.label || 'Camera';
+        const suffix = camera.deviceId.slice(0, 4);
+        option.textContent = `${label} (${suffix})`;
         dropdown.appendChild(option);
     });
 
@@ -206,15 +209,27 @@ class App {
 
     // 2. Advance index
     this.activeSlotIndex = (this.activeSlotIndex + 1) % this.slotOrder.length;
+    this.cycleCount++;
+    const currentCycle = this.cycleCount;
 
-    // 3. Start next slot
+    // 3. Small hardware delay to ensure device is released before next acquisition
+    if (this.slotOrder.length > 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // Abort if a new cycle was started during the delay
+    if (this.cycleCount !== currentCycle) {
+        return;
+    }
+
+    // 4. Start next slot
     const nextDeviceId = this.slotOrder[this.activeSlotIndex];
     const nextSlot = this.slots.get(nextDeviceId);
     if (nextSlot) {
         await this.activateSlot(nextSlot, nextDeviceId);
     }
 
-    // 4. Schedule next switch
+    // 5. Schedule next switch
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
   }
 
@@ -318,9 +333,10 @@ class App {
   async createCameraSlot(camera) {
     const deviceId = camera.deviceId;
     const savedSetting = this.settings[deviceId] || {};
+    const defaultLabel = (camera.label || 'Camera') + ` (${deviceId.slice(0, 4)})`;
     const setting = {
       role: savedSetting.role || 'person',
-      customLabel: savedSetting.customLabel || camera.label || 'Camera'
+      customLabel: savedSetting.customLabel || defaultLabel
     };
 
     const element = document.createElement('div');
