@@ -11,6 +11,7 @@ export class PerspectiveTransformer {
         this.points = points; // [{x, y}, ...] (0-100 percentage)
         this.onPointsChange = onPointsChange;
         this.draggingPoint = null;
+        this.showHandles = false;
 
         this.boundMouseMove = (e) => {
             if (this.draggingPoint !== null) {
@@ -54,15 +55,32 @@ export class PerspectiveTransformer {
         window.addEventListener('mouseup', this.boundMouseUp);
     }
 
-    updateTransform() {
-        // Target is the unit square (0,0) to (1,1) but we use actual video dimensions
-        // Actually, CSS matrix3d works on the element's coordinate system.
-        // We want to map the 4 user points (src) to the corners of the viewport (dst).
-        // Since we want the video TO BE warped TO the rectangle,
-        // we calculate the homography from Corners to UserPoints to apply as transform.
+    setShowingHandles(visible) {
+        this.showHandles = visible;
+        this.draw();
+    }
 
-        const w = this.video.videoWidth || 640;
-        const h = this.video.videoHeight || 360;
+    resetPoints() {
+        this.points = [
+            {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
+        ];
+        this.updateTransform();
+        this.draw();
+        if (this.onPointsChange) this.onPointsChange(this.points);
+    }
+
+    updateTransform() {
+        if (this.showHandles) {
+            this.video.style.transform = '';
+            this.video.style.width = '100%';
+            this.video.style.height = '100%';
+            this.video.style.objectFit = 'fill';
+            return;
+        }
+
+        const rect = this.video.getBoundingClientRect();
+        const w = rect.width || 300;
+        const h = rect.height || 169;
 
         const corners = [
             {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
@@ -72,20 +90,13 @@ export class PerspectiveTransformer {
             y: (p.y / 100) * h
         }));
 
-        // We want the video's corners to move to 'target' points.
-        // The getHomography computes H such that H * corners = target.
-        const H = getHomography(corners, target);
-
-        // However, CSS transform: matrix3d(H) applies H to the element's coordinates.
-        // If we apply H, the corners of the video will move to the target points.
-        // But we want the opposite: we want the area defined by 'target' to fill the video element.
-        // So we need the inverse homography: H_inv * target = corners.
         const H_inv = getHomography(target, corners);
 
         this.video.style.transformOrigin = '0 0';
         this.video.style.transform = toMatrix3d(H_inv);
-        this.video.style.width = w + 'px';
-        this.video.style.height = h + 'px';
+        this.video.style.width = '100%';
+        this.video.style.height = '100%';
+        this.video.style.objectFit = 'fill';
     }
 
     destroy() {
@@ -96,10 +107,13 @@ export class PerspectiveTransformer {
     }
 
     draw() {
+        this.updateTransform();
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (!this.showHandles) return;
 
         // Draw polygon
         this.ctx.beginPath();

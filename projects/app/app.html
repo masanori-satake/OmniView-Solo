@@ -30,6 +30,16 @@
                 </nav>
                 <div class="tab-content" id="tab-general">
                     <div class="settings-row">
+                        <label for="cycling-switch">自動切り替え</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="cycling-switch" checked>
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
                         <label for="interval-input">表示間隔 (秒)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="interval-input" value="5" min="1" step="1">

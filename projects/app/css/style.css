@@ -145,6 +145,75 @@
 
 .spin-btn:hover { background: var(--md-sys-color-surface-variant); }
 
+/* Switch (M3) */
+.m3-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 32px;
+}
+
+.m3-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.m3-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--md-sys-color-surface-variant);
+    border: 2px solid var(--md-sys-color-outline);
+    transition: .4s;
+    border-radius: 32px;
+}
+
+.m3-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--md-sys-color-outline);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.m3-switch input:checked + .slider {
+    background-color: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+}
+
+.m3-switch input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: var(--md-sys-color-on-primary);
+    height: 28px;
+    width: 28px;
+    left: 0px;
+    bottom: 0px;
+}
+
+.m3-switch .slider-icon {
+    position: absolute;
+    z-index: 1;
+    font-size: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: .4s;
+}
+
+.m3-switch .icon-left { left: 8px; color: var(--md-sys-color-outline); }
+.m3-switch .icon-right { right: 8px; color: var(--md-sys-color-on-primary); opacity: 0; }
+
+.m3-switch input:checked + .slider .icon-left { opacity: 0; }
+.m3-switch input:checked + .slider .icon-right { opacity: 1; }
+
 /* Camera Selection UI */
 #camera-selection-ui {
     display: flex;
@@ -172,12 +241,15 @@
     aspect-ratio: 16 / 9;
     background: #000;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: none; /* Default hidden, shown when active */
 }
 
@@ -218,12 +290,14 @@ video {
 .control-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .slot-move-controls {
     display: flex;
-    gap: 4px;
+    gap: 0;
 }
 
 .m3-icon-button-small {
@@ -243,15 +317,24 @@ video {
     background-color: var(--md-sys-color-outline-variant);
 }
 
+.m3-icon-button-small.active {
+    background-color: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+
 .m3-select, .m3-textfield {
-    padding: 8px;
+    padding: 6px 8px;
     border: 1px solid var(--md-sys-color-outline);
     border-radius: var(--md-sys-shape-extra-small);
     background: var(--md-sys-color-surface);
     color: var(--md-sys-color-on-surface);
+    font-size: 13px;
 }
 
-.m3-textfield { flex-grow: 1; }
+.m3-textfield {
+    flex: 1;
+    min-width: 0;
+}
 
 #initial-overlay {
     position: absolute;
@@ -293,23 +376,15 @@ video {
 
 .layout-wide #camera-container {
     display: grid;
-    grid-template-rows: 1fr auto;
-    height: 100%;
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    overflow-y: auto;
+    padding: 8px;
 }
 
-.layout-wide .main-region { grid-row: 1; }
-.layout-wide .sub-region {
-    grid-row: 2;
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 8px;
-}
-
-.layout-wide .sub-region .camera-slot {
-    width: 200px;
-    flex-shrink: 0;
+/* Override for consistent slot size in all modes */
+.camera-slot {
+    width: 100%;
 }
 
 #snackbar {
