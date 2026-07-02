@@ -78,9 +78,8 @@ export class PerspectiveTransformer {
             return;
         }
 
-        const rect = this.video.getBoundingClientRect();
-        const w = rect.width || 300;
-        const h = rect.height || 169;
+        const w = this.canvas.clientWidth || 300;
+        const h = this.canvas.clientHeight || 169;
 
         const corners = [
             {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
@@ -108,8 +107,12 @@ export class PerspectiveTransformer {
 
     draw() {
         this.updateTransform();
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 

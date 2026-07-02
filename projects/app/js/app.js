@@ -381,6 +381,29 @@ class App {
     element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
+    element.querySelector('.video-wrapper').onclick = async () => {
+        const index = this.slotOrder.indexOf(deviceId);
+        if (index === this.activeSlotIndex) return;
+
+        if (this.activeSlotIndex !== -1) {
+            const currentDeviceId = this.slotOrder[this.activeSlotIndex];
+            const currentSlot = this.slots.get(currentDeviceId);
+            if (currentSlot) {
+                await this.deactivateSlot(currentSlot);
+            }
+        }
+
+        this.activeSlotIndex = index;
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            await this.activateSlot(slot, deviceId);
+        }
+
+        if (this.globalSettings.cyclingEnabled) {
+            this.startCycling();
+        }
+    };
+
     const roleSwitch = element.querySelector('.role-switch');
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
@@ -441,9 +464,18 @@ class App {
                 blob = await slot.processor.capture();
             } else {
                 const canvas = document.createElement('canvas');
-                canvas.width = slot.video.videoWidth;
-                canvas.height = slot.video.videoHeight;
-                canvas.getContext('2d').drawImage(slot.video, 0, 0);
+                const isActive = slot.element.classList.contains('active');
+                const source = isActive ? slot.video : slot.freezeCanvas;
+                const w = isActive ? slot.video.videoWidth : slot.freezeCanvas.width;
+                const h = isActive ? slot.video.videoHeight : slot.freezeCanvas.height;
+
+                if (!w || !h) {
+                    throw new Error('No image data available to capture.');
+                }
+
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(source, 0, 0);
                 blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
             }
 
@@ -462,6 +494,9 @@ class App {
     deleteBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (slot) {
+            const index = this.slotOrder.indexOf(deviceId);
+            const wasActive = index === this.activeSlotIndex;
+
             await this.deactivateSlot(slot);
             slot.element.remove();
             this.slots.delete(deviceId);
@@ -473,9 +508,24 @@ class App {
 
             if (this.slotOrder.length === 0) {
                 this.activeSlotIndex = -1;
-                if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
+                if (this.cycleTimeoutId) {
+                    clearTimeout(this.cycleTimeoutId);
+                    this.cycleTimeoutId = null;
+                }
             } else {
-                this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
+                if (wasActive) {
+                    this.activeSlotIndex = index % this.slotOrder.length;
+                    const nextDeviceId = this.slotOrder[this.activeSlotIndex];
+                    const nextSlot = this.slots.get(nextDeviceId);
+                    if (nextSlot) {
+                        await this.activateSlot(nextSlot, nextDeviceId);
+                    }
+                    if (this.globalSettings.cyclingEnabled) {
+                        this.startCycling();
+                    }
+                } else if (index < this.activeSlotIndex) {
+                    this.activeSlotIndex--;
+                }
             }
         }
     });
