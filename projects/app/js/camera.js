@@ -48,15 +48,15 @@ export async function saveCameraSetting(deviceId, settings) {
   return saveQueue;
 }
 
-export async function startCamera(deviceId) {
+export async function startCamera(deviceId, isFallback = false) {
   const constraints = {
     video: {
       deviceId: deviceId ? { exact: deviceId } : undefined,
       // USB bandwidth contention is a common issue with multiple high-res cameras.
       // Start with a lower resolution and frame rate to increase success rate.
-      width: { ideal: 640 },
-      height: { ideal: 480 },
-      frameRate: { ideal: 15 }
+      width: { ideal: isFallback ? 320 : 640 },
+      height: { ideal: isFallback ? 240 : 480 },
+      frameRate: { ideal: isFallback ? 10 : 15 }
     },
     audio: false
   };

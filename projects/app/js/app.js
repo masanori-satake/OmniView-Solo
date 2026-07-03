@@ -52,6 +52,7 @@ class App {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
+        cyclingSwitch.disabled = this.slotOrder.length < 2;
     });
 
     overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
@@ -187,6 +188,8 @@ class App {
             const currentSlot = this.slots.get(currentDeviceId);
             if (currentSlot) {
                 await this.deactivateSlot(currentSlot);
+                // Hardware release delay
+                await new Promise(r => setTimeout(r, 750));
             }
         }
     } else {
@@ -223,7 +226,7 @@ class App {
         if (slot && !slot.stream) {
             await this.activateSlot(slot, deviceId);
             // Sequential initialization with a small delay to avoid contention
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 1000));
         }
     }
   }
@@ -234,6 +237,9 @@ class App {
     this.slotOrder.push(camera.deviceId);
     this.container.appendChild(slot.element);
 
+    const cyclingSwitch = document.getElementById('cycling-switch');
+    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+
     if (this.currentLayout === 'wide') {
         this.reorganizeForWide();
     }
@@ -243,12 +249,13 @@ class App {
 
   async startCycling() {
     if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
+    if (this.slotOrder.length < 2) return;
     const interval = this.globalSettings.interval || 5;
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), interval * 1000);
   }
 
   async nextCamera() {
-    if (this.slotOrder.length === 0) return;
+    if (this.slotOrder.length < 2) return;
     if (!this.globalSettings.cyclingEnabled && this.activeSlotIndex !== -1) {
         return;
     }
@@ -269,7 +276,7 @@ class App {
 
     // 3. Small hardware delay to ensure device is released before next acquisition
     if (this.slotOrder.length > 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 750));
     }
 
     // Abort if a new cycle was started during the delay
@@ -289,44 +296,54 @@ class App {
   }
 
   async activateSlot(slot, deviceId) {
-    try {
-        const stream = await startCamera(deviceId);
-        slot.stream = stream;
-        slot.video.srcObject = stream;
-        slot.element.classList.add('active');
+    const maxRetries = 3;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const isFallback = i === maxRetries - 1;
+            const stream = await startCamera(deviceId, isFallback);
+            slot.stream = stream;
+            slot.video.srcObject = stream;
+            slot.element.classList.add('active');
 
-        await new Promise((resolve) => {
-            const timeoutId = setTimeout(() => {
-                cleanup();
-                resolve();
-            }, 5000);
-            const cleanup = () => {
-                clearTimeout(timeoutId);
-                slot.video.removeEventListener('playing', onPlaying);
-                slot.video.removeEventListener('error', onError);
-            };
-            const onPlaying = () => {
-                cleanup();
-                resolve();
-            };
-            const onError = () => {
-                cleanup();
-                resolve();
-            };
-            slot.video.addEventListener('playing', onPlaying);
-            slot.video.addEventListener('error', onError);
-            if (slot.video.readyState >= 3) {
-                onPlaying();
+            await new Promise((resolve) => {
+                const timeoutId = setTimeout(() => {
+                    cleanup();
+                    resolve();
+                }, 5000);
+                const cleanup = () => {
+                    clearTimeout(timeoutId);
+                    slot.video.removeEventListener('playing', onPlaying);
+                    slot.video.removeEventListener('error', onError);
+                };
+                const onPlaying = () => {
+                    cleanup();
+                    resolve();
+                };
+                const onError = () => {
+                    cleanup();
+                    resolve();
+                };
+                slot.video.addEventListener('playing', onPlaying);
+                slot.video.addEventListener('error', onError);
+                if (slot.video.readyState >= 3) {
+                    onPlaying();
+                }
+            });
+
+            const setting = this.settings[deviceId] || {};
+            if (setting.role === 'whiteboard') {
+                slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
             }
-        });
-
-        const setting = this.settings[deviceId] || {};
-        if (setting.role === 'whiteboard') {
-            slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+            return; // Success
+        } catch (e) {
+            console.error(`Attempt ${i + 1} failed for camera ${deviceId}:`, e);
+            if (i < maxRetries - 1) {
+                await new Promise(r => setTimeout(r, 1000));
+                continue;
+            }
+            const suffix = (deviceId || 'unknown').slice(0, 4);
+            this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
         }
-    } catch (e) {
-        console.error('Failed to start camera:', e);
-        this.showSnackbar(`カメラの起動に失敗しました: ${e.message}`);
     }
   }
 
@@ -589,8 +606,14 @@ class App {
                     if (this.globalSettings.cyclingEnabled) {
                         this.startCycling();
                     }
-                } else if (index < this.activeSlotIndex) {
-                    this.activeSlotIndex--;
+                    const cyclingSwitch = document.getElementById('cycling-switch');
+                    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+                } else {
+                    if (index < this.activeSlotIndex) {
+                        this.activeSlotIndex--;
+                    }
+                    const cyclingSwitch = document.getElementById('cycling-switch');
+                    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
                 }
             }
         }
