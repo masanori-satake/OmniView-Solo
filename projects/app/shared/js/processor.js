@@ -61,9 +61,9 @@ export class PerspectiveTransformer {
     }
 
     resetPoints() {
-        this.points = [
+        this.points.splice(0, this.points.length,
             {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
-        ];
+        );
         this.updateTransform();
         this.draw();
         if (this.onPointsChange) this.onPointsChange(this.points);
@@ -103,6 +103,7 @@ export class PerspectiveTransformer {
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
         this.video.style.transform = '';
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     draw() {

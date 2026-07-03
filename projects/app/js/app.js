@@ -81,6 +81,7 @@ class App {
         if (this.globalSettings.cyclingEnabled) {
             this.startCycling();
         } else {
+            this.cycleCount++; // Invalidate pending nextCamera callbacks
             if (this.cycleTimeoutId) {
                 clearTimeout(this.cycleTimeoutId);
                 this.cycleTimeoutId = null;
@@ -187,6 +188,13 @@ class App {
             if (currentSlot) {
                 await this.deactivateSlot(currentSlot);
             }
+        }
+    } else {
+        // When cycling is OFF, multiple cameras might be active.
+        // Add a small delay if other slots exist and the target camera is not yet active to avoid hardware contention.
+        const slot = this.slots.get(deviceId);
+        if (this.slotOrder.length > 1 && slot && !slot.stream) {
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
 
@@ -324,7 +332,7 @@ class App {
 
   async deactivateSlot(slot) {
     // Capture current frame to freezeCanvas
-    const { video, freezeCanvas, processor } = slot;
+    const { video, freezeCanvas, canvas, processor } = slot;
     if (video.videoWidth > 0) {
         freezeCanvas.width = video.videoWidth;
         freezeCanvas.height = video.videoHeight;
@@ -337,6 +345,12 @@ class App {
         processor.stop();
         slot.processor = null;
     }
+
+    // Clear overlay canvas and reset Set button
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const setBtn = slot.element.querySelector('.set-btn');
+    if (setBtn) setBtn.classList.remove('active');
 
     // Stop stream
     if (slot.stream) {
@@ -455,17 +469,25 @@ class App {
       });
 
       const slot = this.slots.get(deviceId);
-      if (slot && slot.element.classList.contains('active')) {
-          if (role === 'whiteboard') {
-              slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
-          } else {
-              if (slot.processor) {
-                  slot.processor.stop();
-                  slot.processor = null;
+      if (slot) {
+          const setBtn = slot.element.querySelector('.set-btn');
+          if (setBtn) setBtn.classList.remove('active');
+
+          if (slot.element.classList.contains('active')) {
+              if (role === 'whiteboard') {
+                  if (slot.processor) {
+                      slot.processor.stop();
+                  }
+                  slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+              } else {
+                  if (slot.processor) {
+                      slot.processor.stop();
+                      slot.processor = null;
+                  }
+                  slot.video.style.transform = '';
+                  const ctx = slot.canvas.getContext('2d');
+                  ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
               }
-              slot.video.style.transform = '';
-              const ctx = slot.canvas.getContext('2d');
-              ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
           }
       }
     });
@@ -590,6 +612,10 @@ class App {
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
           saveCameraSetting(deviceId, { points: newPts });
+          if (!this.settings[deviceId]) {
+              this.settings[deviceId] = {};
+          }
+          this.settings[deviceId].points = newPts;
       });
       const stacker = new MedianStacker(video);
 
