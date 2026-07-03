@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import re
 
 def check_versions():
     with open('package.json', 'r') as f:
@@ -28,11 +29,19 @@ def check_versions():
             if match:
                 readme_version = match.group(1)
 
-    if pkg_version == lock_version == ver_file_version == manifest_version == readme_version:
+    app_html_version = None
+    if os.path.exists('projects/app/app.html'):
+        with open('projects/app/app.html', 'r') as f:
+            content = f.read()
+            match = re.search(r'<p>Version: (\d+\.\d+\.\d+)</p>', content)
+            if match:
+                app_html_version = match.group(1)
+
+    if pkg_version == lock_version == ver_file_version == manifest_version == readme_version == app_html_version:
         print(f"Version check passed: {pkg_version}")
         return True
     else:
-        print(f"Version mismatch! package.json: {pkg_version}, package-lock.json: {lock_version}, version.json: {ver_file_version}, manifest: {manifest_version}, README: {readme_version}")
+        print(f"Version mismatch! package.json: {pkg_version}, package-lock.json: {lock_version}, version.json: {ver_file_version}, manifest: {manifest_version}, README: {readme_version}, app.html: {app_html_version}")
         return False
 
 if __name__ == "__main__":

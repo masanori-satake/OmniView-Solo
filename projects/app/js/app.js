@@ -14,6 +14,7 @@ class App {
     this.cycleCount = 0;
     this.currentLayout = null;
     this.snackbarTimeout = null;
+    this.switchRequestCount = 0;
   }
 
   async init() {
@@ -79,9 +80,12 @@ class App {
         await saveGlobalSettings(this.globalSettings);
         if (this.globalSettings.cyclingEnabled) {
             this.startCycling();
-        } else if (this.cycleTimeoutId) {
-            clearTimeout(this.cycleTimeoutId);
-            this.cycleTimeoutId = null;
+        } else {
+            if (this.cycleTimeoutId) {
+                clearTimeout(this.cycleTimeoutId);
+                this.cycleTimeoutId = null;
+            }
+            await this.activateAllCameras();
         }
     });
   }
@@ -164,6 +168,58 @@ class App {
     };
   }
 
+  async switchActiveCamera(deviceId) {
+    this.switchRequestCount++;
+    const currentRequest = this.switchRequestCount;
+
+    if (this.cycleTimeoutId) {
+        clearTimeout(this.cycleTimeoutId);
+        this.cycleTimeoutId = null;
+    }
+
+    const index = this.slotOrder.indexOf(deviceId);
+    if (index === -1) return;
+
+    if (this.globalSettings.cyclingEnabled) {
+        if (this.activeSlotIndex !== -1 && this.activeSlotIndex !== index) {
+            const currentDeviceId = this.slotOrder[this.activeSlotIndex];
+            const currentSlot = this.slots.get(currentDeviceId);
+            if (currentSlot) {
+                await this.deactivateSlot(currentSlot);
+            }
+        }
+    }
+
+    // Abort if a newer request has started
+    if (this.switchRequestCount !== currentRequest) return;
+
+    this.activeSlotIndex = index;
+    const slot = this.slots.get(deviceId);
+    if (slot) {
+        if (!slot.stream) {
+            await this.activateSlot(slot, deviceId);
+        }
+    }
+
+    if (this.switchRequestCount !== currentRequest) return;
+
+    if (this.globalSettings.cyclingEnabled) {
+        this.startCycling();
+    }
+  }
+
+  async activateAllCameras() {
+    for (const deviceId of this.slotOrder) {
+        if (this.globalSettings.cyclingEnabled) break;
+        const slot = this.slots.get(deviceId);
+        if (slot && !slot.stream) {
+            await this.activateSlot(slot, deviceId);
+            // Sequential initialization with a small delay to avoid contention
+            await new Promise(r => setTimeout(r, 500));
+        }
+    }
+  }
+
   async addCamera(camera) {
     const slot = await this.createCameraSlot(camera);
     this.slots.set(camera.deviceId, slot);
@@ -174,14 +230,13 @@ class App {
         this.reorganizeForWide();
     }
 
-    if (this.slotOrder.length === 1) {
-        await this.startCycling();
-    }
+    await this.switchActiveCamera(camera.deviceId);
   }
 
   async startCycling() {
     if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
-    await this.nextCamera();
+    const interval = this.globalSettings.interval || 5;
+    this.cycleTimeoutId = setTimeout(() => this.nextCamera(), interval * 1000);
   }
 
   async nextCamera() {
@@ -349,13 +404,17 @@ class App {
                   <span class="material-symbols-outlined">arrow_downward</span>
               </button>
           </div>
-          <label class="m3-switch role-switch-container" title="モード切替 (Person / Whiteboard)">
-            <input type="checkbox" class="role-switch" ${setting.role === 'whiteboard' ? 'checked' : ''}>
-            <span class="slider">
-                <span class="material-symbols-outlined slider-icon icon-left">person</span>
-                <span class="material-symbols-outlined slider-icon icon-right">edit_square</span>
-            </span>
-          </label>
+          <div class="role-switch-wrapper" title="モード切替 (Person / Whiteboard)">
+              <span class="material-symbols-outlined switch-label-icon">person</span>
+              <label class="m3-switch role-switch-container">
+                <input type="checkbox" class="role-switch" ${setting.role === 'whiteboard' ? 'checked' : ''}>
+                <span class="slider">
+                    <span class="material-symbols-outlined slider-icon icon-left">person</span>
+                    <span class="material-symbols-outlined slider-icon icon-right">edit_square</span>
+                </span>
+              </label>
+              <span class="material-symbols-outlined switch-label-icon">edit_square</span>
+          </div>
           <input type="text" class="m3-textfield label-input" placeholder="Camera Name">
           <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="セット">
               <span class="material-symbols-outlined">settings_overscan</span>
@@ -381,28 +440,7 @@ class App {
     element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
-    element.querySelector('.video-wrapper').onclick = async () => {
-        const index = this.slotOrder.indexOf(deviceId);
-        if (index === this.activeSlotIndex) return;
-
-        if (this.activeSlotIndex !== -1) {
-            const currentDeviceId = this.slotOrder[this.activeSlotIndex];
-            const currentSlot = this.slots.get(currentDeviceId);
-            if (currentSlot) {
-                await this.deactivateSlot(currentSlot);
-            }
-        }
-
-        this.activeSlotIndex = index;
-        const slot = this.slots.get(deviceId);
-        if (slot) {
-            await this.activateSlot(slot, deviceId);
-        }
-
-        if (this.globalSettings.cyclingEnabled) {
-            this.startCycling();
-        }
-    };
+    element.querySelector('.video-wrapper').onclick = () => this.switchActiveCamera(deviceId);
 
     const roleSwitch = element.querySelector('.role-switch');
     roleSwitch.addEventListener('change', async (e) => {
@@ -433,8 +471,11 @@ class App {
     });
 
     const setBtn = element.querySelector('.set-btn');
-    setBtn.addEventListener('click', () => {
+    setBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
+        if (slot && !slot.processor) {
+            await this.switchActiveCamera(deviceId);
+        }
         if (slot && slot.processor) {
             const isVisible = !slot.processor.transformer.showHandles;
             slot.processor.transformer.setShowingHandles(isVisible);
@@ -443,8 +484,11 @@ class App {
     });
 
     const resetBtn = element.querySelector('.reset-btn');
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
+        if (slot && !slot.processor) {
+            await this.switchActiveCamera(deviceId);
+        }
         if (slot && slot.processor) {
             slot.processor.transformer.resetPoints();
             this.showSnackbar('調整をリセットしました');
@@ -557,6 +601,8 @@ class App {
       loop();
 
       return {
+          transformer,
+          stacker,
           stop: () => {
               cancelAnimationFrame(animationFrame);
               transformer.destroy();
