@@ -1,4 +1,4 @@
-import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings } from './camera.js';
+import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState } from './camera.js';
 import { PerspectiveTransformer, MedianStacker } from '../shared/js/processor.js';
 
 class App {
@@ -21,20 +21,61 @@ class App {
     this.settings = await loadCameraSettings();
     this.globalSettings = await loadGlobalSettings();
     this.cameras = await getCameras();
+
     this.setupStartButton();
     this.setupResizeObserver();
     this.setupSettingsPanel();
+    this.setupAddCameraButton();
+
+    // Restore session state
+    const session = await loadSessionState();
+    if (session && session.slotOrder && session.slotOrder.length > 0) {
+        const connectedSlotOrder = [];
+        // Recreate slots
+        for (const deviceId of session.slotOrder) {
+            const camera = this.cameras.find(c => c.deviceId === deviceId);
+            if (camera) {
+                const slot = await this.createCameraSlot(camera);
+                this.slots.set(deviceId, slot);
+                this.container.appendChild(slot.element);
+                connectedSlotOrder.push(deviceId);
+            }
+        }
+
+        if (connectedSlotOrder.length > 0) {
+            document.getElementById('initial-overlay').classList.add('hidden');
+            this.slotOrder = connectedSlotOrder;
+
+            if (this.currentLayout === 'wide') {
+                this.reorganizeForWide();
+            }
+
+            const activeIndex = (session.activeSlotIndex >= 0 && session.activeSlotIndex < this.slotOrder.length)
+                ? session.activeSlotIndex
+                : 0;
+
+            if (this.globalSettings.cyclingEnabled) {
+                await this.switchActiveCamera(this.slotOrder[activeIndex]);
+            } else {
+                this.activeSlotIndex = activeIndex;
+                await this.activateAllCameras();
+            }
+        }
+    }
   }
 
   setupStartButton() {
     const overlay = document.getElementById('initial-overlay');
     const btn = document.getElementById('start-btn');
-    const selectionUI = document.getElementById('camera-selection-ui');
     btn.addEventListener('click', async () => {
       overlay.classList.add('hidden');
-      selectionUI.classList.remove('hidden');
-      await this.setupCameraSelection();
+      await this.showCameraDialog();
     });
+  }
+
+  setupAddCameraButton() {
+      const addBtn = document.getElementById('add-camera-nav-btn');
+      addBtn.addEventListener('click', () => this.showCameraDialog());
   }
 
   setupSettingsPanel() {
@@ -53,6 +94,7 @@ class App {
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
         cyclingSwitch.disabled = this.slotOrder.length < 2;
+        this.updateCameraInfoTab();
     });
 
     overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
@@ -63,8 +105,14 @@ class App {
             tabContents.forEach(c => c.classList.add('hidden'));
             btn.classList.add('active');
             document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+            if (btn.dataset.tab === 'camera-info') {
+                this.updateCameraInfoTab();
+            }
         });
     });
+
+    const infoCameraSelect = document.getElementById('info-camera-select');
+    infoCameraSelect.addEventListener('change', () => this.displayCameraInfo(infoCameraSelect.value));
 
     const updateInterval = async (val) => {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
@@ -134,9 +182,12 @@ class App {
     });
   }
 
-  async setupCameraSelection() {
-    const dropdown = document.getElementById('camera-dropdown');
-    const addBtn = document.getElementById('add-camera-btn');
+  async showCameraDialog() {
+    const dialog = document.getElementById('camera-dialog');
+    const overlay = document.getElementById('camera-dialog-overlay');
+    const listContainer = document.getElementById('camera-list-container');
+    const cancelBtn = document.getElementById('dialog-cancel-btn');
+    const addBtn = document.getElementById('dialog-add-btn');
 
     this.cameras = await getCameras();
     if (this.cameras.length > 0 && !this.cameras[0].label) {
@@ -145,29 +196,134 @@ class App {
             '許可する',
             () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
         );
-        window.addEventListener('focus', () => this.setupCameraSelection(), { once: true });
+        window.addEventListener('focus', () => this.showCameraDialog(), { once: true });
         return;
     }
 
-    dropdown.innerHTML = '';
+    listContainer.innerHTML = '';
     this.cameras.forEach(camera => {
-        const option = document.createElement('option');
-        option.value = camera.deviceId;
+        const isAdded = this.slots.has(camera.deviceId);
+        const item = document.createElement('label');
+        item.className = `camera-list-item ${isAdded ? 'disabled' : ''}`;
+
         const label = camera.label || 'Camera';
         const suffix = camera.deviceId.slice(0, 4);
-        option.textContent = `${label} (${suffix})`;
-        dropdown.appendChild(option);
+
+        item.innerHTML = `
+            <input type="checkbox" value="${camera.deviceId}" ${isAdded ? 'checked disabled' : ''}>
+            <span>${label} (${suffix})</span>
+        `;
+        listContainer.appendChild(item);
     });
 
+    dialog.classList.remove('hidden');
+
+    const closeDialog = () => dialog.classList.add('hidden');
+    overlay.onclick = closeDialog;
+    cancelBtn.onclick = closeDialog;
+
     addBtn.onclick = async () => {
-        const deviceId = dropdown.value;
-        if (this.slots.has(deviceId)) {
-            this.showSnackbar('このカメラは既に追加されています');
-            return;
+        const checkedBoxes = listContainer.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)');
+        const camerasToAdd = [];
+        for (const box of checkedBoxes) {
+            const deviceId = box.value;
+            const camera = this.cameras.find(c => c.deviceId === deviceId);
+            if (camera) {
+                camerasToAdd.push(camera);
+            }
         }
-        const camera = this.cameras.find(c => c.deviceId === deviceId);
-        await this.addCamera(camera);
+
+        if (camerasToAdd.length > 0) {
+            for (const camera of camerasToAdd) {
+                const slot = await this.createCameraSlot(camera);
+                this.slots.set(camera.deviceId, slot);
+                this.slotOrder.push(camera.deviceId);
+                this.container.appendChild(slot.element);
+            }
+
+            const cyclingSwitch = document.getElementById('cycling-switch');
+            if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+
+            if (this.currentLayout === 'wide') {
+                this.reorganizeForWide();
+            }
+
+            if (this.globalSettings.cyclingEnabled) {
+                const lastCamera = camerasToAdd[camerasToAdd.length - 1];
+                await this.switchActiveCamera(lastCamera.deviceId);
+            } else {
+                await this.activateAllCameras();
+            }
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
+        }
+        closeDialog();
     };
+  }
+
+  updateCameraInfoTab() {
+    const infoCameraSelect = document.getElementById('info-camera-select');
+    const currentValue = infoCameraSelect.value;
+    infoCameraSelect.innerHTML = '';
+
+    if (this.slotOrder.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'カメラなし';
+        infoCameraSelect.appendChild(option);
+        this.displayCameraInfo(null);
+        return;
+    }
+
+    this.slotOrder.forEach(deviceId => {
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            const option = document.createElement('option');
+            option.value = deviceId;
+            option.textContent = slot.element.querySelector('.label-input').value;
+            infoCameraSelect.appendChild(option);
+        }
+    });
+
+    if (this.slots.has(currentValue)) {
+        infoCameraSelect.value = currentValue;
+    }
+    this.displayCameraInfo(infoCameraSelect.value);
+  }
+
+  async displayCameraInfo(deviceId) {
+    const listContainer = document.getElementById('camera-capabilities-list');
+    listContainer.innerHTML = '';
+
+    const slot = this.slots.get(deviceId);
+    if (!slot || !slot.stream) {
+        listContainer.innerHTML = '<p>ストリームが有効ではありません。</p>';
+        return;
+    }
+
+    const track = slot.stream.getVideoTracks()[0];
+    if (!track) return;
+
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    const settings = track.getSettings ? track.getSettings() : {};
+
+    const info = {
+        'デバイスID': settings.deviceId || 'N/A',
+        '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
+        'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
+        'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
+        'フォーカス': capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A',
+        '露出': capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A',
+        'ホワイトバランス': capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A'
+    };
+
+    for (const [label, value] of Object.entries(info)) {
+        const item = document.createElement('div');
+        item.className = 'info-item';
+        item.innerHTML = `
+            <span class="info-label">${label}</span>
+            <span class="info-value">${value}</span>
+        `;
+        listContainer.appendChild(item);
+    }
   }
 
   async switchActiveCamera(deviceId) {
@@ -217,6 +373,8 @@ class App {
     if (this.globalSettings.cyclingEnabled) {
         this.startCycling();
     }
+
+    saveSessionState(this.slotOrder, this.activeSlotIndex);
   }
 
   async activateAllCameras() {
@@ -245,6 +403,7 @@ class App {
     }
 
     await this.switchActiveCamera(camera.deviceId);
+    saveSessionState(this.slotOrder, this.activeSlotIndex);
   }
 
   async startCycling() {
@@ -413,6 +572,8 @@ class App {
         this.activeSlotIndex = this.slotOrder.indexOf(oldActiveDeviceId);
     }
 
+    saveSessionState(this.slotOrder, this.activeSlotIndex);
+
     // Re-render order
     if (this.currentLayout === 'wide') {
         this.reorganizeForWide();
@@ -469,7 +630,7 @@ class App {
           <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="リセット">
               <span class="material-symbols-outlined">restart_alt</span>
           </button>
-          <button class="m3-icon-button-small copy-btn" title="キャプチャ">
+          <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="キャプチャ">
               <span class="material-symbols-outlined">photo_camera</span>
           </button>
           <button class="m3-icon-button-small delete-btn" title="削除">
@@ -604,6 +765,8 @@ class App {
             const currentSettings = await loadCameraSettings();
             delete currentSettings[deviceId];
             await chrome.storage.local.set({ camera_settings: currentSettings });
+
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
 
             if (this.slotOrder.length === 0) {
                 this.activeSlotIndex = -1;

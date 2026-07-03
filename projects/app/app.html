@@ -12,9 +12,14 @@
     <div id="app" class="layout-narrow">
         <header id="app-header">
             <span class="m3-title">OmniView-Solo</span>
-            <button id="settings-btn" class="m3-icon-button" title="設定">
-                <span class="material-symbols-outlined">settings</span>
-            </button>
+            <div class="header-actions">
+                <button id="add-camera-nav-btn" class="m3-icon-button" title="カメラ追加">
+                    <span class="material-symbols-outlined">video_call</span>
+                </button>
+                <button id="settings-btn" class="m3-icon-button" title="設定">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
+            </div>
         </header>
 
         <div id="settings-panel" class="hidden">
@@ -23,6 +28,9 @@
                 <nav class="settings-tabs">
                     <button class="tab-btn active" data-tab="general">
                         <span class="material-symbols-outlined">tune</span>
+                    </button>
+                    <button class="tab-btn" data-tab="camera-info">
+                        <span class="material-symbols-outlined">visibility</span>
                     </button>
                     <button class="tab-btn" data-tab="about">
                         <span class="material-symbols-outlined">info</span>
@@ -54,10 +62,19 @@
                         </div>
                     </div>
                 </div>
+                <div class="tab-content hidden" id="tab-camera-info">
+                    <div class="settings-row">
+                        <label for="info-camera-select">カメラ選択</label>
+                        <select id="info-camera-select" class="m3-select"></select>
+                    </div>
+                    <div id="camera-capabilities-list" class="info-list">
+                        <!-- Info will be injected here -->
+                    </div>
+                </div>
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p>Version: 0.1.16</p>
+                        <p>Version: 0.1.17</p>
                         <p>ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong>データの保存場所とリスク</strong></p>
@@ -79,12 +96,22 @@
             </button>
         </div>
 
-        <div id="camera-selection-ui" class="hidden">
-            <select id="camera-dropdown" class="m3-select"></select>
-            <button id="add-camera-btn" class="m3-button-filled">
-                <span class="material-symbols-outlined">add</span>
-                追加
-            </button>
+        <div id="camera-dialog" class="hidden">
+            <div id="camera-dialog-overlay"></div>
+            <div class="dialog-content m3-surface">
+                <div class="dialog-header">
+                    <h2 class="m3-title">カメラ追加</h2>
+                </div>
+                <div class="dialog-body">
+                    <div id="camera-list-container">
+                        <!-- Camera list with checkboxes will be injected here -->
+                    </div>
+                </div>
+                <div class="dialog-actions">
+                    <button id="dialog-cancel-btn" class="m3-button">キャンセル</button>
+                    <button id="dialog-add-btn" class="m3-button-filled">追加</button>
+                </div>
+            </div>
         </div>
 
         <main id="camera-container">
