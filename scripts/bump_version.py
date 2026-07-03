@@ -18,6 +18,7 @@ def bump_version(part='patch'):
 
     new_version = '.'.join(version)
 
+    import re
     # Update all files
     for filepath in ['package.json', 'package-lock.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
         with open(filepath, 'r') as f:
@@ -31,8 +32,15 @@ def bump_version(part='patch'):
             json.dump(data, f, indent=2)
             f.write('\n')
 
+    # Update app.html
+    app_html_path = 'projects/app/app.html'
+    with open(app_html_path, 'r') as f:
+        content = f.read()
+    new_content = re.sub(r'<p>Version: \d+\.\d+\.\d+</p>', f'<p>Version: {new_version}</p>', content)
+    with open(app_html_path, 'w') as f:
+        f.write(new_content)
+
     # Update README.md badge
-    import re
     with open('README.md', 'r') as f:
         content = f.read()
     new_content = re.sub(r'version-\d+\.\d+\.\d+-blue', f'version-{new_version}-blue', content)
