@@ -16,6 +16,11 @@
     padding: 4px 0;
 }
 
+.header-actions {
+    display: flex;
+    gap: 4px;
+}
+
 .m3-title {
     font-size: 1.2rem;
     font-weight: 500;
@@ -341,6 +346,10 @@ video {
     color: var(--md-sys-color-on-primary-container);
 }
 
+.whiteboard-only.hidden {
+    display: none !important;
+}
+
 .m3-select, .m3-textfield {
     padding: 6px 8px;
     border: 1px solid var(--md-sys-color-outline);
@@ -461,4 +470,110 @@ video {
     border: none;
     border-top: 1px solid var(--md-sys-color-outline-variant);
     margin: 12px 0;
+}
+
+/* Dialog */
+#camera-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#camera-dialog-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.dialog-content {
+    position: relative;
+    width: 85%;
+    max-width: 320px;
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-large);
+    padding: 24px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.dialog-header h2 {
+    margin: 0 0 16px 0;
+}
+
+.dialog-body {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 24px;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.m3-button {
+    background: none;
+    border: none;
+    color: var(--md-sys-color-primary);
+    padding: 8px 16px;
+    border-radius: var(--md-sys-shape-full);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.m3-button:hover {
+    background: var(--md-sys-color-surface-variant);
+}
+
+/* Camera List Item */
+.camera-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    cursor: pointer;
+}
+
+.camera-list-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.camera-list-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Info List */
+.info-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.info-label {
+    font-size: 11px;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.info-value {
+    font-size: 13px;
+    font-weight: 500;
 }

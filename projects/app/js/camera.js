@@ -14,6 +14,27 @@ export async function loadCameraSettings() {
   });
 }
 
+export async function saveSessionState(slotOrder, activeSlotIndex) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({
+      session_state: {
+        slotOrder,
+        activeSlotIndex
+      }
+    }, () => {
+      resolve();
+    });
+  });
+}
+
+export async function loadSessionState() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['session_state'], (result) => {
+      resolve(result.session_state || null);
+    });
+  });
+}
+
 export async function loadGlobalSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['global_settings'], (result) => {
