@@ -86,25 +86,10 @@ export class PerspectiveTransformer {
             {x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}
         ];
 
-        // Video resolution and its placement within 'object-fit: contain'
-        const vw = this.video.videoWidth || 16;
-        const vh = this.video.videoHeight || 9;
-        const vRatio = vw / vh;
-        const cRatio = cw / ch;
-        let rW = cw, rH = ch, xO = 0, yO = 0;
-        if (vRatio > cRatio) {
-            rH = cw / vRatio; yO = (ch - rH) / 2;
-        } else {
-            rW = ch * vRatio; xO = (cw - rW) / 2;
-        }
-
         // We want to map points from the 'video' coordinate system to the 'container' coordinate system.
         // BUT matrix3d is applied to the video element itself.
-        // If we use object-fit: fill, the video matches the container exactly.
-        // If we use object-fit: contain, we need to account for the offset/scaling.
-
-        // Actually, using 'object-fit: fill' is simpler for the math,
-        // as long as we only use it when NOT showing handles.
+        // Using 'object-fit: fill' is simpler for the math as long as handles are hidden,
+        // because the video element boundary matches the container boundary.
         this.video.style.objectFit = 'fill';
 
         const target = this.points.map(p => ({
