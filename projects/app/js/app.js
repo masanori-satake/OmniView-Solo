@@ -191,8 +191,9 @@ class App {
         }
     } else {
         // When cycling is OFF, multiple cameras might be active.
-        // Add a small delay if other slots exist to avoid hardware contention.
-        if (this.slotOrder.length > 1) {
+        // Add a small delay if other slots exist and the target camera is not yet active to avoid hardware contention.
+        const slot = this.slots.get(deviceId);
+        if (this.slotOrder.length > 1 && slot && !slot.stream) {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
@@ -474,6 +475,9 @@ class App {
 
           if (slot.element.classList.contains('active')) {
               if (role === 'whiteboard') {
+                  if (slot.processor) {
+                      slot.processor.stop();
+                  }
                   slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
               } else {
                   if (slot.processor) {
@@ -608,9 +612,10 @@ class App {
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
           saveCameraSetting(deviceId, { points: newPts });
-          if (this.settings[deviceId]) {
-              this.settings[deviceId].points = newPts;
+          if (!this.settings[deviceId]) {
+              this.settings[deviceId] = {};
           }
+          this.settings[deviceId].points = newPts;
       });
       const stacker = new MedianStacker(video);
 

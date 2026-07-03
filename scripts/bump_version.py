@@ -1,5 +1,6 @@
 import json
 import sys
+import re
 
 def bump_version(part='patch'):
     with open('package.json', 'r') as f:
