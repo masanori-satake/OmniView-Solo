@@ -6,7 +6,7 @@ class App {
     this.container = document.getElementById('camera-container');
     this.cameras = [];
     this.settings = {};
-    this.globalSettings = { interval: 5 };
+    this.globalSettings = { interval: 5, cyclingEnabled: true };
     this.slots = new Map();
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
@@ -45,10 +45,12 @@ class App {
     const intervalInput = document.getElementById('interval-input');
     const intervalUp = document.getElementById('interval-up');
     const intervalDown = document.getElementById('interval-down');
+    const cyclingSwitch = document.getElementById('cycling-switch');
 
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
+        cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
     });
 
     overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
@@ -71,6 +73,17 @@ class App {
     intervalInput.addEventListener('change', (e) => updateInterval(e.target.value));
     intervalUp.addEventListener('click', () => updateInterval(this.globalSettings.interval + 1));
     intervalDown.addEventListener('click', () => updateInterval(this.globalSettings.interval - 1));
+
+    cyclingSwitch.addEventListener('change', async (e) => {
+        this.globalSettings.cyclingEnabled = e.target.checked;
+        await saveGlobalSettings(this.globalSettings);
+        if (this.globalSettings.cyclingEnabled) {
+            this.startCycling();
+        } else if (this.cycleTimeoutId) {
+            clearTimeout(this.cycleTimeoutId);
+            this.cycleTimeoutId = null;
+        }
+    });
   }
 
   setupResizeObserver() {
@@ -109,33 +122,9 @@ class App {
   }
 
   reorganizeForWide() {
-    let mainRegion = this.container.querySelector('.main-region');
-    if (!mainRegion) {
-        mainRegion = document.createElement('div');
-        mainRegion.className = 'main-region';
-        this.container.appendChild(mainRegion);
-    }
-
-    let subRegion = this.container.querySelector('.sub-region');
-    if (!subRegion) {
-        subRegion = document.createElement('div');
-        subRegion.className = 'sub-region';
-        this.container.appendChild(subRegion);
-    }
-
     this.slotOrder.forEach((deviceId) => {
         const slot = this.slots.get(deviceId);
-        if (!slot) return;
-        const setting = this.settings[deviceId] || {};
-        if (setting.role === 'whiteboard') {
-            mainRegion.appendChild(slot.element);
-            slot.element.classList.add('main-region');
-            slot.element.classList.remove('sub-region-item');
-        } else {
-            subRegion.appendChild(slot.element);
-            slot.element.classList.add('sub-region-item');
-            slot.element.classList.remove('main-region');
-        }
+        if (slot) this.container.appendChild(slot.element);
     });
   }
 
@@ -197,6 +186,9 @@ class App {
 
   async nextCamera() {
     if (this.slotOrder.length === 0) return;
+    if (!this.globalSettings.cyclingEnabled && this.activeSlotIndex !== -1) {
+        return;
+    }
 
     // 1. Capture and stop current active slot
     if (this.activeSlotIndex !== -1) {
@@ -357,17 +349,26 @@ class App {
                   <span class="material-symbols-outlined">arrow_downward</span>
               </button>
           </div>
-          <select class="m3-select role-select">
-            <option value="whiteboard" ${setting.role === 'whiteboard' ? 'selected' : ''}>Whiteboard</option>
-            <option value="person" ${setting.role === 'person' ? 'selected' : ''}>Person</option>
-          </select>
-          <input type="text" class="m3-textfield label-input">
-        </div>
-        <div class="control-row whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}">
-            <button class="m3-button-filled copy-btn">
-                <span class="material-symbols-outlined">content_copy</span>
-                Capture
-            </button>
+          <label class="m3-switch role-switch-container" title="モード切替 (Person / Whiteboard)">
+            <input type="checkbox" class="role-switch" ${setting.role === 'whiteboard' ? 'checked' : ''}>
+            <span class="slider">
+                <span class="material-symbols-outlined slider-icon icon-left">person</span>
+                <span class="material-symbols-outlined slider-icon icon-right">edit_square</span>
+            </span>
+          </label>
+          <input type="text" class="m3-textfield label-input" placeholder="Camera Name">
+          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="セット">
+              <span class="material-symbols-outlined">settings_overscan</span>
+          </button>
+          <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="リセット">
+              <span class="material-symbols-outlined">restart_alt</span>
+          </button>
+          <button class="m3-icon-button-small copy-btn" title="キャプチャ">
+              <span class="material-symbols-outlined">photo_camera</span>
+          </button>
+          <button class="m3-icon-button-small delete-btn" title="削除">
+              <span class="material-symbols-outlined">delete</span>
+          </button>
         </div>
       </div>
     `;
@@ -380,40 +381,151 @@ class App {
     element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
-    const roleSelect = element.querySelector('.role-select');
-    roleSelect.addEventListener('change', async (e) => {
-      const role = e.target.value;
+    element.querySelector('.video-wrapper').onclick = async () => {
+        const index = this.slotOrder.indexOf(deviceId);
+        if (index === this.activeSlotIndex) return;
+
+        if (this.activeSlotIndex !== -1) {
+            const currentDeviceId = this.slotOrder[this.activeSlotIndex];
+            const currentSlot = this.slots.get(currentDeviceId);
+            if (currentSlot) {
+                await this.deactivateSlot(currentSlot);
+            }
+        }
+
+        this.activeSlotIndex = index;
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            await this.activateSlot(slot, deviceId);
+        }
+
+        if (this.globalSettings.cyclingEnabled) {
+            this.startCycling();
+        }
+    };
+
+    const roleSwitch = element.querySelector('.role-switch');
+    roleSwitch.addEventListener('change', async (e) => {
+      const role = e.target.checked ? 'whiteboard' : 'person';
       await saveCameraSetting(deviceId, { role });
       this.settings[deviceId] = { ...this.settings[deviceId], role };
 
-      const wbControls = element.querySelector('.whiteboard-only');
-      if (role === 'whiteboard') {
-          wbControls.classList.remove('hidden');
-      } else {
-          wbControls.classList.add('hidden');
-      }
+      const wbControls = element.querySelectorAll('.whiteboard-only');
+      wbControls.forEach(ctrl => {
+          if (role === 'whiteboard') ctrl.classList.remove('hidden');
+          else ctrl.classList.add('hidden');
+      });
 
-      if (this.currentLayout === 'wide') {
-          this.reorganizeForWide();
+      const slot = this.slots.get(deviceId);
+      if (slot && slot.element.classList.contains('active')) {
+          if (role === 'whiteboard') {
+              slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+          } else {
+              if (slot.processor) {
+                  slot.processor.stop();
+                  slot.processor = null;
+              }
+              slot.video.style.transform = '';
+              const ctx = slot.canvas.getContext('2d');
+              ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
+          }
       }
+    });
+
+    const setBtn = element.querySelector('.set-btn');
+    setBtn.addEventListener('click', () => {
+        const slot = this.slots.get(deviceId);
+        if (slot && slot.processor) {
+            const isVisible = !slot.processor.transformer.showHandles;
+            slot.processor.transformer.setShowingHandles(isVisible);
+            setBtn.classList.toggle('active', isVisible);
+        }
+    });
+
+    const resetBtn = element.querySelector('.reset-btn');
+    resetBtn.addEventListener('click', () => {
+        const slot = this.slots.get(deviceId);
+        if (slot && slot.processor) {
+            slot.processor.transformer.resetPoints();
+            this.showSnackbar('調整をリセットしました');
+        } else if (slot) {
+            slot.video.style.transform = '';
+            this.showSnackbar('調整をリセットしました');
+        }
     });
 
     const copyBtn = element.querySelector('.copy-btn');
     copyBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
-        if (slot && slot.processor) {
-            try {
-                const blob = await slot.processor.capture();
-                if (!blob) {
-                    throw new Error('Failed to capture frame.');
+        if (!slot) return;
+        try {
+            let blob;
+            if (slot.processor) {
+                blob = await slot.processor.capture();
+            } else {
+                const canvas = document.createElement('canvas');
+                const isActive = slot.element.classList.contains('active');
+                const source = isActive ? slot.video : slot.freezeCanvas;
+                const w = isActive ? slot.video.videoWidth : slot.freezeCanvas.width;
+                const h = isActive ? slot.video.videoHeight : slot.freezeCanvas.height;
+
+                if (!w || !h) {
+                    throw new Error('No image data available to capture.');
                 }
-                await navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': blob })
-                ]);
-                this.showSnackbar('クリップボードにコピーしました');
-            } catch (err) {
-                console.error('Clipboard copy failed:', err);
-                this.showSnackbar('コピーに失敗しました: ' + err.message);
+
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(source, 0, 0);
+                blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            }
+
+            if (!blob) throw new Error('Failed to capture frame.');
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            this.showSnackbar('クリップボードにコピーしました');
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+            this.showSnackbar('コピーに失敗しました: ' + err.message);
+        }
+    });
+
+    const deleteBtn = element.querySelector('.delete-btn');
+    deleteBtn.addEventListener('click', async () => {
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            const index = this.slotOrder.indexOf(deviceId);
+            const wasActive = index === this.activeSlotIndex;
+
+            await this.deactivateSlot(slot);
+            slot.element.remove();
+            this.slots.delete(deviceId);
+            this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
+
+            const currentSettings = await loadCameraSettings();
+            delete currentSettings[deviceId];
+            await chrome.storage.local.set({ camera_settings: currentSettings });
+
+            if (this.slotOrder.length === 0) {
+                this.activeSlotIndex = -1;
+                if (this.cycleTimeoutId) {
+                    clearTimeout(this.cycleTimeoutId);
+                    this.cycleTimeoutId = null;
+                }
+            } else {
+                if (wasActive) {
+                    this.activeSlotIndex = index % this.slotOrder.length;
+                    const nextDeviceId = this.slotOrder[this.activeSlotIndex];
+                    const nextSlot = this.slots.get(nextDeviceId);
+                    if (nextSlot) {
+                        await this.activateSlot(nextSlot, nextDeviceId);
+                    }
+                    if (this.globalSettings.cyclingEnabled) {
+                        this.startCycling();
+                    }
+                } else if (index < this.activeSlotIndex) {
+                    this.activeSlotIndex--;
+                }
             }
         }
     });
