@@ -74,19 +74,27 @@ export class PerspectiveTransformer {
             this.video.style.transform = '';
             this.video.style.width = '100%';
             this.video.style.height = '100%';
-            this.video.style.objectFit = 'fill';
+            this.video.style.objectFit = 'contain';
             return;
         }
 
-        const w = this.canvas.clientWidth || 300;
-        const h = this.canvas.clientHeight || 169;
+        const cw = this.canvas.clientWidth || 300;
+        const ch = this.canvas.clientHeight || 169;
 
+        // Output corners (full container area)
         const corners = [
-            {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
+            {x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}
         ];
+
+        // We want to map points from the 'video' coordinate system to the 'container' coordinate system.
+        // BUT matrix3d is applied to the video element itself.
+        // Using 'object-fit: fill' is simpler for the math as long as handles are hidden,
+        // because the video element boundary matches the container boundary.
+        this.video.style.objectFit = 'fill';
+
         const target = this.points.map(p => ({
-            x: (p.x / 100) * w,
-            y: (p.y / 100) * h
+            x: (p.x / 100) * cw,
+            y: (p.y / 100) * ch
         }));
 
         const H_inv = getHomography(target, corners);
@@ -95,7 +103,6 @@ export class PerspectiveTransformer {
         this.video.style.transform = toMatrix3d(H_inv);
         this.video.style.width = '100%';
         this.video.style.height = '100%';
-        this.video.style.objectFit = 'fill';
     }
 
     destroy() {
@@ -151,9 +158,20 @@ export class PerspectiveTransformer {
         const h = imageData.height;
         const out = new ImageData(w, h);
 
+        const cw = this.canvas.clientWidth || 100;
+        const ch = this.canvas.clientHeight || 100;
+        const vRatio = w / h;
+        const cRatio = cw / ch;
+        let rW = cw, rH = ch, xO = 0, yO = 0;
+        if (vRatio > cRatio) {
+            rH = cw / vRatio; yO = (ch - rH) / 2;
+        } else {
+            rW = ch * vRatio; xO = (cw - rW) / 2;
+        }
+
         const target = this.points.map(p => ({
-            x: (p.x / 100) * w,
-            y: (p.y / 100) * h
+            x: (((p.x / 100) * cw - xO) / rW) * w,
+            y: (((p.y / 100) * ch - yO) / rH) * h
         }));
         const corners = [
             {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
