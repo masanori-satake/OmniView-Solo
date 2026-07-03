@@ -298,6 +298,14 @@ class App {
   async activateSlot(slot, deviceId) {
     const maxRetries = 3;
     for (let i = 0; i < maxRetries; i++) {
+        // Check if camera is still needed
+        const isStillNeeded = this.globalSettings.cyclingEnabled
+            ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+            : this.slotOrder.includes(deviceId);
+        if (!isStillNeeded) {
+            return;
+        }
+
         try {
             const isFallback = i === maxRetries - 1;
             const stream = await startCamera(deviceId, isFallback);
@@ -337,6 +345,14 @@ class App {
             return; // Success
         } catch (e) {
             console.error(`Attempt ${i + 1} failed for camera ${deviceId}:`, e);
+            // Cleanup partial stream
+            if (slot.stream) {
+                slot.stream.getTracks().forEach(track => track.stop());
+                slot.stream = null;
+            }
+            slot.video.srcObject = null;
+            slot.element.classList.remove('active');
+
             if (i < maxRetries - 1) {
                 await new Promise(r => setTimeout(r, 1000));
                 continue;
@@ -606,16 +622,14 @@ class App {
                     if (this.globalSettings.cyclingEnabled) {
                         this.startCycling();
                     }
-                    const cyclingSwitch = document.getElementById('cycling-switch');
-                    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
                 } else {
                     if (index < this.activeSlotIndex) {
                         this.activeSlotIndex--;
                     }
-                    const cyclingSwitch = document.getElementById('cycling-switch');
-                    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
                 }
             }
+            const cyclingSwitch = document.getElementById('cycling-switch');
+            if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
         }
     });
 
