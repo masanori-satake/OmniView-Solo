@@ -403,12 +403,12 @@ video {
 }
 
 .layout-wide .camera-slot {
-    flex: 1;
+    flex: none;
     min-height: 200px;
 }
 
 .layout-wide .camera-slot:first-child {
-    flex: 3;
+    flex: none;
 }
 
 /* Override for consistent slot size in all modes */

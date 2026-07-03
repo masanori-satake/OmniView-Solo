@@ -14,6 +14,7 @@ class App {
     this.cycleCount = 0;
     this.currentLayout = null;
     this.snackbarTimeout = null;
+    this.switchRequestCount = 0;
   }
 
   async init() {
@@ -168,6 +169,9 @@ class App {
   }
 
   async switchActiveCamera(deviceId) {
+    this.switchRequestCount++;
+    const currentRequest = this.switchRequestCount;
+
     if (this.cycleTimeoutId) {
         clearTimeout(this.cycleTimeoutId);
         this.cycleTimeoutId = null;
@@ -186,6 +190,9 @@ class App {
         }
     }
 
+    // Abort if a newer request has started
+    if (this.switchRequestCount !== currentRequest) return;
+
     this.activeSlotIndex = index;
     const slot = this.slots.get(deviceId);
     if (slot) {
@@ -194,6 +201,8 @@ class App {
         }
     }
 
+    if (this.switchRequestCount !== currentRequest) return;
+
     if (this.globalSettings.cyclingEnabled) {
         this.startCycling();
     }
@@ -201,6 +210,7 @@ class App {
 
   async activateAllCameras() {
     for (const deviceId of this.slotOrder) {
+        if (this.globalSettings.cyclingEnabled) break;
         const slot = this.slots.get(deviceId);
         if (slot && !slot.stream) {
             await this.activateSlot(slot, deviceId);
@@ -225,7 +235,8 @@ class App {
 
   async startCycling() {
     if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
-    this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
+    const interval = this.globalSettings.interval || 5;
+    this.cycleTimeoutId = setTimeout(() => this.nextCamera(), interval * 1000);
   }
 
   async nextCamera() {

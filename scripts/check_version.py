@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import re
 
 def check_versions():
     with open('package.json', 'r') as f:
@@ -32,7 +33,6 @@ def check_versions():
     if os.path.exists('projects/app/app.html'):
         with open('projects/app/app.html', 'r') as f:
             content = f.read()
-            import re
             match = re.search(r'<p>Version: (\d+\.\d+\.\d+)</p>', content)
             if match:
                 app_html_version = match.group(1)
