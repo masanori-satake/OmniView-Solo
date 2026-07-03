@@ -30,32 +30,36 @@ class App {
     // Restore session state
     const session = await loadSessionState();
     if (session && session.slotOrder && session.slotOrder.length > 0) {
-        document.getElementById('initial-overlay').classList.add('hidden');
-        this.slotOrder = session.slotOrder;
-
+        const connectedSlotOrder = [];
         // Recreate slots
-        for (const deviceId of this.slotOrder) {
+        for (const deviceId of session.slotOrder) {
             const camera = this.cameras.find(c => c.deviceId === deviceId);
             if (camera) {
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(deviceId, slot);
                 this.container.appendChild(slot.element);
+                connectedSlotOrder.push(deviceId);
             }
         }
 
-        if (this.currentLayout === 'wide') {
-            this.reorganizeForWide();
-        }
+        if (connectedSlotOrder.length > 0) {
+            document.getElementById('initial-overlay').classList.add('hidden');
+            this.slotOrder = connectedSlotOrder;
 
-        const activeIndex = (session.activeSlotIndex >= 0 && session.activeSlotIndex < this.slotOrder.length)
-            ? session.activeSlotIndex
-            : 0;
+            if (this.currentLayout === 'wide') {
+                this.reorganizeForWide();
+            }
 
-        if (this.globalSettings.cyclingEnabled) {
-            await this.switchActiveCamera(this.slotOrder[activeIndex]);
-        } else {
-            this.activeSlotIndex = activeIndex;
-            await this.activateAllCameras();
+            const activeIndex = (session.activeSlotIndex >= 0 && session.activeSlotIndex < this.slotOrder.length)
+                ? session.activeSlotIndex
+                : 0;
+
+            if (this.globalSettings.cyclingEnabled) {
+                await this.switchActiveCamera(this.slotOrder[activeIndex]);
+            } else {
+                this.activeSlotIndex = activeIndex;
+                await this.activateAllCameras();
+            }
         }
     }
   }
@@ -220,12 +224,37 @@ class App {
 
     addBtn.onclick = async () => {
         const checkedBoxes = listContainer.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)');
+        const camerasToAdd = [];
         for (const box of checkedBoxes) {
             const deviceId = box.value;
             const camera = this.cameras.find(c => c.deviceId === deviceId);
             if (camera) {
-                await this.addCamera(camera);
+                camerasToAdd.push(camera);
             }
+        }
+
+        if (camerasToAdd.length > 0) {
+            for (const camera of camerasToAdd) {
+                const slot = await this.createCameraSlot(camera);
+                this.slots.set(camera.deviceId, slot);
+                this.slotOrder.push(camera.deviceId);
+                this.container.appendChild(slot.element);
+            }
+
+            const cyclingSwitch = document.getElementById('cycling-switch');
+            if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+
+            if (this.currentLayout === 'wide') {
+                this.reorganizeForWide();
+            }
+
+            if (this.globalSettings.cyclingEnabled) {
+                const lastCamera = camerasToAdd[camerasToAdd.length - 1];
+                await this.switchActiveCamera(lastCamera.deviceId);
+            } else {
+                await this.activateAllCameras();
+            }
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
         closeDialog();
     };
@@ -277,8 +306,8 @@ class App {
     const settings = track.getSettings ? track.getSettings() : {};
 
     const info = {
-        'デバイスID': settings.deviceId,
-        '解像度': `${settings.width}x${settings.height}`,
+        'デバイスID': settings.deviceId || 'N/A',
+        '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
         'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
         'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
         'フォーカス': capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A',
