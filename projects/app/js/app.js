@@ -1455,15 +1455,24 @@ class App {
                   this.addLog(`Some modes failed to lock (current: ${failedModes.map(m => `${m.constr}=${newSettings[m.constr]}`).join(', ')}). Attempting fallback with values...`);
                   const fallbackAdv = { ...adv };
                   const fallbackConstraints = { ...constraints, advanced: [fallbackAdv] };
+                  let hasFallbackValues = false;
 
                   for (const m of failedModes) {
                       if (m.valProp && newSettings[m.valProp] !== undefined) {
                           fallbackAdv[m.valProp] = newSettings[m.valProp];
                           fallbackConstraints[m.valProp] = newSettings[m.valProp];
                           this.addLog(`Fallback for ${m.constr}: manual + ${m.valProp}=${newSettings[m.valProp]}`);
+                          hasFallbackValues = true;
                       }
                   }
-                  await track.applyConstraints(fallbackConstraints);
+
+                  if (hasFallbackValues) {
+                      try {
+                          await track.applyConstraints(fallbackConstraints);
+                      } catch (fallbackError) {
+                          this.addLog(`Failed to apply fallback constraints: ${fallbackError.message}`, true);
+                      }
+                  }
               }
 
               const finalSettings = track.getSettings();
