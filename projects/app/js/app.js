@@ -625,7 +625,15 @@ class App {
   async deactivateSlot(slot) {
     // Capture current frame to freezeCanvas
     const { video, freezeCanvas, canvas, processor } = slot;
-    if (video.videoWidth > 0) {
+    if (processor) {
+        const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
+        if (warpedData) {
+            freezeCanvas.width = warpedData.width;
+            freezeCanvas.height = warpedData.height;
+            const ctx = freezeCanvas.getContext('2d');
+            ctx.putImageData(warpedData, 0, 0);
+        }
+    } else if (video.videoWidth > 0) {
         freezeCanvas.width = video.videoWidth;
         freezeCanvas.height = video.videoHeight;
         const ctx = freezeCanvas.getContext('2d');
