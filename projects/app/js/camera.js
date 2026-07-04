@@ -22,7 +22,7 @@ function migrateSettings(settings) {
 
   for (const [deviceId, s] of Object.entries(settings)) {
     // Check if it's the old format
-    if (s.role !== undefined && s.modes === undefined) {
+    if (s && s.role !== undefined && s.modes === undefined) {
       migrated[deviceId] = {
         customLabel: s.customLabel,
         defaultRole: s.role,
