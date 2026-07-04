@@ -1,17 +1,64 @@
 import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
 
 /**
- * Image processing logic using CSS 3D Transforms and Canvas API.
+ * Image enhancement for whiteboard.
+ */
+export function applyEnhancement(imageData, mode) {
+    if (mode === 'none' || !mode) return imageData;
+    const data = imageData.data;
+    const len = data.length;
+
+    // Simple Adaptive-ish Binarization:
+    // Instead of global min/max, we could do blocks, but let's at least
+    // optimize the current one and make it feel more "adaptive" by
+    // using a slightly more sophisticated thresholding if possible.
+    // For now, let's keep it simple but correct.
+
+    let min = 255, max = 0;
+    for (let i = 0; i < len; i += 4) {
+        const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+        if (avg < min) min = avg;
+        if (avg > max) max = avg;
+    }
+    const range = max - min || 1;
+
+    if (mode === 'bw') {
+        const threshold = min + range * 0.45;
+        for (let i = 0; i < len; i += 4) {
+            const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+            const val = avg > threshold ? 255 : 0;
+            data[i] = data[i+1] = data[i+2] = val;
+        }
+    } else if (mode === 'color') {
+        const whitePoint = min + range * 0.8;
+        for (let i = 0; i < len; i += 4) {
+            const r = data[i], g = data[i+1], b = data[i+2];
+            const avg = (r + g + b) / 3;
+            if (avg > whitePoint) {
+                data[i] = data[i+1] = data[i+2] = 255;
+            } else {
+                data[i] = Math.min(255, Math.max(0, (r - min) / (whitePoint - min) * 255));
+                data[i+1] = Math.min(255, Math.max(0, (g - min) / (whitePoint - min) * 255));
+                data[i+2] = Math.min(255, Math.max(0, (b - min) / (whitePoint - min) * 255));
+            }
+        }
+    }
+    return imageData;
+}
+
+/**
+ * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
     constructor(video, canvas, points, onPointsChange) {
         this.video = video;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.points = points; // [{x, y}, ...] (0-100 percentage)
+        this.points = points;
         this.onPointsChange = onPointsChange;
         this.draggingPoint = null;
         this.showHandles = false;
+        this.processedCanvas = null;
 
         this.boundMouseMove = (e) => {
             if (this.draggingPoint !== null) {
@@ -70,27 +117,24 @@ export class PerspectiveTransformer {
     }
 
     updateTransform() {
+        const elements = [this.video];
+        if (this.processedCanvas) elements.push(this.processedCanvas);
+
         if (this.showHandles) {
-            this.video.style.transform = '';
-            this.video.style.width = '100%';
-            this.video.style.height = '100%';
-            this.video.style.objectFit = 'contain';
+            elements.forEach(el => {
+                el.style.transform = '';
+                el.style.width = '100%';
+                el.style.height = '100%';
+                el.style.objectFit = 'contain';
+            });
             return;
         }
 
         const cw = this.canvas.clientWidth || 300;
         const ch = this.canvas.clientHeight || 169;
+        const corners = [{x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}];
 
-        // Output corners (full container area)
-        const corners = [
-            {x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}
-        ];
-
-        // We want to map points from the 'video' coordinate system to the 'container' coordinate system.
-        // BUT matrix3d is applied to the video element itself.
-        // Using 'object-fit: fill' is simpler for the math as long as handles are hidden,
-        // because the video element boundary matches the container boundary.
-        this.video.style.objectFit = 'fill';
+        elements.forEach(el => el.style.objectFit = 'fill');
 
         const target = this.points.map(p => ({
             x: (p.x / 100) * cw,
@@ -98,11 +142,14 @@ export class PerspectiveTransformer {
         }));
 
         const H_inv = getHomography(target, corners);
+        const transform = toMatrix3d(H_inv);
 
-        this.video.style.transformOrigin = '0 0';
-        this.video.style.transform = toMatrix3d(H_inv);
-        this.video.style.width = '100%';
-        this.video.style.height = '100%';
+        elements.forEach(el => {
+            el.style.transformOrigin = '0 0';
+            el.style.transform = transform;
+            el.style.width = '100%';
+            el.style.height = '100%';
+        });
     }
 
     destroy() {
@@ -110,6 +157,8 @@ export class PerspectiveTransformer {
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
         this.video.style.transform = '';
+        this.video.style.visibility = 'visible';
+        if (this.processedCanvas) this.processedCanvas.style.display = 'none';
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
@@ -121,14 +170,11 @@ export class PerspectiveTransformer {
             this.canvas.width = width;
             this.canvas.height = height;
         }
-
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
         if (!this.showHandles) return;
 
-        // Draw polygon
         this.ctx.beginPath();
-        this.ctx.strokeStyle = '#00e676'; // M3 Accent
+        this.ctx.strokeStyle = '#00e676';
         this.ctx.lineWidth = 2;
         this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
@@ -139,7 +185,6 @@ export class PerspectiveTransformer {
         this.ctx.closePath();
         this.ctx.stroke();
 
-        // Draw handles
         this.points.forEach(p => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
@@ -153,64 +198,37 @@ export class PerspectiveTransformer {
     }
 
     async getWarpedFrame(imageData) {
-        // Pure JS implementation of warpPerspective
         const w = imageData.width;
         const h = imageData.height;
         const out = new ImageData(w, h);
-
         const cw = this.canvas.clientWidth || 100;
         const ch = this.canvas.clientHeight || 100;
         const vRatio = w / h;
         const cRatio = cw / ch;
         let rW = cw, rH = ch, xO = 0, yO = 0;
-        if (vRatio > cRatio) {
-            rH = cw / vRatio; yO = (ch - rH) / 2;
-        } else {
-            rW = ch * vRatio; xO = (cw - rW) / 2;
-        }
+        if (vRatio > cRatio) { rH = cw / vRatio; yO = (ch - rH) / 2; }
+        else { rW = ch * vRatio; xO = (cw - rW) / 2; }
 
         const target = this.points.map(p => ({
             x: (((p.x / 100) * cw - xO) / rW) * w,
             y: (((p.y / 100) * ch - yO) / rH) * h
         }));
-        const corners = [
-            {x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}
-        ];
-
-        // H maps corners to target. We need H_inv to map target back to corners for sampling.
-        // Actually, we want to map output pixels (corners area) to input pixels (target area).
-        // So H: Corners -> Target.
+        const corners = [{x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}];
         const H = getHomography(corners, target);
 
         for (let y = 0; y < h; y++) {
             for (let x = 0; x < w; x++) {
-                // Compute source coordinates
-                const denominator = H[6] * x + H[7] * y + H[8];
-                const sx = (H[0] * x + H[1] * y + H[2]) / denominator;
-                const sy = (H[3] * x + H[4] * y + H[5]) / denominator;
-
+                const den = H[6] * x + H[7] * y + H[8];
+                const sx = (H[0] * x + H[1] * y + H[2]) / den;
+                const sy = (H[3] * x + H[4] * y + H[5]) / den;
                 if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
-                    const ix = Math.floor(sx);
-                    const iy = Math.floor(sy);
-                    const idx = (iy * w + ix) * 4;
-                    const oidx = (y * w + x) * 4;
-
-                    // Nearest neighbor for speed, or bilinear for quality.
-                    // Given the 5s interval and "Capture" only, bilinear is fine.
-                    const dx = sx - ix;
-                    const dy = sy - iy;
-
+                    const ix = Math.floor(sx), iy = Math.floor(sy);
+                    const idx = (iy * w + ix) * 4, oidx = (y * w + x) * 4;
+                    const dx = sx - ix, dy = sy - iy;
                     for (let c = 0; c < 4; c++) {
-                        const p00 = imageData.data[idx + c];
-                        const p10 = imageData.data[idx + 4 + c];
-                        const p01 = imageData.data[idx + w * 4 + c];
-                        const p11 = imageData.data[idx + w * 4 + 4 + c];
-
-                        const val = p00 * (1 - dx) * (1 - dy) +
-                                    p10 * dx * (1 - dy) +
-                                    p01 * (1 - dx) * dy +
-                                    p11 * dx * dy;
-                        out.data[oidx + c] = val;
+                        const p00 = imageData.data[idx + c], p10 = imageData.data[idx + 4 + c];
+                        const p01 = imageData.data[idx + w * 4 + c], p11 = imageData.data[idx + w * 4 + 4 + c];
+                        out.data[oidx + c] = p00 * (1 - dx) * (1 - dy) + p10 * dx * (1 - dy) + p01 * (1 - dx) * dy + p11 * dx * dy;
                     }
                 }
             }
@@ -219,19 +237,21 @@ export class PerspectiveTransformer {
     }
 }
 
+/**
+ * Accumulates frames and computes median to remove moving objects.
+ */
 export class MedianStacker {
     constructor(video) {
         this.video = video;
-        this.history = []; // Array of ImageData
+        this.history = [];
         this.maxHistory = 5;
         this.interval = null;
-        this.lastMedian = null; // ImageData
-
-        this.start();
+        this.lastMedian = null;
     }
 
     start() {
-        this.interval = setInterval(() => this.capture(), 5000);
+        if (this.interval) return;
+        this.interval = setInterval(() => this.capture(), 2000);
     }
 
     capture() {
@@ -240,50 +260,30 @@ export class MedianStacker {
         if (!w || !h) return;
 
         const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
+        canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(this.video, 0, 0);
         const data = ctx.getImageData(0, 0, w, h);
 
         this.history.push(data);
-        if (this.history.length > this.maxHistory) {
-            this.history.shift();
-        }
+        if (this.history.length > this.maxHistory) this.history.shift();
+        this.computeMedian();
     }
 
     computeMedian() {
-        if (this.history.length === 0) {
-            this.lastMedian = null;
-            return;
-        }
-        if (this.history.length < 2) {
-            this.lastMedian = this.history[0];
-            return;
-        }
+        if (this.history.length === 0) { this.lastMedian = null; return; }
+        if (this.history.length < 2) { this.lastMedian = this.history[0]; return; }
 
-        const w = this.history[0].width;
-        const h = this.history[0].height;
+        const w = this.history[0].width, h = this.history[0].height;
         const size = w * h * 4;
-        const result = new ImageData(w, h);
+        const result = new ImageData(new Uint8ClampedArray(size), w, h);
         const len = this.history.length;
         const vals = new Uint8Array(len);
 
         for (let i = 0; i < size; i += 4) {
             for (let c = 0; c < 3; c++) {
-                for (let j = 0; j < len; j++) {
-                    vals[j] = this.history[j].data[i + c];
-                }
-                // In-place insertion sort
-                for (let k = 1; k < len; k++) {
-                    const key = vals[k];
-                    let l = k - 1;
-                    while (l >= 0 && vals[l] > key) {
-                        vals[l + 1] = vals[l];
-                        l--;
-                    }
-                    vals[l + 1] = key;
-                }
+                for (let j = 0; j < len; j++) vals[j] = this.history[j].data[i + c];
+                vals.sort(); // Optimized sort
                 result.data[i + c] = vals[Math.floor(len / 2)];
             }
             result.data[i + 3] = 255;
@@ -292,61 +292,130 @@ export class MedianStacker {
     }
 
     cleanup() {
-        if (this.interval) clearInterval(this.interval);
+        if (this.interval) { clearInterval(this.interval); this.interval = null; }
         this.history = [];
     }
 
-    async getMedianFrame(transformer) {
-        this.computeMedian();
+    async getMedianFrame(transformer, enhanceMode = 'none') {
         const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
         if (!base) return null;
-        const warped = await this.getWarpedImageData(base, transformer);
-
+        const warped = await transformer.getWarpedFrame(base);
+        const enhanced = applyEnhancement(warped, enhanceMode);
         const canvas = document.createElement('canvas');
-        canvas.width = warped.width;
-        canvas.height = warped.height;
-        canvas.getContext('2d').putImageData(warped, 0, 0);
+        canvas.width = enhanced.width; canvas.height = enhanced.height;
+        canvas.getContext('2d').putImageData(enhanced, 0, 0);
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     }
 
     async getWarpedCurrentFrame(transformer) {
-        const w = this.video.videoWidth;
-        const h = this.video.videoHeight;
+        const w = this.video.videoWidth, h = this.video.videoHeight;
         if (!w || !h) return null;
-
         const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
+        canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(this.video, 0, 0);
         const data = ctx.getImageData(0, 0, w, h);
+        return await transformer.getWarpedFrame(data);
+    }
+}
 
-        return await this.getWarpedImageData(data, transformer);
+/**
+ * Orchestrates whiteboard features.
+ */
+export class WhiteboardProcessor {
+    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange) {
+        this.video = video;
+        this.overlayCanvas = overlayCanvas;
+        this.processedCanvas = processedCanvas;
+        this.ctx = processedCanvas.getContext('2d', { willReadFrequently: true });
+        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange);
+        this.transformer.processedCanvas = processedCanvas;
+        this.stacker = new MedianStacker(video);
+        this.enhanceMode = 'none';
+        this.occlusionRemoval = false;
+        this.animationFrame = null;
+        this.cachedImageData = null;
     }
 
-    async getWarpedImageData(imageData, transformer) {
-        // Apply perspective warp
-        const warped = await transformer.getWarpedFrame(imageData);
-        // Simple enhancement: Contrast stretch
-        return this.enhance(warped);
+    setEnhanceMode(mode) { this.enhanceMode = mode; this.transformer.updateTransform(); }
+    setOcclusionRemoval(enabled) {
+        this.occlusionRemoval = enabled;
+        if (enabled) this.stacker.start();
+        else this.stacker.cleanup();
+        this.transformer.updateTransform();
     }
 
-    enhance(imageData) {
-        const data = imageData.data;
-        let min = 255, max = 0;
+    start() {
+        const loop = () => { this.render(); this.animationFrame = requestAnimationFrame(loop); };
+        loop();
+    }
 
-        for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-            if (avg < min) min = avg;
-            if (avg > max) max = avg;
+    stop() {
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+        this.transformer.destroy();
+        this.stacker.cleanup();
+    }
+
+    render() {
+        this.transformer.draw();
+        const isProcessing = this.enhanceMode !== 'none' || this.occlusionRemoval;
+        if (isProcessing) {
+            this.video.style.visibility = 'hidden';
+            this.processedCanvas.style.display = 'block';
+            this.drawProcessedFrame();
+        } else {
+            this.video.style.visibility = 'visible';
+            this.processedCanvas.style.display = 'none';
+        }
+    }
+
+    drawProcessedFrame() {
+        const w = this.video.videoWidth, h = this.video.videoHeight;
+        if (!w || !h) return;
+        if (this.processedCanvas.width !== w || this.processedCanvas.height !== h) {
+            this.processedCanvas.width = w; this.processedCanvas.height = h;
         }
 
-        const range = max - min || 1;
-        for (let i = 0; i < data.length; i += 4) {
-            for (let c = 0; c < 3; c++) {
-                data[i + c] = ((data[i + c] - min) / range) * 255;
+        let imageData = null;
+        if (this.occlusionRemoval) imageData = this.stacker.lastMedian;
+
+        if (!imageData) {
+            this.ctx.drawImage(this.video, 0, 0);
+            if (this.enhanceMode !== 'none') imageData = this.ctx.getImageData(0, 0, w, h);
+            else return;
+        }
+
+        if (this.enhanceMode !== 'none') {
+            let dataToEnhance = imageData;
+            if (imageData === this.stacker.lastMedian) {
+                if (!this.cachedImageData || this.cachedImageData.width !== w || this.cachedImageData.height !== h) {
+                    this.cachedImageData = this.ctx.createImageData(w, h);
+                }
+                this.cachedImageData.data.set(imageData.data);
+                dataToEnhance = this.cachedImageData;
             }
+            applyEnhancement(dataToEnhance, this.enhanceMode);
+            this.ctx.putImageData(dataToEnhance, 0, 0);
+        } else {
+            this.ctx.putImageData(imageData, 0, 0);
         }
-        return imageData;
+    }
+
+    async capture() {
+        const base = (this.occlusionRemoval && this.stacker.lastMedian) ? this.stacker.lastMedian : null;
+        let imageData = base;
+        if (!imageData) {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.video.videoWidth; canvas.height = this.video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(this.video, 0, 0);
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+        const warped = await this.transformer.getWarpedFrame(imageData);
+        const enhanced = applyEnhancement(warped, this.enhanceMode);
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = enhanced.width; outCanvas.height = enhanced.height;
+        outCanvas.getContext('2d').putImageData(enhanced, 0, 0);
+        return new Promise(resolve => outCanvas.toBlob(resolve, 'image/png'));
     }
 }
