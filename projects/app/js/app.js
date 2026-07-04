@@ -1206,6 +1206,7 @@ class App {
             if (slot && slot.processor) {
                 const next = btn.dataset.mode;
                 slot.processor.setEnhanceMode(next);
+                if (!this.settings[deviceId]) this.settings[deviceId] = {};
                 if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
                 if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
                 this.settings[deviceId].modes.whiteboard.enhanceMode = next;
