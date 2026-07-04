@@ -1410,9 +1410,7 @@ class App {
           let retryCount = 3;
           while (retryCount > 0) {
               settings = track.getSettings();
-              const hasValues = (settings.focusDistance !== undefined || !capabilities.focusMode?.includes('manual')) &&
-                                (settings.exposureTime !== undefined || !capabilities.exposureMode?.includes('manual')) &&
-                                (settings.colorTemperature !== undefined || !capabilities.whiteBalanceMode?.includes('manual'));
+              const hasValues = (settings.focusDistance !== undefined || !capabilities.focusDistance || !capabilities.focusMode?.includes('manual')) &&\n                                (settings.exposureTime !== undefined || !capabilities.exposureTime || !capabilities.exposureMode?.includes('manual')) &&\n                                (settings.colorTemperature !== undefined || !capabilities.colorTemperature || !capabilities.whiteBalanceMode?.includes('manual'));
               if (hasValues) break;
               this.addLog(`Waiting for settings to stabilize... (${retryCount})`);
               await new Promise(r => setTimeout(r, 200));
