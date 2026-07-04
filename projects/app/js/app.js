@@ -1383,7 +1383,7 @@ class App {
   }
 
   async applyMediaLock(track, locked) {
-      if (!track.getCapabilities || !track.getSettings) return false;
+      if (!track || typeof track.getCapabilities !== 'function' || typeof track.getSettings !== 'function') return false;
       const capabilities = track.getCapabilities();
       const settings = track.getSettings();
       const constraints = { advanced: [] };
