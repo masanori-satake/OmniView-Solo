@@ -1405,41 +1405,23 @@ class App {
       this.addLog(`ApplyMediaLock: locked=${locked}`);
 
       if (locked) {
-          // Some cameras need a moment to report stable values in getSettings() after being active
-          // or might report 0/default until polled.
-          let retryCount = 3;
-          while (retryCount > 0) {
-              settings = track.getSettings();
-              const hasValues = (settings.focusDistance !== undefined || !capabilities.focusDistance || !capabilities.focusMode?.includes('manual')) &&
-                                (settings.exposureTime !== undefined || !capabilities.exposureTime || !capabilities.exposureMode?.includes('manual')) &&
-                                (settings.colorTemperature !== undefined || !capabilities.colorTemperature || !capabilities.whiteBalanceMode?.includes('manual'));
-              if (hasValues) break;
-              this.addLog(`Waiting for settings to stabilize... (${retryCount})`);
-              await new Promise(r => setTimeout(r, 200));
-              retryCount--;
-          }
-
           const targetModes = [
-              { prop: 'focusMode', setting: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
-              { prop: 'exposureMode', setting: 'exposureMode', constr: 'exposureMode', valProp: 'exposureTime' },
-              { prop: 'whiteBalanceMode', setting: 'whiteBalanceMode', constr: 'whiteBalanceMode', valProp: 'colorTemperature' }
+              { prop: 'focusMode', constr: 'focusMode' },
+              { prop: 'exposureMode', constr: 'exposureMode' },
+              { prop: 'whiteBalanceMode', constr: 'whiteBalanceMode' }
           ];
 
           for (const m of targetModes) {
               if (capabilities[m.prop]) {
-                  // Prefer 'manual' for absolute lock, but ONLY if we have a value to maintain the current look.
-                  if (capabilities[m.prop].includes('manual') && m.valProp && settings[m.valProp] !== undefined) {
+                  // To avoid "snapping" to stale/default values reported by the driver,
+                  // we only set the mode to 'manual' or 'single-shot' without forcing numeric values.
+                  // Most UVC cameras will lock at their current auto-adjusted position.
+                  if (capabilities[m.prop].includes('manual')) {
                       adv[m.constr] = 'manual';
-                      adv[m.valProp] = settings[m.valProp];
-                      this.addLog(`Locking ${m.constr}: manual, ${m.valProp}=${settings[m.valProp]}`);
+                      this.addLog(`Locking ${m.constr}: manual`);
                   } else if (capabilities[m.prop].includes('single-shot')) {
-                      // fallback to single-shot which locks at current auto-adjusted value
                       adv[m.constr] = 'single-shot';
-                      this.addLog(`Locking ${m.constr}: single-shot (preferred/fallback)`);
-                  } else if (capabilities[m.prop].includes('manual')) {
-                      // If we MUST use manual but have no value, it's risky but some cameras might require it.
-                      // However, to fix the user's report, let's avoid it if it's likely to reset.
-                      this.addLog(`Skipping ${m.constr} lock: 'manual' supported but no current value found to preserve.`);
+                      this.addLog(`Locking ${m.constr}: single-shot`);
                   }
               }
           }
