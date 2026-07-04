@@ -1398,74 +1398,37 @@ class App {
   async applyMediaLock(track, locked) {
       if (!track || typeof track.getCapabilities !== 'function' || typeof track.getSettings !== 'function') return false;
       const capabilities = track.getCapabilities();
-      let settings = track.getSettings();
       const constraints = { advanced: [] };
       const adv = {};
 
       this.addLog(`ApplyMediaLock: locked=${locked}`);
 
+      const modeProps = [
+          { prop: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
+          { prop: 'exposureMode', constr: 'exposureMode', valProp: 'exposureTime' },
+          { prop: 'whiteBalanceMode', constr: 'whiteBalanceMode', valProp: 'colorTemperature' }
+      ];
+
       if (locked) {
-          // Some cameras need a moment to report stable values in getSettings() after being active
-          // or might report 0/default until polled.
-          let retryCount = 3;
-          while (retryCount > 0) {
-              settings = track.getSettings();
-              const hasValues = (settings.focusDistance !== undefined || !capabilities.focusDistance || !capabilities.focusMode?.includes('manual')) &&
-                                (settings.exposureTime !== undefined || !capabilities.exposureTime || !capabilities.exposureMode?.includes('manual')) &&
-                                (settings.colorTemperature !== undefined || !capabilities.colorTemperature || !capabilities.whiteBalanceMode?.includes('manual'));
-              if (hasValues) break;
-              this.addLog(`Waiting for settings to stabilize... (${retryCount})`);
-              await new Promise(r => setTimeout(r, 200));
-              retryCount--;
-          }
-
-          const targetModes = [
-              { prop: 'focusMode', setting: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
-              { prop: 'exposureMode', setting: 'exposureMode', constr: 'exposureMode', valProp: 'exposureTime' },
-              { prop: 'whiteBalanceMode', setting: 'whiteBalanceMode', constr: 'whiteBalanceMode', valProp: 'colorTemperature' }
-          ];
-
-          for (const m of targetModes) {
+          for (const m of modeProps) {
               if (capabilities[m.prop]) {
-                  // Prefer 'manual' for absolute lock, but ONLY if we have a value to maintain the current look.
-                  if (capabilities[m.prop].includes('manual') && m.valProp && settings[m.valProp] !== undefined) {
+                  if (capabilities[m.prop].includes('manual')) {
                       adv[m.constr] = 'manual';
-                      adv[m.valProp] = settings[m.valProp];
-                      this.addLog(`Locking ${m.constr}: manual, ${m.valProp}=${settings[m.valProp]}`);
+                      constraints[m.constr] = 'manual'; // Also set as top-level constraint
                   } else if (capabilities[m.prop].includes('single-shot')) {
-                      // fallback to single-shot which locks at current auto-adjusted value
                       adv[m.constr] = 'single-shot';
-                      this.addLog(`Locking ${m.constr}: single-shot (preferred/fallback)`);
-                  } else if (capabilities[m.prop].includes('manual')) {
-                      // If we MUST use manual but have no value, it's risky but some cameras might require it.
-                      // However, to fix the user's report, let's avoid it if it's likely to reset.
-                      this.addLog(`Skipping ${m.constr} lock: 'manual' supported but no current value found to preserve.`);
+                      constraints[m.constr] = 'single-shot';
                   }
               }
           }
-
-          // Also lock other parameters if available
-          const otherProps = ['iso', 'brightness', 'contrast', 'saturation', 'sharpness'];
-          for (const prop of otherProps) {
-              if (capabilities[prop] && settings[prop] !== undefined) {
-                  adv[prop] = settings[prop];
-                  this.addLog(`Locking ${prop}=${settings[prop]}`);
-              }
-          }
       } else {
-          const resetModes = [
-              { prop: 'focusMode', constr: 'focusMode' },
-              { prop: 'exposureMode', constr: 'exposureMode' },
-              { prop: 'whiteBalanceMode', constr: 'whiteBalanceMode' }
-          ];
-          for (const m of resetModes) {
+          for (const m of modeProps) {
               if (capabilities[m.prop]) {
-                  if (capabilities[m.prop].includes('continuous')) {
-                      adv[m.constr] = 'continuous';
-                      this.addLog(`Unlocking ${m.constr}: continuous`);
-                  } else if (capabilities[m.prop].includes('single-shot')) {
-                      adv[m.constr] = 'single-shot';
-                      this.addLog(`Unlocking ${m.constr}: single-shot`);
+                  const mode = capabilities[m.prop].includes('continuous') ? 'continuous' :
+                             (capabilities[m.prop].includes('single-shot') ? 'single-shot' : null);
+                  if (mode) {
+                      adv[m.constr] = mode;
+                      constraints[m.constr] = mode;
                   }
               }
           }
@@ -1474,8 +1437,37 @@ class App {
       if (Object.keys(adv).length > 0) {
           constraints.advanced.push(adv);
           try {
-              this.addLog(`Applying constraints: ${JSON.stringify(adv)}`);
+              this.addLog(`Applying constraints: ${JSON.stringify(constraints)}`);
               await track.applyConstraints(constraints);
+
+              // Verification & Fallback
+              const newSettings = track.getSettings();
+              const failedModes = [];
+              if (locked) {
+                  for (const m of modeProps) {
+                      if (adv[m.constr] && newSettings[m.constr] !== adv[m.constr]) {
+                          failedModes.push(m);
+                      }
+                  }
+              }
+
+              if (failedModes.length > 0) {
+                  this.addLog(`Some modes failed to lock (current: ${failedModes.map(m => `${m.constr}=${newSettings[m.constr]}`).join(', ')}). Attempting fallback with values...`);
+                  const fallbackAdv = { ...adv };
+                  const fallbackConstraints = { ...constraints, advanced: [fallbackAdv] };
+
+                  for (const m of failedModes) {
+                      if (m.valProp && newSettings[m.valProp] !== undefined) {
+                          fallbackAdv[m.valProp] = newSettings[m.valProp];
+                          fallbackConstraints[m.valProp] = newSettings[m.valProp];
+                          this.addLog(`Fallback for ${m.constr}: manual + ${m.valProp}=${newSettings[m.valProp]}`);
+                      }
+                  }
+                  await track.applyConstraints(fallbackConstraints);
+              }
+
+              const finalSettings = track.getSettings();
+              this.addLog(`Final settings: focus=${finalSettings.focusMode}(${finalSettings.focusDistance}), exposure=${finalSettings.exposureMode}(${finalSettings.exposureTime}), wb=${finalSettings.whiteBalanceMode}(${finalSettings.colorTemperature})`);
               return true;
           } catch (e) {
               this.addLog(`Failed to apply constraints: ${e.message}`, true);
