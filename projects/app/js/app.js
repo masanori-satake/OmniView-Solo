@@ -1,12 +1,13 @@
 import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS } from './camera.js';
 import { WhiteboardProcessor } from '../shared/js/processor.js';
 
+
 class App {
   constructor() {
     this.container = document.getElementById('camera-container');
     this.cameras = [];
     this.settings = {};
-    this.globalSettings = { interval: 5, cyclingEnabled: true };
+    this.globalSettings = { interval: 5, cyclingEnabled: false };
     this.slots = new Map();
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
@@ -39,7 +40,9 @@ class App {
     });
 
     // Restore session state
+
     const session = await loadSessionState();
+
     if (session && session.slotOrder && session.slotOrder.length > 0) {
         const connectedSlotOrder = [];
         // Recreate slots
@@ -204,7 +207,7 @@ class App {
         a.href = url;
         a.download = `omniview_settings_${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
         this.addLog('Settings exported successfully');
     });
 
@@ -583,6 +586,7 @@ class App {
         clearTimeout(this.cycleTimeoutId);
         this.cycleTimeoutId = null;
     }
+    this.cycleCount++;
 
     const index = this.slotOrder.indexOf(deviceId);
     if (index === -1) return;
