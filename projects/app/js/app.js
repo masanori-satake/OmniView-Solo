@@ -876,11 +876,13 @@ class App {
 
                 // Restore lock state if saved
                 if (setting.mediaSettingsFixed) {
-                    await this.applyMediaLock(track, true);
-                    const lockBtn = slot.element.querySelector('.lock-btn');
-                    if (lockBtn) {
-                        lockBtn.classList.add('locked');
-                        lockBtn.querySelector('.material-symbols-outlined').textContent = 'lock';
+                    const success = await this.applyMediaLock(track, true);
+                    if (success) {
+                        const lockBtn = slot.element.querySelector('.lock-btn');
+                        if (lockBtn) {
+                            lockBtn.classList.add('locked');
+                            lockBtn.querySelector('.material-symbols-outlined').textContent = 'lock';
+                        }
                     }
                 }
 
