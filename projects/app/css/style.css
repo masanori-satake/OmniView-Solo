@@ -11,7 +11,7 @@
 /* Header */
 #app-header {
     display: flex;
-    justify-content: flex-start;
+    justify-content: flex-end;
     align-items: center;
     padding: 4px 0;
 }
@@ -19,6 +19,7 @@
 .header-actions {
     display: flex;
     gap: 4px;
+    margin-left: auto;
 }
 
 .m3-title {
