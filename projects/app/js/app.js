@@ -218,6 +218,9 @@ class App {
         reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
+                if (!data || typeof data !== 'object') {
+                    throw new Error('無効な設定ファイル形式です。');
+                }
                 const mode = importModeSelect.value;
                 this.addLog(`Importing settings (mode: ${mode})`);
 
