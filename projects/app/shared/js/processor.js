@@ -334,6 +334,7 @@ export class WhiteboardProcessor {
         this.enhanceMode = 'none';
         this.occlusionRemoval = false;
         this.animationFrame = null;
+        this.cachedImageData = null;
     }
 
     setEnhanceMode(mode) { this.enhanceMode = mode; this.transformer.updateTransform(); }
@@ -385,9 +386,16 @@ export class WhiteboardProcessor {
         }
 
         if (this.enhanceMode !== 'none') {
-            const dataCopy = new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
-            applyEnhancement(dataCopy, this.enhanceMode);
-            this.ctx.putImageData(dataCopy, 0, 0);
+            let dataToEnhance = imageData;
+            if (imageData === this.stacker.lastMedian) {
+                if (!this.cachedImageData || this.cachedImageData.width !== w || this.cachedImageData.height !== h) {
+                    this.cachedImageData = this.ctx.createImageData(w, h);
+                }
+                this.cachedImageData.data.set(imageData.data);
+                dataToEnhance = this.cachedImageData;
+            }
+            applyEnhancement(dataToEnhance, this.enhanceMode);
+            this.ctx.putImageData(dataToEnhance, 0, 0);
         } else {
             this.ctx.putImageData(imageData, 0, 0);
         }

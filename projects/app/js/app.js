@@ -1085,7 +1085,7 @@ class App {
                       slot.processor.stop();
                   }
                   // Restore points will happen inside initProcessor
-                  slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+                  slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
               } else {
                   if (slot.processor) {
                       slot.processor.stop();
@@ -1266,14 +1266,13 @@ class App {
     return { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null };
   }
 
-  initProcessor(video, canvas, deviceId) {
-      const slot = this.slots.get(deviceId);
+  initProcessor(video, canvas, processedCanvas, deviceId) {
       const wbSettings = this.settings[deviceId]?.modes?.whiteboard || {};
       const pts = wbSettings.points || [
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
 
-      const processor = new WhiteboardProcessor(video, canvas, slot.processedCanvas, pts, (newPts) => {
+      const processor = new WhiteboardProcessor(video, canvas, processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(`Perspective adjusted for ${deviceId.slice(0, 8)}: [${ptsStr}]`);
           saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
