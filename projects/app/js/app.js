@@ -22,6 +22,7 @@ class App {
   async init() {
     this.settings = await loadCameraSettings();
     this.globalSettings = await loadGlobalSettings();
+    this.addLog(`Global settings loaded: cyclingEnabled=${this.globalSettings.cyclingEnabled}, interval=${this.globalSettings.interval}`);
     this.cameras = await getCameras();
 
     this.setupStartButton();
@@ -30,6 +31,7 @@ class App {
     this.setupAddCameraButton();
 
     // Log initial device list
+    this.addLog('--- App initialized ---');
     this.logDeviceList();
     navigator.mediaDevices.addEventListener('devicechange', () => {
         this.addLog('Device configuration changed');
@@ -147,6 +149,7 @@ class App {
     const updateInterval = async (val) => {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
         intervalInput.value = this.globalSettings.interval;
+        this.addLog(`Interval changed to ${this.globalSettings.interval}s`);
         await saveGlobalSettings(this.globalSettings);
     };
 
@@ -156,6 +159,7 @@ class App {
 
     cyclingSwitch.addEventListener('change', async (e) => {
         this.globalSettings.cyclingEnabled = e.target.checked;
+        this.addLog(`Cycling enabled: ${this.globalSettings.cyclingEnabled}`);
         await saveGlobalSettings(this.globalSettings);
         if (this.globalSettings.cyclingEnabled) {
             this.startCycling();
@@ -264,7 +268,9 @@ class App {
         }
 
         if (camerasToAdd.length > 0) {
+            this.addLog(`--- Adding ${camerasToAdd.length} cameras ---`);
             for (const camera of camerasToAdd) {
+                this.addLog(`Adding camera: ${camera.label} (${camera.deviceId.slice(0, 8)})`);
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(camera.deviceId, slot);
                 this.slotOrder.push(camera.deviceId);
@@ -323,7 +329,7 @@ class App {
     const now = new Date();
     const time = now.toLocaleTimeString('ja-JP', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
     this.logs.push({ time, message, isError });
-    if (this.logs.length > 100) this.logs.shift();
+    if (this.logs.length > 500) this.logs.shift();
     console.log(`[${time}] ${message}`);
     this.renderLogs();
   }
@@ -345,7 +351,13 @@ class App {
         const div = document.createElement('div');
         div.className = 'log-entry';
         if (log.isError) div.classList.add('log-error');
-        div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+        if (log.message.startsWith('---')) div.classList.add('log-separator');
+
+        if (log.message.startsWith('---')) {
+            div.innerHTML = `<div class="separator-line"></div><div class="separator-text">${log.message}</div><div class="separator-line"></div>`;
+        } else {
+            div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+        }
         container.appendChild(div);
     });
     container.scrollTop = container.scrollHeight;
@@ -457,6 +469,7 @@ class App {
   }
 
   async activateAllCameras() {
+    this.addLog(`Activating all cameras (cyclingEnabled=${this.globalSettings.cyclingEnabled})`);
     for (const deviceId of this.slotOrder) {
         if (this.globalSettings.cyclingEnabled) break;
         const slot = this.slots.get(deviceId);
@@ -623,7 +636,15 @@ class App {
   async deactivateSlot(slot) {
     // Capture current frame to freezeCanvas
     const { video, freezeCanvas, canvas, processor } = slot;
-    if (video.videoWidth > 0) {
+    if (processor) {
+        const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
+        if (warpedData) {
+            freezeCanvas.width = warpedData.width;
+            freezeCanvas.height = warpedData.height;
+            const ctx = freezeCanvas.getContext('2d');
+            ctx.putImageData(warpedData, 0, 0);
+        }
+    } else if (video.videoWidth > 0) {
         freezeCanvas.width = video.videoWidth;
         freezeCanvas.height = video.videoHeight;
         const ctx = freezeCanvas.getContext('2d');
@@ -658,8 +679,10 @@ class App {
     const oldActiveDeviceId = this.slotOrder[this.activeSlotIndex];
 
     if (direction === 'up' && index > 0) {
+        this.addLog(`Moving camera ${deviceId.slice(0, 8)} up`);
         [this.slotOrder[index], this.slotOrder[index - 1]] = [this.slotOrder[index - 1], this.slotOrder[index]];
     } else if (direction === 'down' && index < this.slotOrder.length - 1) {
+        this.addLog(`Moving camera ${deviceId.slice(0, 8)} down`);
         [this.slotOrder[index], this.slotOrder[index + 1]] = [this.slotOrder[index + 1], this.slotOrder[index]];
     } else {
         return;
@@ -751,6 +774,7 @@ class App {
     const roleSwitch = element.querySelector('.role-switch');
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
+      this.addLog(`Camera ${deviceId.slice(0, 8)} mode changed to ${role}`);
       await saveCameraSetting(deviceId, { role });
       this.settings[deviceId] = { ...this.settings[deviceId], role };
 
@@ -804,9 +828,11 @@ class App {
             await this.switchActiveCamera(deviceId);
         }
         if (slot && slot.processor) {
+            this.addLog(`Resetting perspective for camera ${deviceId.slice(0, 8)}`);
             slot.processor.transformer.resetPoints();
             this.showSnackbar('調整をリセットしました');
         } else if (slot) {
+            this.addLog(`Resetting transform for camera ${deviceId.slice(0, 8)}`);
             slot.video.style.transform = '';
             this.showSnackbar('調整をリセットしました');
         }
@@ -816,6 +842,7 @@ class App {
     copyBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (!slot) return;
+        this.addLog(`Capturing frame for camera ${deviceId.slice(0, 8)} (mode: ${this.settings[deviceId]?.role || 'person'})`);
         try {
             let blob;
             if (slot.processor) {
@@ -852,6 +879,7 @@ class App {
     deleteBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (slot) {
+            this.addLog(`Deleting camera slot: ${deviceId.slice(0, 8)}`);
             const index = this.slotOrder.indexOf(deviceId);
             const wasActive = index === this.activeSlotIndex;
 
@@ -909,6 +937,8 @@ class App {
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
+          const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
+          this.addLog(`Perspective adjusted for ${deviceId.slice(0, 8)}: [${ptsStr}]`);
           saveCameraSetting(deviceId, { points: newPts });
           if (!this.settings[deviceId]) {
               this.settings[deviceId] = {};

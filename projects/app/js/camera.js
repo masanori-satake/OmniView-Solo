@@ -38,7 +38,8 @@ export async function loadSessionState() {
 export async function loadGlobalSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['global_settings'], (result) => {
-      resolve(result.global_settings || { interval: 5 });
+      const defaults = { interval: 5, cyclingEnabled: true };
+      resolve({ ...defaults, ...(result?.global_settings || {}) });
     });
   });
 }

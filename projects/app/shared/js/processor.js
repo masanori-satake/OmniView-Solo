@@ -300,19 +300,35 @@ export class MedianStacker {
         this.computeMedian();
         const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
         if (!base) return null;
-
-        // Apply perspective warp
-        const warped = await transformer.getWarpedFrame(base);
-
-        // Simple enhancement: Contrast stretch
-        const enhanced = this.enhance(warped);
+        const warped = await this.getWarpedImageData(base, transformer);
 
         const canvas = document.createElement('canvas');
-        canvas.width = enhanced.width;
-        canvas.height = enhanced.height;
-        canvas.getContext('2d').putImageData(enhanced, 0, 0);
-
+        canvas.width = warped.width;
+        canvas.height = warped.height;
+        canvas.getContext('2d').putImageData(warped, 0, 0);
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    }
+
+    async getWarpedCurrentFrame(transformer) {
+        const w = this.video.videoWidth;
+        const h = this.video.videoHeight;
+        if (!w || !h) return null;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.video, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h);
+
+        return await this.getWarpedImageData(data, transformer);
+    }
+
+    async getWarpedImageData(imageData, transformer) {
+        // Apply perspective warp
+        const warped = await transformer.getWarpedFrame(imageData);
+        // Simple enhancement: Contrast stretch
+        return this.enhance(warped);
     }
 
     enhance(imageData) {
