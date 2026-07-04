@@ -337,7 +337,13 @@ class App {
         const div = document.createElement('div');
         div.className = 'log-entry';
         if (log.isError) div.classList.add('log-error');
-        div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-time';
+        timeSpan.textContent = log.time;
+
+        div.appendChild(timeSpan);
+        div.appendChild(document.createTextNode(log.message));
         container.appendChild(div);
     });
     container.scrollTop = container.scrollHeight;
