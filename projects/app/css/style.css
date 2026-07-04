@@ -631,7 +631,7 @@ video {
     background-color: var(--md-sys-color-surface-variant);
     border-radius: var(--md-sys-shape-small);
     padding: 8px;
-    height: 200px;
+    height: 300px;
     overflow-y: auto;
     font-family: 'Roboto Mono', monospace;
     font-size: 11px;
