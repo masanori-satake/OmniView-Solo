@@ -1,7 +1,6 @@
 import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS } from './camera.js';
 import { WhiteboardProcessor } from '../shared/js/processor.js';
 
-
 class App {
   constructor() {
     this.container = document.getElementById('camera-container');
@@ -40,9 +39,7 @@ class App {
     });
 
     // Restore session state
-
     const session = await loadSessionState();
-
     if (session && session.slotOrder && session.slotOrder.length > 0) {
         const connectedSlotOrder = [];
         // Recreate slots
