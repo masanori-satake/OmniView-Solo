@@ -1190,6 +1190,7 @@ class App {
             const current = !!(this.settings[deviceId]?.modes?.whiteboard?.occlusionRemoval);
             const newValue = !current;
             slot.processor.setOcclusionRemoval(newValue);
+            if (!this.settings[deviceId]) this.settings[deviceId] = {};
             if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
             if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
             this.settings[deviceId].modes.whiteboard.occlusionRemoval = newValue;
