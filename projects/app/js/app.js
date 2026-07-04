@@ -291,7 +291,7 @@ class App {
     cancelBtn.onclick = closeDialog;
 
     addBtn.onclick = async () => {
-        const checkedBoxes = listContainer.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)');
+        const checkedBoxes = listContainer.querySelectorAll('.camera-checkbox:checked:not(:disabled)');
         const camerasToAdd = [];
         for (const box of checkedBoxes) {
             const deviceId = box.value;
@@ -1019,7 +1019,8 @@ class App {
     });
 
     const deleteBtn = element.querySelector('.delete-btn-overlay');
-    deleteBtn.addEventListener('click', async () => {
+    deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const slot = this.slots.get(deviceId);
         if (slot) {
             this.addLog(`Deleting camera slot: ${deviceId.slice(0, 8)}`);
