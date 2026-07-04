@@ -599,8 +599,21 @@ class App {
         }
     }
 
-    this.addLog('Failed to activate all cameras even at the lowest resolution level.', true);
-    this.showSnackbar('すべてのカメラを同時に起動できませんでした。帯域不足またはハードウェアの制限です。');
+    this.addLog('Failed to activate all cameras even at the lowest resolution level. Falling back to single camera mode.', true);
+    this.showSnackbar('すべてのカメラを同時に起動できませんでした。帯域不足のため、1台のみ表示します。');
+
+    if (isStateChanged()) return false;
+
+    if (this.slotOrder.length > 0) {
+        const fallbackIdx = (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) ? this.activeSlotIndex : 0;
+        this.activeSlotIndex = fallbackIdx;
+        const fallbackDeviceId = this.slotOrder[fallbackIdx];
+        const slot = this.slots.get(fallbackDeviceId);
+        if (slot) {
+            await this.activateSlot(slot, fallbackDeviceId);
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
+        }
+    }
     return false;
   }
 
