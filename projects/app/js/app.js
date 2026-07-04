@@ -865,7 +865,7 @@ class App {
                 const setting = this.settings[deviceId] || {};
                 const role = setting.defaultRole || 'person';
                 if (role === 'whiteboard') {
-                    slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+                    slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
                 }
                 const track = stream.getVideoTracks()[0];
                 const settings = track ? track.getSettings() : {};
