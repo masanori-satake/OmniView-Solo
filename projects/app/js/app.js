@@ -1426,14 +1426,6 @@ class App {
               }
           }
 
-          // Also lock other parameters if available
-          const otherProps = ['iso', 'brightness', 'contrast', 'saturation', 'sharpness'];
-          for (const prop of otherProps) {
-              if (capabilities[prop] && settings[prop] !== undefined) {
-                  adv[prop] = settings[prop];
-                  this.addLog(`Locking ${prop}=${settings[prop]}`);
-              }
-          }
       } else {
           const resetModes = [
               { prop: 'focusMode', constr: 'focusMode' },
