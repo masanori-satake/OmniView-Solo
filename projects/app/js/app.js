@@ -576,10 +576,12 @@ class App {
 
     if (this.slotOrder.length > 0) {
         const fallbackIdx = (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) ? this.activeSlotIndex : 0;
+        this.activeSlotIndex = fallbackIdx;
         const fallbackDeviceId = this.slotOrder[fallbackIdx];
         const slot = this.slots.get(fallbackDeviceId);
         if (slot) {
             await this.activateSlot(slot, fallbackDeviceId);
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     }
     return false;
