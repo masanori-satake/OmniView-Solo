@@ -70,16 +70,22 @@ export async function saveCameraSetting(deviceId, settings) {
   return saveQueue;
 }
 
-export async function startCamera(deviceId, isFallback = false) {
+export const RESOLUTION_LEVELS = [
+    { width: 1280, height: 720, frameRate: 15, label: '720p (15fps)' },
+    { width: 960, height: 540, frameRate: 15, label: '540p (15fps)' },
+    { width: 640, height: 360, frameRate: 15, label: '360p (15fps)' },
+    { width: 426, height: 240, frameRate: 10, label: '240p (10fps)' }
+];
+
+export async function startCamera(deviceId, resolution = null) {
+  const res = resolution || RESOLUTION_LEVELS[0];
   const constraints = {
     video: {
       deviceId: deviceId ? { exact: deviceId } : undefined,
       aspectRatio: { ideal: 1.7777777778 },
-      // USB bandwidth contention is a common issue with multiple high-res cameras.
-      // Start with a lower resolution and frame rate to increase success rate.
-      width: { ideal: isFallback ? 426 : 1280 },
-      height: { ideal: isFallback ? 240 : 720 },
-      frameRate: { ideal: isFallback ? 10 : 15 }
+      width: { ideal: res.width },
+      height: { ideal: res.height },
+      frameRate: { ideal: res.frameRate }
     },
     audio: false
   };

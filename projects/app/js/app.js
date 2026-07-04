@@ -1,4 +1,4 @@
-import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState } from './camera.js';
+import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS } from './camera.js';
 import { PerspectiveTransformer, MedianStacker } from '../shared/js/processor.js';
 
 class App {
@@ -169,7 +169,11 @@ class App {
                 clearTimeout(this.cycleTimeoutId);
                 this.cycleTimeoutId = null;
             }
-            await this.activateAllCameras();
+            if (this.slotOrder.length > 1) {
+                await this.activateMultipleCameras();
+            } else {
+                await this.activateAllCameras();
+            }
         }
     });
   }
@@ -469,9 +473,15 @@ class App {
   }
 
   async activateAllCameras() {
+    if (this.globalSettings.cyclingEnabled) return;
+
+    if (this.slotOrder.length > 1) {
+        await this.activateMultipleCameras();
+        return;
+    }
+
     this.addLog(`Activating all cameras (cyclingEnabled=${this.globalSettings.cyclingEnabled})`);
     for (const deviceId of this.slotOrder) {
-        if (this.globalSettings.cyclingEnabled) break;
         const slot = this.slots.get(deviceId);
         if (slot && !slot.stream) {
             await this.activateSlot(slot, deviceId);
@@ -479,6 +489,61 @@ class App {
             await new Promise(r => setTimeout(r, 1000));
         }
     }
+  }
+
+  async activateMultipleCameras() {
+    this.addLog(`--- Starting multi-camera activation search (Cameras: ${this.slotOrder.length}) ---`);
+
+    for (let levelIdx = 0; levelIdx < RESOLUTION_LEVELS.length; levelIdx++) {
+        const resolution = RESOLUTION_LEVELS[levelIdx];
+        this.addLog(`Attempting activation at resolution level: ${resolution.label}`);
+
+        // 1. Stop all current streams to release bandwidth
+        for (const deviceId of this.slotOrder) {
+            const slot = this.slots.get(deviceId);
+            if (slot) await this.deactivateSlot(slot);
+        }
+
+        // Wait a bit for hardware release
+        await new Promise(r => setTimeout(r, 1000));
+
+        let allSuccessful = true;
+        const activatedSlots = [];
+
+        // 2. Try to activate each camera sequentially
+        for (const deviceId of this.slotOrder) {
+            const slot = this.slots.get(deviceId);
+            if (slot) {
+                const success = await this.activateSlot(slot, deviceId, resolution);
+                if (success) {
+                    activatedSlots.push(slot);
+                    // Small delay between activations to mitigate spikes
+                    await new Promise(r => setTimeout(r, 1000));
+                } else {
+                    this.addLog(`Failed to activate ${deviceId.slice(0, 8)} at ${resolution.label}`);
+                    allSuccessful = false;
+                    break;
+                }
+            }
+        }
+
+        if (allSuccessful) {
+            this.addLog(`Successfully activated all cameras at ${resolution.label}`);
+            if (levelIdx > 0) {
+                this.showSnackbar(`帯域確保のため、解像度を ${resolution.label} に下げて接続しました`);
+            }
+            return true;
+        }
+
+        // If not all successful, clean up before trying next level
+        for (const slot of activatedSlots) {
+            await this.deactivateSlot(slot);
+        }
+    }
+
+    this.addLog('Failed to activate all cameras even at the lowest resolution level.', true);
+    this.showSnackbar('すべてのカメラを同時に起動できませんでした。帯域不足またはハードウェアの制限です。');
+    return false;
   }
 
   async addCamera(camera) {
@@ -546,14 +611,14 @@ class App {
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
   }
 
-  async activateSlot(slot, deviceId) {
+  async activateSlot(slot, deviceId, resolution = null) {
     if (slot.isActivating) {
         this.addLog(`Skipping activation for ${deviceId.slice(0, 8)} - already in progress`);
-        return;
+        return false;
     }
     slot.isActivating = true;
 
-    const maxRetries = 3;
+    const maxRetries = resolution ? 1 : 3; // No retries during multi-camera search
     try {
         for (let i = 0; i < maxRetries; i++) {
             // Check if camera is still needed
@@ -562,13 +627,14 @@ class App {
                 : this.slotOrder.includes(deviceId);
             if (!isStillNeeded) {
                 this.addLog(`Activation aborted for ${deviceId.slice(0, 8)} - no longer needed`);
-                return;
+                return false;
             }
 
-            this.addLog(`Activating camera ${deviceId.slice(0, 8)} (Attempt ${i + 1}/${maxRetries})`);
+            const targetRes = resolution || (i === maxRetries - 1 ? RESOLUTION_LEVELS[RESOLUTION_LEVELS.length - 1] : RESOLUTION_LEVELS[0]);
+            this.addLog(`Activating camera ${deviceId.slice(0, 8)} (Attempt ${i + 1}/${maxRetries}) at ${targetRes.label}`);
+
             try {
-                const isFallback = i === maxRetries - 1;
-                const stream = await startCamera(deviceId, isFallback);
+                const stream = await startCamera(deviceId, targetRes);
                 slot.stream = stream;
                 slot.video.srcObject = stream;
                 slot.element.classList.add('active');
@@ -602,12 +668,14 @@ class App {
                 if (setting.role === 'whiteboard') {
                     slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
                 }
-                this.addLog(`Camera ${deviceId.slice(0, 8)} activated successfully`);
+                const track = stream.getVideoTracks()[0];
+                const settings = track ? track.getSettings() : {};
+                this.addLog(`Camera ${deviceId.slice(0, 8)} activated successfully. Obtained: ${settings.width}x${settings.height}@${settings.frameRate?.toFixed(2)}fps`);
 
                 // Update cache
                 this.displayCameraInfo(deviceId);
 
-                return; // Success
+                return true; // Success
             } catch (e) {
                 const errorDetail = `${e.name}: ${e.message}`;
                 this.addLog(`Attempt ${i + 1} failed for ${deviceId.slice(0, 8)}: ${errorDetail}`, true);
@@ -625,12 +693,15 @@ class App {
                     continue;
                 }
                 const suffix = (deviceId || 'unknown').slice(0, 4);
-                this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
+                if (!resolution) {
+                    this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
+                }
             }
         }
     } finally {
         slot.isActivating = false;
     }
+    return false;
   }
 
   async deactivateSlot(slot) {
