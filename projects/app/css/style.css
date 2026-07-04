@@ -333,6 +333,67 @@ video {
     cursor: crosshair;
 }
 
+.video-overlay-top-left,
+.video-overlay-top-right {
+    position: absolute;
+    top: 8px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.video-overlay-top-left {
+    left: 8px;
+}
+
+.video-overlay-top-right {
+    right: 8px;
+    pointer-events: auto; /* Allow clicking delete button */
+}
+
+.video-overlay-top-left .material-symbols-outlined,
+.video-overlay-top-right .material-symbols-outlined {
+    font-size: 24px;
+    color: white;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  0px 4px rgba(0,0,0,0.5);
+}
+
+.delete-btn-overlay {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn-overlay:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.pause-indicator {
+    display: none; /* Only show when inactive */
+}
+
+.camera-slot:not(.active) .pause-indicator {
+    display: flex;
+}
+
+.pause-indicator .material-symbols-outlined {
+    color: #FFEB3B; /* Yellow */
+}
+
 .slot-controls {
     padding: 8px;
     display: flex;

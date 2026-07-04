@@ -203,9 +203,12 @@ class App {
   }
 
   reorganizeForNarrow() {
-    this.slots.forEach(slot => {
-        this.container.appendChild(slot.element);
-        slot.element.classList.remove('main-region', 'sub-region-item');
+    this.slotOrder.forEach(deviceId => {
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            this.container.appendChild(slot.element);
+            slot.element.classList.remove('main-region', 'sub-region-item');
+        }
     });
     const mr = this.container.querySelector('.main-region');
     if (mr) mr.remove();
@@ -239,6 +242,17 @@ class App {
     }
 
     listContainer.innerHTML = '';
+
+    // "All Cameras" checkbox
+    const allAdded = this.cameras.every(camera => this.slots.has(camera.deviceId));
+    const selectAllItem = document.createElement('label');
+    selectAllItem.className = `camera-list-item ${allAdded ? 'disabled' : ''}`;
+    selectAllItem.innerHTML = `
+        <input type="checkbox" id="select-all-cameras" ${allAdded ? 'checked disabled' : ''}>
+        <span style="font-weight: bold;">全てのカメラ</span>
+    `;
+    listContainer.appendChild(selectAllItem);
+
     this.cameras.forEach(camera => {
         const isAdded = this.slots.has(camera.deviceId);
         const item = document.createElement('label');
@@ -248,10 +262,26 @@ class App {
         const suffix = camera.deviceId.slice(0, 4);
 
         item.innerHTML = `
-            <input type="checkbox" value="${camera.deviceId}" ${isAdded ? 'checked disabled' : ''}>
+            <input type="checkbox" class="camera-checkbox" value="${camera.deviceId}" ${isAdded ? 'checked disabled' : ''}>
             <span>${label} (${suffix})</span>
         `;
         listContainer.appendChild(item);
+    });
+
+    const selectAllCheckbox = document.getElementById('select-all-cameras');
+    const cameraCheckboxes = listContainer.querySelectorAll('.camera-checkbox:not(:disabled)');
+
+    selectAllCheckbox.addEventListener('change', (e) => {
+        cameraCheckboxes.forEach(cb => {
+            cb.checked = e.target.checked;
+        });
+    });
+
+    cameraCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const allChecked = Array.from(cameraCheckboxes).every(c => c.checked);
+            selectAllCheckbox.checked = allChecked;
+        });
     });
 
     dialog.classList.remove('hidden');
@@ -832,6 +862,12 @@ class App {
         <video autoplay playsinline muted></video>
         <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
+        <div class="video-overlay-top-left pause-indicator">
+            <span class="material-symbols-outlined">pause_circle</span>
+        </div>
+        <button class="video-overlay-top-right delete-btn-overlay" title="削除">
+            <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
       <div class="slot-controls">
         <div class="control-row">
@@ -863,9 +899,6 @@ class App {
           </button>
           <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="キャプチャ">
               <span class="material-symbols-outlined">photo_camera</span>
-          </button>
-          <button class="m3-icon-button-small delete-btn" title="削除">
-              <span class="material-symbols-outlined">delete</span>
           </button>
         </div>
       </div>
@@ -985,7 +1018,7 @@ class App {
         }
     });
 
-    const deleteBtn = element.querySelector('.delete-btn');
+    const deleteBtn = element.querySelector('.delete-btn-overlay');
     deleteBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (slot) {
