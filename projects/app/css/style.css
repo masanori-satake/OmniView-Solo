@@ -138,6 +138,29 @@
     margin-bottom: 24px;
 }
 
+.settings-row-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.settings-row-vertical label {
+    font-size: 14px;
+    color: var(--md-sys-color-on-surface);
+}
+
+.settings-action-group {
+    display: flex;
+    gap: 8px;
+}
+
+.m3-divider {
+    border: none;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    margin: 16px 0;
+}
+
 .settings-row:last-child {
     margin-bottom: 0;
 }

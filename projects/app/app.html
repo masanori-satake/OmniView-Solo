@@ -63,6 +63,28 @@
                             </div>
                         </div>
                     </div>
+                    <hr class="m3-divider">
+                    <div class="settings-row-vertical">
+                        <label>設定の入出力</label>
+                        <div class="settings-action-group">
+                            <button id="export-btn" class="m3-button">
+                                <span class="material-symbols-outlined">download</span>
+                                エクスポート
+                            </button>
+                            <button id="import-btn-trigger" class="m3-button">
+                                <span class="material-symbols-outlined">upload</span>
+                                インポート
+                            </button>
+                            <input type="file" id="import-input" class="hidden" accept=".json">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <label for="import-mode-select">インポート設定:</label>
+                        <select id="import-mode-select" class="m3-select">
+                            <option value="add">追記</option>
+                            <option value="overwrite">上書き</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="tab-content hidden" id="tab-camera-info">
                     <div class="settings-row">
@@ -91,7 +113,7 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p>Version: 0.1.24</p>
+                        <p>Version: 0.1.25</p>
                         <p>ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong>データの保存場所とリスク</strong></p>
