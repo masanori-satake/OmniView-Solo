@@ -535,9 +535,17 @@ class App {
                 '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
                 'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
                 'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
-                'フォーカス': capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A',
-                '露出': capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A',
-                'ホワイトバランス': capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A'
+                'フォーカスモード': (capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A') + ` (現在: ${settings.focusMode || 'N/A'})`,
+                'フォーカス距離': settings.focusDistance !== undefined ? settings.focusDistance : 'N/A',
+                '露出モード': (capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A') + ` (現在: ${settings.exposureMode || 'N/A'})`,
+                '露出時間': settings.exposureTime !== undefined ? settings.exposureTime : 'N/A',
+                'ホワイトバランスモード': (capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A') + ` (現在: ${settings.whiteBalanceMode || 'N/A'})`,
+                '色温度': settings.colorTemperature !== undefined ? settings.colorTemperature : 'N/A',
+                'ISO': settings.iso !== undefined ? settings.iso : 'N/A',
+                '明るさ': settings.brightness !== undefined ? settings.brightness : 'N/A',
+                'コントラスト': settings.contrast !== undefined ? settings.contrast : 'N/A',
+                '彩度': settings.saturation !== undefined ? settings.saturation : 'N/A',
+                'シャープネス': settings.sharpness !== undefined ? settings.sharpness : 'N/A'
             };
             this.cameraInfoCache.set(deviceId, info);
         }
@@ -1390,38 +1398,72 @@ class App {
   async applyMediaLock(track, locked) {
       if (!track || typeof track.getCapabilities !== 'function' || typeof track.getSettings !== 'function') return false;
       const capabilities = track.getCapabilities();
-      const settings = track.getSettings();
+      let settings = track.getSettings();
       const constraints = { advanced: [] };
       const adv = {};
 
-      const modes = [
-          { prop: 'focusMode', setting: 'focusMode', constr: 'focusMode' },
-          { prop: 'exposureMode', setting: 'exposureMode', constr: 'exposureMode' },
-          { prop: 'whiteBalanceMode', setting: 'whiteBalanceMode', constr: 'whiteBalanceMode' }
-      ];
+      this.addLog(`ApplyMediaLock: locked=${locked}`);
 
-      let anyChange = false;
-      for (const mode of modes) {
-          if (capabilities[mode.prop]) {
-              if (locked) {
-                  if (capabilities[mode.prop].includes('manual')) {
-                      adv[mode.constr] = 'manual';
-                      // Also try to fix current values
-                      const valProps = {
-                          'focusMode': 'focusDistance',
-                          'exposureMode': 'exposureTime',
-                          'whiteBalanceMode': 'colorTemperature'
-                      };
-                      const valProp = valProps[mode.prop];
-                      if (valProp && settings[valProp] !== undefined && capabilities[valProp]) {
-                          adv[valProp] = settings[valProp];
-                      }
-                      anyChange = true;
+      if (locked) {
+          // Some cameras need a moment to report stable values in getSettings() after being active
+          // or might report 0/default until polled.
+          let retryCount = 3;
+          while (retryCount > 0) {
+              settings = track.getSettings();
+              const hasValues = (settings.focusDistance !== undefined || !capabilities.focusDistance || !capabilities.focusMode?.includes('manual')) &&\n                                (settings.exposureTime !== undefined || !capabilities.exposureTime || !capabilities.exposureMode?.includes('manual')) &&\n                                (settings.colorTemperature !== undefined || !capabilities.colorTemperature || !capabilities.whiteBalanceMode?.includes('manual'));
+              if (hasValues) break;
+              this.addLog(`Waiting for settings to stabilize... (${retryCount})`);
+              await new Promise(r => setTimeout(r, 200));
+              retryCount--;
+          }
+
+          const targetModes = [
+              { prop: 'focusMode', setting: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
+              { prop: 'exposureMode', setting: 'exposureMode', constr: 'exposureMode', valProp: 'exposureTime' },
+              { prop: 'whiteBalanceMode', setting: 'whiteBalanceMode', constr: 'whiteBalanceMode', valProp: 'colorTemperature' }
+          ];
+
+          for (const m of targetModes) {
+              if (capabilities[m.prop]) {
+                  // Prefer 'manual' for absolute lock, but ONLY if we have a value to maintain the current look.
+                  if (capabilities[m.prop].includes('manual') && m.valProp && settings[m.valProp] !== undefined) {
+                      adv[m.constr] = 'manual';
+                      adv[m.valProp] = settings[m.valProp];
+                      this.addLog(`Locking ${m.constr}: manual, ${m.valProp}=${settings[m.valProp]}`);
+                  } else if (capabilities[m.prop].includes('single-shot')) {
+                      // fallback to single-shot which locks at current auto-adjusted value
+                      adv[m.constr] = 'single-shot';
+                      this.addLog(`Locking ${m.constr}: single-shot (preferred/fallback)`);
+                  } else if (capabilities[m.prop].includes('manual')) {
+                      // If we MUST use manual but have no value, it's risky but some cameras might require it.
+                      // However, to fix the user's report, let's avoid it if it's likely to reset.
+                      this.addLog(`Skipping ${m.constr} lock: 'manual' supported but no current value found to preserve.`);
                   }
-              } else {
-                  if (capabilities[mode.prop].includes('continuous')) {
-                      adv[mode.constr] = 'continuous';
-                      anyChange = true;
+              }
+          }
+
+          // Also lock other parameters if available
+          const otherProps = ['iso', 'brightness', 'contrast', 'saturation', 'sharpness'];
+          for (const prop of otherProps) {
+              if (capabilities[prop] && settings[prop] !== undefined) {
+                  adv[prop] = settings[prop];
+                  this.addLog(`Locking ${prop}=${settings[prop]}`);
+              }
+          }
+      } else {
+          const resetModes = [
+              { prop: 'focusMode', constr: 'focusMode' },
+              { prop: 'exposureMode', constr: 'exposureMode' },
+              { prop: 'whiteBalanceMode', constr: 'whiteBalanceMode' }
+          ];
+          for (const m of resetModes) {
+              if (capabilities[m.prop]) {
+                  if (capabilities[m.prop].includes('continuous')) {
+                      adv[m.constr] = 'continuous';
+                      this.addLog(`Unlocking ${m.constr}: continuous`);
+                  } else if (capabilities[m.prop].includes('single-shot')) {
+                      adv[m.constr] = 'single-shot';
+                      this.addLog(`Unlocking ${m.constr}: single-shot`);
                   }
               }
           }
@@ -1430,6 +1472,7 @@ class App {
       if (Object.keys(adv).length > 0) {
           constraints.advanced.push(adv);
           try {
+              this.addLog(`Applying constraints: ${JSON.stringify(adv)}`);
               await track.applyConstraints(constraints);
               return true;
           } catch (e) {
@@ -1437,7 +1480,7 @@ class App {
               return false;
           }
       }
-      return anyChange;
+      return true;
   }
 
   showSnackbar(message, actionLabel = null, actionCallback = null) {
