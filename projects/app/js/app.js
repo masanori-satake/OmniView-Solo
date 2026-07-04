@@ -252,7 +252,7 @@ class App {
                         }
                     }
                     await chrome.storage.local.set({ camera_settings: currentSettings });
-                    this.settings = currentSettings;
+                    this.settings = await loadCameraSettings();
 
                     // Refresh existing slots with new settings if applicable
                     for (const [deviceId, slot] of this.slots.entries()) {
