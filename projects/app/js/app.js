@@ -101,6 +101,10 @@ class App {
     const cyclingSwitch = document.getElementById('cycling-switch');
     const copyLogsBtn = document.getElementById('copy-logs-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const importBtnTrigger = document.getElementById('import-btn-trigger');
+    const importInput = document.getElementById('import-input');
+    const importModeSelect = document.getElementById('import-mode-select');
 
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.remove('hidden');
@@ -176,6 +180,104 @@ class App {
             }
         }
     });
+
+    exportBtn.addEventListener('click', async () => {
+        const settingsToExport = await loadCameraSettings();
+        // Record current mode as defaultRole for export
+        for (const deviceId of Object.keys(settingsToExport)) {
+            const slot = this.slots.get(deviceId);
+            if (slot) {
+                const role = slot.element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
+                settingsToExport[deviceId].defaultRole = role;
+            }
+        }
+
+        const exportData = {
+            version: 1,
+            global_settings: this.globalSettings,
+            camera_settings: settingsToExport
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `omniview_settings_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.addLog('Settings exported successfully');
+    });
+
+    importBtnTrigger.addEventListener('click', () => importInput.click());
+
+    importInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                const mode = importModeSelect.value;
+                this.addLog(`Importing settings (mode: ${mode})`);
+
+                if (data.global_settings) {
+                    this.globalSettings = { ...this.globalSettings, ...data.global_settings };
+                    await saveGlobalSettings(this.globalSettings);
+                    intervalInput.value = this.globalSettings.interval;
+
+                    if (cyclingSwitch.checked !== this.globalSettings.cyclingEnabled) {
+                        cyclingSwitch.checked = this.globalSettings.cyclingEnabled;
+                        cyclingSwitch.dispatchEvent(new Event('change'));
+                    } else if (this.globalSettings.cyclingEnabled) {
+                        this.startCycling();
+                    }
+                }
+
+                if (data.camera_settings) {
+                    let currentSettings = mode === 'overwrite' ? {} : await loadCameraSettings();
+
+                    for (const [deviceId, imported] of Object.entries(data.camera_settings)) {
+                        if (mode === 'overwrite') {
+                            currentSettings[deviceId] = imported;
+                        } else if (mode === 'add') {
+                            if (!currentSettings[deviceId]) {
+                                currentSettings[deviceId] = imported;
+                            }
+                        }
+                    }
+                    await chrome.storage.local.set({ camera_settings: currentSettings });
+                    this.settings = currentSettings;
+
+                    // Refresh existing slots with new settings if applicable
+                    for (const [deviceId, slot] of this.slots.entries()) {
+                        const s = this.settings[deviceId];
+                        if (s) {
+                            if (s.customLabel) {
+                                slot.element.querySelector('.label-input').value = s.customLabel;
+                            }
+                            if (s.defaultRole) {
+                                const roleSwitch = slot.element.querySelector('.role-switch');
+                                const currentRole = roleSwitch.checked ? 'whiteboard' : 'person';
+                                if (currentRole !== s.defaultRole) {
+                                    roleSwitch.checked = s.defaultRole === 'whiteboard';
+                                    roleSwitch.dispatchEvent(new Event('change'));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                this.showSnackbar('設定をインポートしました。反映するには、必要に応じてカメラを再起動してください。');
+                this.addLog('Settings imported successfully');
+            } catch (err) {
+                this.addLog('Import failed: ' + err.message, true);
+                this.showSnackbar('インポートに失敗しました: ' + err.message);
+            }
+            importInput.value = '';
+        };
+        reader.readAsText(file);
+    });
   }
 
   setupResizeObserver() {
@@ -241,6 +343,9 @@ class App {
         return;
     }
 
+    // Refresh settings to get potential custom labels for disconnected cameras
+    this.settings = await loadCameraSettings();
+
     listContainer.innerHTML = '';
 
     // "All Cameras" checkbox
@@ -258,13 +363,24 @@ class App {
         const item = document.createElement('label');
         item.className = `camera-list-item ${isAdded ? 'disabled' : ''}`;
 
-        const label = camera.label || 'Camera';
-        const suffix = camera.deviceId.slice(0, 4);
+        const savedSetting = this.settings[camera.deviceId];
+        const defaultLabel = `${camera.label || 'Camera'} (${camera.deviceId.slice(0, 4)})`;
+        const displayName = (savedSetting && savedSetting.customLabel) ? savedSetting.customLabel : defaultLabel;
 
-        item.innerHTML = `
-            <input type="checkbox" class="camera-checkbox" value="${camera.deviceId}" ${isAdded ? 'checked disabled' : ''}>
-            <span>${label} (${suffix})</span>
-        `;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'camera-checkbox';
+        checkbox.value = camera.deviceId;
+        if (isAdded) {
+            checkbox.checked = true;
+            checkbox.disabled = true;
+        }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = displayName;
+
+        item.appendChild(checkbox);
+        item.appendChild(nameSpan);
         listContainer.appendChild(item);
     });
 
@@ -864,7 +980,7 @@ class App {
     const savedSetting = this.settings[deviceId] || {};
     const defaultLabel = (camera.label || 'Camera') + ` (${deviceId.slice(0, 4)})`;
     const setting = {
-      role: savedSetting.role || 'person',
+      role: savedSetting.defaultRole || 'person',
       customLabel: savedSetting.customLabel || defaultLabel
     };
 
@@ -931,8 +1047,15 @@ class App {
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
       this.addLog(`Camera ${deviceId.slice(0, 8)} mode changed to ${role}`);
-      await saveCameraSetting(deviceId, { role });
-      this.settings[deviceId] = { ...this.settings[deviceId], role };
+
+      // Update local settings first to ensure subsequent calls use the new role
+      if (!this.settings[deviceId]) {
+        this.settings[deviceId] = { modes: { person: {}, whiteboard: {} } };
+      }
+
+      // Persist the current mode as defaultRole so it's restored on next load/export
+      await saveCameraSetting(deviceId, { defaultRole: role });
+      this.settings[deviceId].defaultRole = role;
 
       const wbControls = element.querySelectorAll('.whiteboard-only');
       wbControls.forEach(ctrl => {
@@ -950,6 +1073,7 @@ class App {
                   if (slot.processor) {
                       slot.processor.stop();
                   }
+                  // Restore points will happen inside initProcessor
                   slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
               } else {
                   if (slot.processor) {
@@ -1045,10 +1169,7 @@ class App {
             this.slots.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
-            const currentSettings = await loadCameraSettings();
-            delete currentSettings[deviceId];
-            await chrome.storage.local.set({ camera_settings: currentSettings });
-
+            // We no longer delete camera settings here to allow persistence
             saveSessionState(this.slotOrder, this.activeSlotIndex);
 
             if (this.slotOrder.length === 0) {
@@ -1081,7 +1202,11 @@ class App {
 
     const labelInput = element.querySelector('.label-input');
     labelInput.addEventListener('blur', async (e) => {
-      const customLabel = e.target.value;
+      let customLabel = e.target.value.trim();
+      if (customLabel === '') {
+        customLabel = defaultLabel;
+        e.target.value = customLabel;
+      }
       await saveCameraSetting(deviceId, { customLabel });
       this.settings[deviceId] = { ...this.settings[deviceId], customLabel };
     });
@@ -1090,17 +1215,19 @@ class App {
   }
 
   initProcessor(video, canvas, deviceId) {
-      const pts = (this.settings[deviceId] && this.settings[deviceId].points) || [
+      const pts = (this.settings[deviceId]?.modes?.whiteboard?.points) || [
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
       const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(`Perspective adjusted for ${deviceId.slice(0, 8)}: [${ptsStr}]`);
-          saveCameraSetting(deviceId, { points: newPts });
+          saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
           if (!this.settings[deviceId]) {
-              this.settings[deviceId] = {};
+              this.settings[deviceId] = { modes: { person: {}, whiteboard: {} } };
           }
-          this.settings[deviceId].points = newPts;
+          if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
+          if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
+          this.settings[deviceId].modes.whiteboard.points = newPts;
       });
       const stacker = new MedianStacker(video);
 

@@ -9,9 +9,40 @@ export async function getCameras() {
 export async function loadCameraSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['camera_settings'], (result) => {
-      resolve(result.camera_settings || {});
+      const settings = result.camera_settings || {};
+      const migrated = migrateSettings(settings);
+      resolve(migrated);
     });
   });
+}
+
+function migrateSettings(settings) {
+  let changed = false;
+  const migrated = {};
+
+  for (const [deviceId, s] of Object.entries(settings)) {
+    // Check if it's the old format
+    if (s.role !== undefined && s.modes === undefined) {
+      migrated[deviceId] = {
+        customLabel: s.customLabel,
+        defaultRole: s.role,
+        modes: {
+          person: {},
+          whiteboard: {
+            points: s.points
+          }
+        }
+      };
+      changed = true;
+    } else {
+      migrated[deviceId] = s;
+    }
+  }
+
+  if (changed) {
+    chrome.storage.local.set({ camera_settings: migrated });
+  }
+  return migrated;
 }
 
 export async function saveSessionState(slotOrder, activeSlotIndex) {
@@ -57,10 +88,21 @@ let saveQueue = Promise.resolve();
 export async function saveCameraSetting(deviceId, settings) {
   saveQueue = saveQueue.then(async () => {
     const currentSettings = await loadCameraSettings();
-    currentSettings[deviceId] = {
-      ...(currentSettings[deviceId] || {}),
-      ...settings
+    const existing = currentSettings[deviceId] || {};
+    const existingModes = existing.modes || { person: {}, whiteboard: {} };
+
+    const updated = {
+      customLabel: '',
+      defaultRole: 'person',
+      ...existing,
+      ...settings,
+      modes: {
+        person: { ...(existingModes.person || {}), ...(settings.modes?.person || {}) },
+        whiteboard: { ...(existingModes.whiteboard || {}), ...(settings.modes?.whiteboard || {}) }
+      }
     };
+
+    currentSettings[deviceId] = updated;
     return new Promise((resolve) => {
       chrome.storage.local.set({ camera_settings: currentSettings }, () => {
         resolve();
