@@ -22,6 +22,7 @@ class App {
   async init() {
     this.settings = await loadCameraSettings();
     this.globalSettings = await loadGlobalSettings();
+    this.addLog(`Global settings loaded: cyclingEnabled=${this.globalSettings.cyclingEnabled}, interval=${this.globalSettings.interval}`);
     this.cameras = await getCameras();
 
     this.setupStartButton();
@@ -457,6 +458,7 @@ class App {
   }
 
   async activateAllCameras() {
+    this.addLog(`Activating all cameras (cyclingEnabled=${this.globalSettings.cyclingEnabled})`);
     for (const deviceId of this.slotOrder) {
         if (this.globalSettings.cyclingEnabled) break;
         const slot = this.slots.get(deviceId);
