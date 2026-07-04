@@ -492,14 +492,26 @@ class App {
   }
 
   async activateMultipleCameras() {
-    this.addLog(`--- Starting multi-camera activation search (Cameras: ${this.slotOrder.length}) ---`);
+    const initialOrder = [...this.slotOrder];
+    this.addLog(`--- Starting multi-camera activation search (Cameras: ${initialOrder.length}) ---`);
+
+    const isStateChanged = () => {
+        return this.globalSettings.cyclingEnabled ||
+            this.slotOrder.length !== initialOrder.length ||
+            !this.slotOrder.every((id, idx) => id === initialOrder[idx]);
+    };
 
     for (let levelIdx = 0; levelIdx < RESOLUTION_LEVELS.length; levelIdx++) {
+        if (isStateChanged()) {
+            this.addLog('Multi-camera activation search aborted: state changed');
+            return false;
+        }
+
         const resolution = RESOLUTION_LEVELS[levelIdx];
         this.addLog(`Attempting activation at resolution level: ${resolution.label}`);
 
         // 1. Stop all current streams to release bandwidth
-        for (const deviceId of this.slotOrder) {
+        for (const deviceId of initialOrder) {
             const slot = this.slots.get(deviceId);
             if (slot) await this.deactivateSlot(slot);
         }
@@ -511,7 +523,15 @@ class App {
         const activatedSlots = [];
 
         // 2. Try to activate each camera sequentially
-        for (const deviceId of this.slotOrder) {
+        for (const deviceId of initialOrder) {
+            if (isStateChanged()) {
+                this.addLog('Multi-camera activation search aborted: state changed');
+                for (const slot of activatedSlots) {
+                    await this.deactivateSlot(slot);
+                }
+                return false;
+            }
+
             const slot = this.slots.get(deviceId);
             if (slot) {
                 const success = await this.activateSlot(slot, deviceId, resolution);
@@ -525,6 +545,14 @@ class App {
                     break;
                 }
             }
+        }
+
+        if (isStateChanged()) {
+            this.addLog('Multi-camera activation search aborted: state changed');
+            for (const slot of activatedSlots) {
+                await this.deactivateSlot(slot);
+            }
+            return false;
         }
 
         if (allSuccessful) {
@@ -635,6 +663,17 @@ class App {
 
             try {
                 const stream = await startCamera(deviceId, targetRes);
+
+                // Check if still needed after async acquisition to prevent leaks
+                const isStillNeededPost = this.globalSettings.cyclingEnabled
+                    ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+                    : this.slotOrder.includes(deviceId);
+                if (!isStillNeededPost) {
+                    this.addLog(`Activation aborted post-acquisition for ${deviceId.slice(0, 8)}`);
+                    stream.getTracks().forEach(track => track.stop());
+                    return false;
+                }
+
                 slot.stream = stream;
                 slot.video.srcObject = stream;
                 slot.element.classList.add('active');
