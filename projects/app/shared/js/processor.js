@@ -1,49 +1,6 @@
 import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
 
 /**
- * Image enhancement for whiteboard.
- */
-export function applyEnhancement(imageData, mode, thresholdValue = 0.45) {
-    if (mode === 'none' || !mode) return imageData;
-    const data = imageData.data;
-    const len = data.length;
-
-    let min = 255, max = 0;
-    for (let i = 0; i < len; i += 4) {
-        const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-        if (avg < min) min = avg;
-        if (avg > max) max = avg;
-    }
-    const range = max - min || 1;
-
-    if (mode === 'bw') {
-        const threshold = min + range * thresholdValue;
-        for (let i = 0; i < len; i += 4) {
-            const avg = (data[i] + data[i+1] + data[i+2]) / 3;
-            const val = avg > threshold ? 255 : 0;
-            data[i] = data[i+1] = data[i+2] = val;
-        }
-    } else if (mode === 'color') {
-        // Use thresholdValue to adjust the white point as well
-        // Map thresholdValue [0.0, 1.0] to white point range
-        // If thresholdValue is high, more pixels become white.
-        const whitePoint = min + range * (1.0 - thresholdValue * 0.5);
-        for (let i = 0; i < len; i += 4) {
-            const r = data[i], g = data[i+1], b = data[i+2];
-            const avg = (r + g + b) / 3;
-            if (avg > whitePoint) {
-                data[i] = data[i+1] = data[i+2] = 255;
-            } else {
-                data[i] = Math.min(255, Math.max(0, (r - min) / (whitePoint - min) * 255));
-                data[i+1] = Math.min(255, Math.max(0, (g - min) / (whitePoint - min) * 255));
-                data[i+2] = Math.min(255, Math.max(0, (b - min) / (whitePoint - min) * 255));
-            }
-        }
-    }
-    return imageData;
-}
-
-/**
  * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
@@ -294,14 +251,13 @@ export class MedianStacker {
         this.lastMedian = null;
     }
 
-    async getMedianFrame(transformer, enhanceMode = 'none', threshold = 0.45) {
+    async getMedianFrame(transformer) {
         const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
         if (!base) return null;
         const warped = await transformer.getWarpedFrame(base);
-        const enhanced = applyEnhancement(warped, enhanceMode, threshold);
         const canvas = document.createElement('canvas');
-        canvas.width = enhanced.width; canvas.height = enhanced.height;
-        canvas.getContext('2d').putImageData(enhanced, 0, 0);
+        canvas.width = warped.width; canvas.height = warped.height;
+        canvas.getContext('2d').putImageData(warped, 0, 0);
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     }
 
@@ -329,15 +285,10 @@ export class WhiteboardProcessor {
         this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange);
         this.transformer.processedCanvas = processedCanvas;
         this.stacker = new MedianStacker(video);
-        this.enhanceMode = 'none';
-        this.threshold = 0.45;
         this.occlusionRemoval = false;
         this.animationFrame = null;
-        this.cachedImageData = null;
     }
 
-    setEnhanceMode(mode) { this.enhanceMode = mode; this.transformer.updateTransform(); }
-    setThreshold(val) { this.threshold = val; }
     setOcclusionRemoval(enabled) {
         this.occlusionRemoval = enabled;
         if (enabled) this.stacker.start();
@@ -358,8 +309,7 @@ export class WhiteboardProcessor {
 
     render() {
         this.transformer.draw();
-        const isProcessing = this.enhanceMode !== 'none' || this.occlusionRemoval;
-        if (isProcessing) {
+        if (this.occlusionRemoval) {
             this.video.style.visibility = 'hidden';
             this.processedCanvas.style.display = 'block';
             this.drawProcessedFrame();
@@ -376,29 +326,10 @@ export class WhiteboardProcessor {
             this.processedCanvas.width = w; this.processedCanvas.height = h;
         }
 
-        let imageData = null;
-        if (this.occlusionRemoval) imageData = this.stacker.lastMedian;
+        let imageData = this.stacker.lastMedian;
+        if (!imageData) return;
 
-        if (!imageData) {
-            this.ctx.drawImage(this.video, 0, 0);
-            if (this.enhanceMode !== 'none') imageData = this.ctx.getImageData(0, 0, w, h);
-            else return;
-        }
-
-        if (this.enhanceMode !== 'none') {
-            let dataToEnhance = imageData;
-            if (imageData === this.stacker.lastMedian) {
-                if (!this.cachedImageData || this.cachedImageData.width !== w || this.cachedImageData.height !== h) {
-                    this.cachedImageData = this.ctx.createImageData(w, h);
-                }
-                this.cachedImageData.data.set(imageData.data);
-                dataToEnhance = this.cachedImageData;
-            }
-            applyEnhancement(dataToEnhance, this.enhanceMode, this.threshold);
-            this.ctx.putImageData(dataToEnhance, 0, 0);
-        } else {
-            this.ctx.putImageData(imageData, 0, 0);
-        }
+        this.ctx.putImageData(imageData, 0, 0);
     }
 
     async capture() {
@@ -412,10 +343,9 @@ export class WhiteboardProcessor {
             imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         }
         const warped = await this.transformer.getWarpedFrame(imageData);
-        const enhanced = applyEnhancement(warped, this.enhanceMode, this.threshold);
         const outCanvas = document.createElement('canvas');
-        outCanvas.width = enhanced.width; outCanvas.height = enhanced.height;
-        outCanvas.getContext('2d').putImageData(enhanced, 0, 0);
+        outCanvas.width = warped.width; outCanvas.height = warped.height;
+        outCanvas.getContext('2d').putImageData(warped, 0, 0);
         return new Promise(resolve => outCanvas.toBlob(resolve, 'image/png'));
     }
 }

@@ -1,6 +1,6 @@
 # OmniView-Solo
 
-[![Version](https://img.shields.io/badge/version-0.2.7-blue)](https://github.com/masanori-satake/OmniView-Solo)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue)](https://github.com/masanori-satake/OmniView-Solo)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-brightgreen)](SECURITY.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
@@ -12,7 +12,6 @@
 
 - **完全ローカル完結**: 外部サーバーやクラウドAPIを一切利用せず、セキュリティが厳格な社内環境でもスタンドアロンで動作します。
 - **射影変換 (Perspective Transform)**: ホワイトボードの歪みを補正し、正面から見たような綺麗な長方形に変換します。
-- **適応的二値化**: 背景の白を飛ばし、マーカーの文字をくっきり強調します。
 - **写り込み排除**: タイムラプス的な合成処理により、ホワイトボード前の人や腕をノイズとして排除します。
 - **M3準拠のUI/UX**: Google Material Design 3に完全準拠し、他の-Soloシリーズと統一感のあるデザインを提供します。
 
