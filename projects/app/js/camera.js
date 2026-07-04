@@ -22,7 +22,7 @@ function migrateSettings(settings) {
 
   for (const [deviceId, s] of Object.entries(settings)) {
     // Check if it's the old format
-    if (s && s.role !== undefined && s.modes === undefined) {
+    if (s.role !== undefined && s.modes === undefined) {
       migrated[deviceId] = {
         customLabel: s.customLabel,
         defaultRole: s.role,
@@ -88,20 +88,19 @@ let saveQueue = Promise.resolve();
 export async function saveCameraSetting(deviceId, settings) {
   saveQueue = saveQueue.then(async () => {
     const currentSettings = await loadCameraSettings();
-    const existing = currentSettings[deviceId] || {
+    const existing = currentSettings[deviceId] || {};
+    const existingModes = existing.modes || { person: {}, whiteboard: {} };
+
+    const updated = {
       customLabel: '',
       defaultRole: 'person',
-      modes: { person: {}, whiteboard: {} }
+      ...existing,
+      ...settings,
+      modes: {
+        person: { ...(existingModes.person || {}), ...(settings.modes?.person || {}) },
+        whiteboard: { ...(existingModes.whiteboard || {}), ...(settings.modes?.whiteboard || {}) }
+      }
     };
-
-    // Deep merge for modes
-    const updated = { ...existing, ...settings };
-    if (settings.modes) {
-      updated.modes = {
-        person: { ...(existing.modes?.person || {}), ...(settings.modes.person || {}) },
-        whiteboard: { ...(existing.modes?.whiteboard || {}), ...(settings.modes.whiteboard || {}) }
-      };
-    }
 
     currentSettings[deviceId] = updated;
     return new Promise((resolve) => {

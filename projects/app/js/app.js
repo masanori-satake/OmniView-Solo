@@ -218,9 +218,6 @@ class App {
         reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (!data || typeof data !== 'object') {
-                    throw new Error('無効な設定ファイル形式です。');
-                }
                 const mode = importModeSelect.value;
                 this.addLog(`Importing settings (mode: ${mode})`);
 
@@ -228,17 +225,12 @@ class App {
                     this.globalSettings = { ...this.globalSettings, ...data.global_settings };
                     await saveGlobalSettings(this.globalSettings);
                     intervalInput.value = this.globalSettings.interval;
-                    cyclingSwitch.checked = this.globalSettings.cyclingEnabled;
 
-                    // Trigger cycling state update
-                    if (this.globalSettings.cyclingEnabled) {
+                    if (cyclingSwitch.checked !== this.globalSettings.cyclingEnabled) {
+                        cyclingSwitch.checked = this.globalSettings.cyclingEnabled;
+                        cyclingSwitch.dispatchEvent(new Event('change'));
+                    } else if (this.globalSettings.cyclingEnabled) {
                         this.startCycling();
-                    } else {
-                        this.cycleCount++;
-                        if (this.cycleTimeoutId) {
-                            clearTimeout(this.cycleTimeoutId);
-                            this.cycleTimeoutId = null;
-                        }
                     }
                 }
 
@@ -255,7 +247,7 @@ class App {
                         }
                     }
                     await chrome.storage.local.set({ camera_settings: currentSettings });
-                    this.settings = await loadCameraSettings();
+                    this.settings = currentSettings;
 
                     // Refresh existing slots with new settings if applicable
                     for (const [deviceId, slot] of this.slots.entries()) {
