@@ -29,6 +29,13 @@ class App {
     this.setupSettingsPanel();
     this.setupAddCameraButton();
 
+    // Log initial device list
+    this.logDeviceList();
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+        this.addLog('Device configuration changed');
+        this.logDeviceList();
+    });
+
     // Restore session state
     const session = await loadSessionState();
     if (session && session.slotOrder && session.slotOrder.length > 0) {
@@ -93,20 +100,13 @@ class App {
     const copyLogsBtn = document.getElementById('copy-logs-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
 
-    settingsBtn.addEventListener('click', async () => {
+    settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
         cyclingSwitch.disabled = this.slotOrder.length < 2;
         this.updateCameraInfoTab();
         this.renderLogs();
-
-        // Log device list for diagnosis
-        const devices = await getCameras();
-        this.addLog(`Connected devices: ${devices.length}`);
-        devices.forEach(d => {
-            this.addLog(`- [${d.deviceId.slice(0, 8)}] ${d.label}`);
-        });
     });
 
     overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
@@ -328,6 +328,14 @@ class App {
     this.renderLogs();
   }
 
+  async logDeviceList() {
+      const devices = await getCameras();
+      this.addLog(`Connected devices: ${devices.length}`);
+      devices.forEach(d => {
+          this.addLog(`- [${d.deviceId.slice(0, 8)}] ${d.label}`);
+      });
+  }
+
   renderLogs() {
     const container = document.getElementById('logs-container');
     if (!container) return;
@@ -337,21 +345,20 @@ class App {
         const div = document.createElement('div');
         div.className = 'log-entry';
         if (log.isError) div.classList.add('log-error');
-
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'log-time';
-        timeSpan.textContent = log.time;
-
-        div.appendChild(timeSpan);
-        div.appendChild(document.createTextNode(log.message));
+        div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
         container.appendChild(div);
     });
     container.scrollTop = container.scrollHeight;
   }
 
   async displayCameraInfo(deviceId) {
+    const infoCameraSelect = document.getElementById('info-camera-select');
+    const shouldRender = !infoCameraSelect || infoCameraSelect.value === deviceId;
     const listContainer = document.getElementById('camera-capabilities-list');
-    listContainer.innerHTML = '';
+
+    if (shouldRender && listContainer) {
+        listContainer.innerHTML = '';
+    }
 
     const slot = this.slots.get(deviceId);
     let info = null;
@@ -379,9 +386,13 @@ class App {
     }
 
     if (!info) {
-        listContainer.innerHTML = '<p>ストリームが有効ではなく、キャッシュもありません。</p>';
+        if (shouldRender && listContainer) {
+            listContainer.innerHTML = '<p>ストリームが有効ではなく、キャッシュもありません。</p>';
+        }
         return;
     }
+
+    if (!shouldRender) return;
 
     for (const [label, value] of Object.entries(info)) {
         const item = document.createElement('div');
