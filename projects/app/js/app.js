@@ -15,6 +15,8 @@ class App {
     this.currentLayout = null;
     this.snackbarTimeout = null;
     this.switchRequestCount = 0;
+    this.cameraInfoCache = new Map();
+    this.logs = [];
   }
 
   async init() {
@@ -26,6 +28,13 @@ class App {
     this.setupResizeObserver();
     this.setupSettingsPanel();
     this.setupAddCameraButton();
+
+    // Log initial device list
+    this.logDeviceList();
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+        this.addLog('Device configuration changed');
+        this.logDeviceList();
+    });
 
     // Restore session state
     const session = await loadSessionState();
@@ -88,6 +97,8 @@ class App {
     const intervalUp = document.getElementById('interval-up');
     const intervalDown = document.getElementById('interval-down');
     const cyclingSwitch = document.getElementById('cycling-switch');
+    const copyLogsBtn = document.getElementById('copy-logs-btn');
+    const clearLogsBtn = document.getElementById('clear-logs-btn');
 
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.remove('hidden');
@@ -95,6 +106,7 @@ class App {
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
         cyclingSwitch.disabled = this.slotOrder.length < 2;
         this.updateCameraInfoTab();
+        this.renderLogs();
     });
 
     overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
@@ -108,11 +120,29 @@ class App {
             if (btn.dataset.tab === 'camera-info') {
                 this.updateCameraInfoTab();
             }
+            if (btn.dataset.tab === 'logs') {
+                this.renderLogs();
+            }
         });
     });
 
     const infoCameraSelect = document.getElementById('info-camera-select');
     infoCameraSelect.addEventListener('change', () => this.displayCameraInfo(infoCameraSelect.value));
+
+    copyLogsBtn.addEventListener('click', async () => {
+        const text = this.logs.map(l => `[${l.time}] ${l.message}`).join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showSnackbar('ログをコピーしました');
+        } catch (e) {
+            this.showSnackbar('コピーに失敗しました');
+        }
+    });
+
+    clearLogsBtn.addEventListener('click', () => {
+        this.logs = [];
+        this.renderLogs();
+    });
 
     const updateInterval = async (val) => {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
@@ -289,31 +319,80 @@ class App {
     this.displayCameraInfo(infoCameraSelect.value);
   }
 
+  addLog(message, isError = false) {
+    const now = new Date();
+    const time = now.toLocaleTimeString('ja-JP', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+    this.logs.push({ time, message, isError });
+    if (this.logs.length > 100) this.logs.shift();
+    console.log(`[${time}] ${message}`);
+    this.renderLogs();
+  }
+
+  async logDeviceList() {
+      const devices = await getCameras();
+      this.addLog(`Connected devices: ${devices.length}`);
+      devices.forEach(d => {
+          this.addLog(`- [${d.deviceId.slice(0, 8)}] ${d.label}`);
+      });
+  }
+
+  renderLogs() {
+    const container = document.getElementById('logs-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    this.logs.forEach(log => {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        if (log.isError) div.classList.add('log-error');
+        div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+        container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  }
+
   async displayCameraInfo(deviceId) {
+    const infoCameraSelect = document.getElementById('info-camera-select');
+    const shouldRender = !infoCameraSelect || infoCameraSelect.value === deviceId;
     const listContainer = document.getElementById('camera-capabilities-list');
-    listContainer.innerHTML = '';
+
+    if (shouldRender && listContainer) {
+        listContainer.innerHTML = '';
+    }
 
     const slot = this.slots.get(deviceId);
-    if (!slot || !slot.stream) {
-        listContainer.innerHTML = '<p>ストリームが有効ではありません。</p>';
+    let info = null;
+
+    if (slot && slot.stream) {
+        const track = slot.stream.getVideoTracks()[0];
+        if (track) {
+            const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+            const settings = track.getSettings ? track.getSettings() : {};
+            info = {
+                'デバイスID': settings.deviceId || 'N/A',
+                '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
+                'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
+                'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
+                'フォーカス': capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A',
+                '露出': capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A',
+                'ホワイトバランス': capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A'
+            };
+            this.cameraInfoCache.set(deviceId, info);
+        }
+    }
+
+    if (!info) {
+        info = this.cameraInfoCache.get(deviceId);
+    }
+
+    if (!info) {
+        if (shouldRender && listContainer) {
+            listContainer.innerHTML = '<p>ストリームが有効ではなく、キャッシュもありません。</p>';
+        }
         return;
     }
 
-    const track = slot.stream.getVideoTracks()[0];
-    if (!track) return;
-
-    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-    const settings = track.getSettings ? track.getSettings() : {};
-
-    const info = {
-        'デバイスID': settings.deviceId || 'N/A',
-        '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
-        'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
-        'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
-        'フォーカス': capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A',
-        '露出': capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A',
-        'ホワイトバランス': capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A'
-    };
+    if (!shouldRender) return;
 
     for (const [label, value] of Object.entries(info)) {
         const item = document.createElement('div');
@@ -455,24 +534,33 @@ class App {
   }
 
   async activateSlot(slot, deviceId) {
+    if (slot.isActivating) {
+        this.addLog(`Skipping activation for ${deviceId.slice(0, 8)} - already in progress`);
+        return;
+    }
+    slot.isActivating = true;
+
     const maxRetries = 3;
-    for (let i = 0; i < maxRetries; i++) {
-        // Check if camera is still needed
-        const isStillNeeded = this.globalSettings.cyclingEnabled
-            ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-            : this.slotOrder.includes(deviceId);
-        if (!isStillNeeded) {
-            return;
-        }
+    try {
+        for (let i = 0; i < maxRetries; i++) {
+            // Check if camera is still needed
+            const isStillNeeded = this.globalSettings.cyclingEnabled
+                ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+                : this.slotOrder.includes(deviceId);
+            if (!isStillNeeded) {
+                this.addLog(`Activation aborted for ${deviceId.slice(0, 8)} - no longer needed`);
+                return;
+            }
 
-        try {
-            const isFallback = i === maxRetries - 1;
-            const stream = await startCamera(deviceId, isFallback);
-            slot.stream = stream;
-            slot.video.srcObject = stream;
-            slot.element.classList.add('active');
+            this.addLog(`Activating camera ${deviceId.slice(0, 8)} (Attempt ${i + 1}/${maxRetries})`);
+            try {
+                const isFallback = i === maxRetries - 1;
+                const stream = await startCamera(deviceId, isFallback);
+                slot.stream = stream;
+                slot.video.srcObject = stream;
+                slot.element.classList.add('active');
 
-            await new Promise((resolve) => {
+                await new Promise((resolve) => {
                 const timeoutId = setTimeout(() => {
                     cleanup();
                     resolve();
@@ -497,28 +585,38 @@ class App {
                 }
             });
 
-            const setting = this.settings[deviceId] || {};
-            if (setting.role === 'whiteboard') {
-                slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
-            }
-            return; // Success
-        } catch (e) {
-            console.error(`Attempt ${i + 1} failed for camera ${deviceId}:`, e);
-            // Cleanup partial stream
-            if (slot.stream) {
-                slot.stream.getTracks().forEach(track => track.stop());
-                slot.stream = null;
-            }
-            slot.video.srcObject = null;
-            slot.element.classList.remove('active');
+                const setting = this.settings[deviceId] || {};
+                if (setting.role === 'whiteboard') {
+                    slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
+                }
+                this.addLog(`Camera ${deviceId.slice(0, 8)} activated successfully`);
 
-            if (i < maxRetries - 1) {
-                await new Promise(r => setTimeout(r, 1000));
-                continue;
+                // Update cache
+                this.displayCameraInfo(deviceId);
+
+                return; // Success
+            } catch (e) {
+                const errorDetail = `${e.name}: ${e.message}`;
+                this.addLog(`Attempt ${i + 1} failed for ${deviceId.slice(0, 8)}: ${errorDetail}`, true);
+
+                // Cleanup partial stream
+                if (slot.stream) {
+                    slot.stream.getTracks().forEach(track => track.stop());
+                    slot.stream = null;
+                }
+                slot.video.srcObject = null;
+                slot.element.classList.remove('active');
+
+                if (i < maxRetries - 1) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    continue;
+                }
+                const suffix = (deviceId || 'unknown').slice(0, 4);
+                this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
             }
-            const suffix = (deviceId || 'unknown').slice(0, 4);
-            this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
         }
+    } finally {
+        slot.isActivating = false;
     }
   }
 

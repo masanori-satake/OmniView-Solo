@@ -11,7 +11,6 @@
 <body class="theme-light">
     <div id="app" class="layout-narrow">
         <header id="app-header">
-            <span class="m3-title">OmniView-Solo</span>
             <div class="header-actions">
                 <button id="add-camera-nav-btn" class="m3-icon-button" title="カメラ追加">
                     <span class="material-symbols-outlined">video_call</span>
@@ -26,13 +25,16 @@
             <div id="settings-overlay"></div>
             <div class="settings-content m3-surface">
                 <nav class="settings-tabs">
-                    <button class="tab-btn active" data-tab="general">
+                    <button class="tab-btn active" data-tab="general" data-tooltip="一般">
                         <span class="material-symbols-outlined">tune</span>
                     </button>
-                    <button class="tab-btn" data-tab="camera-info">
-                        <span class="material-symbols-outlined">visibility</span>
+                    <button class="tab-btn" data-tab="camera-info" data-tooltip="カメラ情報">
+                        <span class="material-symbols-outlined">videocam</span>
                     </button>
-                    <button class="tab-btn" data-tab="about">
+                    <button class="tab-btn" data-tab="logs" data-tooltip="ログ">
+                        <span class="material-symbols-outlined">description</span>
+                    </button>
+                    <button class="tab-btn" data-tab="about" data-tooltip="About">
                         <span class="material-symbols-outlined">info</span>
                     </button>
                 </nav>
@@ -71,10 +73,25 @@
                         <!-- Info will be injected here -->
                     </div>
                 </div>
+                <div class="tab-content hidden" id="tab-logs">
+                    <div class="logs-header">
+                        <button id="copy-logs-btn" class="m3-button">
+                            <span class="material-symbols-outlined">content_copy</span>
+                            ログをコピー
+                        </button>
+                        <button id="clear-logs-btn" class="m3-button">
+                            <span class="material-symbols-outlined">delete</span>
+                            消去
+                        </button>
+                    </div>
+                    <div id="logs-container" class="logs-list">
+                        <!-- Logs will be injected here -->
+                    </div>
+                </div>
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p>Version: 0.1.17</p>
+                        <p>Version: 0.1.18</p>
                         <p>ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong>データの保存場所とリスク</strong></p>

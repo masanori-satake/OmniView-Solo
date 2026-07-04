@@ -11,7 +11,7 @@
 /* Header */
 #app-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 4px 0;
 }
@@ -19,6 +19,7 @@
 .header-actions {
     display: flex;
     gap: 4px;
+    margin-left: auto;
 }
 
 .m3-title {
@@ -95,6 +96,34 @@
 .tab-btn.active {
     border-bottom: 3px solid var(--md-sys-color-primary);
     color: var(--md-sys-color-primary);
+}
+
+/* Tooltip */
+.tab-btn {
+    position: relative;
+}
+
+.tab-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background-color: var(--md-sys-color-inverse-surface);
+    color: var(--md-sys-color-inverse-on-surface);
+    padding: 4px 8px;
+    border-radius: var(--md-sys-shape-extra-small);
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1001;
+}
+
+.tab-btn:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 .tab-content {
@@ -576,4 +605,53 @@ video {
 .info-value {
     font-size: 13px;
     font-weight: 500;
+}
+
+/* Logs Tab */
+.logs-header {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.logs-header .m3-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.logs-header .m3-button .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.logs-list {
+    background-color: var(--md-sys-color-surface-variant);
+    border-radius: var(--md-sys-shape-small);
+    padding: 8px;
+    height: 200px;
+    overflow-y: auto;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+}
+
+.log-entry {
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    padding: 4px 0;
+    word-break: break-all;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: var(--md-sys-color-primary);
+    margin-right: 8px;
+}
+
+.log-error {
+    color: var(--md-sys-color-error);
 }
