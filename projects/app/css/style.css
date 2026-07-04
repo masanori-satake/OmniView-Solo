@@ -321,7 +321,7 @@
     justify-content: center;
 }
 
-video {
+video, .processed-canvas {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -330,6 +330,13 @@ video {
 
 .camera-slot.active video {
     display: block;
+}
+
+.processed-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
 
 .freeze-canvas {
@@ -457,6 +464,37 @@ video {
 .m3-icon-button-small.active {
     background-color: var(--md-sys-color-primary-container);
     color: var(--md-sys-color-on-primary-container);
+}
+
+.m3-button-outlined-small {
+    background: none;
+    border: 1px solid var(--md-sys-color-outline);
+    color: var(--md-sys-color-primary);
+    padding: 0 8px;
+    height: 32px;
+    border-radius: var(--md-sys-shape-extra-small);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.m3-button-outlined-small:hover {
+    background: var(--md-sys-color-surface-variant);
+}
+
+.m3-button-outlined-small.active {
+    background-color: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+    border-color: var(--md-sys-color-primary-container);
+}
+
+.fixed-width-btn {
+    width: 48px;
+    flex-shrink: 0;
 }
 
 .whiteboard-only.hidden {

@@ -1,5 +1,5 @@
 import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS } from './camera.js';
-import { PerspectiveTransformer, MedianStacker } from '../shared/js/processor.js';
+import { WhiteboardProcessor } from '../shared/js/processor.js';
 
 class App {
   constructor() {
@@ -863,7 +863,8 @@ class App {
             });
 
                 const setting = this.settings[deviceId] || {};
-                if (setting.role === 'whiteboard') {
+                const role = setting.defaultRole || 'person';
+                if (role === 'whiteboard') {
                     slot.processor = this.initProcessor(slot.video, slot.canvas, deviceId);
                 }
                 const track = stream.getVideoTracks()[0];
@@ -989,6 +990,7 @@ class App {
     element.innerHTML = `
       <div class="video-wrapper">
         <video autoplay playsinline muted></video>
+        <canvas class="processed-canvas whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}"></canvas>
         <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
         <div class="video-overlay-top-left pause-indicator">
@@ -1020,6 +1022,14 @@ class App {
               <span class="material-symbols-outlined switch-label-icon">edit_square</span>
           </div>
           <input type="text" class="m3-textfield label-input" placeholder="Camera Name">
+
+          <button class="m3-button-outlined-small occlusion-btn whiteboard-only fixed-width-btn ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="写り込み排除">
+              OFF
+          </button>
+          <button class="m3-button-outlined-small enhance-btn whiteboard-only fixed-width-btn ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="強調">
+              ORIG
+          </button>
+
           <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="セット">
               <span class="material-symbols-outlined">settings_overscan</span>
           </button>
@@ -1035,6 +1045,7 @@ class App {
 
     const video = element.querySelector('video');
     const canvas = element.querySelector('.overlay-canvas');
+    const processedCanvas = element.querySelector('.processed-canvas');
     const freezeCanvas = element.querySelector('.freeze-canvas');
     element.querySelector('.label-input').value = setting.customLabel;
 
@@ -1088,6 +1099,47 @@ class App {
       }
     });
 
+    const occlusionBtn = element.querySelector('.occlusion-btn');
+    const enhanceBtn = element.querySelector('.enhance-btn');
+
+    const updateWhiteboardButtons = () => {
+        const s = this.settings[deviceId]?.modes?.whiteboard || {};
+        occlusionBtn.textContent = s.occlusionRemoval ? 'ON' : 'OFF';
+        occlusionBtn.classList.toggle('active', !!s.occlusionRemoval);
+
+        const modeLabels = { 'none': 'ORIG', 'bw': 'B&W', 'color': 'CLR' };
+        enhanceBtn.textContent = modeLabels[s.enhanceMode || 'none'];
+        enhanceBtn.classList.toggle('active', (s.enhanceMode || 'none') !== 'none');
+    };
+    updateWhiteboardButtons();
+
+    occlusionBtn.addEventListener('click', async () => {
+        const slot = this.slots.get(deviceId);
+        if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
+        if (slot && slot.processor) {
+            const current = !!(this.settings[deviceId]?.modes?.whiteboard?.occlusionRemoval);
+            const newValue = !current;
+            slot.processor.setOcclusionRemoval(newValue);
+            this.settings[deviceId].modes.whiteboard.occlusionRemoval = newValue;
+            saveCameraSetting(deviceId, { modes: { whiteboard: { occlusionRemoval: newValue } } });
+            updateWhiteboardButtons();
+        }
+    });
+
+    enhanceBtn.addEventListener('click', async () => {
+        const slot = this.slots.get(deviceId);
+        if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
+        if (slot && slot.processor) {
+            const modes = ['none', 'bw', 'color'];
+            const current = this.settings[deviceId]?.modes?.whiteboard?.enhanceMode || 'none';
+            const next = modes[(modes.indexOf(current) + 1) % modes.length];
+            slot.processor.setEnhanceMode(next);
+            this.settings[deviceId].modes.whiteboard.enhanceMode = next;
+            saveCameraSetting(deviceId, { modes: { whiteboard: { enhanceMode: next } } });
+            updateWhiteboardButtons();
+        }
+    });
+
     const setBtn = element.querySelector('.set-btn');
     setBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
@@ -1122,7 +1174,7 @@ class App {
     copyBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (!slot) return;
-        this.addLog(`Capturing frame for camera ${deviceId.slice(0, 8)} (mode: ${this.settings[deviceId]?.role || 'person'})`);
+        this.addLog(`Capturing frame for camera ${deviceId.slice(0, 8)} (mode: ${this.settings[deviceId]?.defaultRole || 'person'})`);
         try {
             let blob;
             if (slot.processor) {
@@ -1211,14 +1263,17 @@ class App {
       this.settings[deviceId] = { ...this.settings[deviceId], customLabel };
     });
 
-    return { element, video, canvas, freezeCanvas, processor: null, stream: null };
+    return { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null };
   }
 
   initProcessor(video, canvas, deviceId) {
-      const pts = (this.settings[deviceId]?.modes?.whiteboard?.points) || [
+      const slot = this.slots.get(deviceId);
+      const wbSettings = this.settings[deviceId]?.modes?.whiteboard || {};
+      const pts = wbSettings.points || [
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
-      const transformer = new PerspectiveTransformer(video, canvas, pts, (newPts) => {
+
+      const processor = new WhiteboardProcessor(video, canvas, slot.processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(`Perspective adjusted for ${deviceId.slice(0, 8)}: [${ptsStr}]`);
           saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
@@ -1229,27 +1284,12 @@ class App {
           if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
           this.settings[deviceId].modes.whiteboard.points = newPts;
       });
-      const stacker = new MedianStacker(video);
 
-      let animationFrame;
-      const loop = () => {
-          transformer.draw();
-          animationFrame = requestAnimationFrame(loop);
-      };
-      loop();
+      processor.setEnhanceMode(wbSettings.enhanceMode || 'none');
+      processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
+      processor.start();
 
-      return {
-          transformer,
-          stacker,
-          stop: () => {
-              cancelAnimationFrame(animationFrame);
-              transformer.destroy();
-              stacker.cleanup();
-          },
-          capture: async () => {
-              return await stacker.getMedianFrame(transformer);
-          }
-      };
+      return processor;
   }
 
   showSnackbar(message, actionLabel = null, actionCallback = null) {
