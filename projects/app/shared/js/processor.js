@@ -3,16 +3,10 @@ import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
 /**
  * Image enhancement for whiteboard.
  */
-export function applyEnhancement(imageData, mode) {
+export function applyEnhancement(imageData, mode, thresholdValue = 0.45) {
     if (mode === 'none' || !mode) return imageData;
     const data = imageData.data;
     const len = data.length;
-
-    // Simple Adaptive-ish Binarization:
-    // Instead of global min/max, we could do blocks, but let's at least
-    // optimize the current one and make it feel more "adaptive" by
-    // using a slightly more sophisticated thresholding if possible.
-    // For now, let's keep it simple but correct.
 
     let min = 255, max = 0;
     for (let i = 0; i < len; i += 4) {
@@ -23,14 +17,17 @@ export function applyEnhancement(imageData, mode) {
     const range = max - min || 1;
 
     if (mode === 'bw') {
-        const threshold = min + range * 0.45;
+        const threshold = min + range * thresholdValue;
         for (let i = 0; i < len; i += 4) {
             const avg = (data[i] + data[i+1] + data[i+2]) / 3;
             const val = avg > threshold ? 255 : 0;
             data[i] = data[i+1] = data[i+2] = val;
         }
     } else if (mode === 'color') {
-        const whitePoint = min + range * 0.8;
+        // Use thresholdValue to adjust the white point as well
+        // Map thresholdValue [0.0, 1.0] to white point range
+        // If thresholdValue is high, more pixels become white.
+        const whitePoint = min + range * (1.0 - thresholdValue * 0.5);
         for (let i = 0; i < len; i += 4) {
             const r = data[i], g = data[i+1], b = data[i+2];
             const avg = (r + g + b) / 3;
@@ -294,13 +291,14 @@ export class MedianStacker {
     cleanup() {
         if (this.interval) { clearInterval(this.interval); this.interval = null; }
         this.history = [];
+        this.lastMedian = null;
     }
 
-    async getMedianFrame(transformer, enhanceMode = 'none') {
+    async getMedianFrame(transformer, enhanceMode = 'none', threshold = 0.45) {
         const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
         if (!base) return null;
         const warped = await transformer.getWarpedFrame(base);
-        const enhanced = applyEnhancement(warped, enhanceMode);
+        const enhanced = applyEnhancement(warped, enhanceMode, threshold);
         const canvas = document.createElement('canvas');
         canvas.width = enhanced.width; canvas.height = enhanced.height;
         canvas.getContext('2d').putImageData(enhanced, 0, 0);
@@ -332,12 +330,14 @@ export class WhiteboardProcessor {
         this.transformer.processedCanvas = processedCanvas;
         this.stacker = new MedianStacker(video);
         this.enhanceMode = 'none';
+        this.threshold = 0.45;
         this.occlusionRemoval = false;
         this.animationFrame = null;
         this.cachedImageData = null;
     }
 
     setEnhanceMode(mode) { this.enhanceMode = mode; this.transformer.updateTransform(); }
+    setThreshold(val) { this.threshold = val; }
     setOcclusionRemoval(enabled) {
         this.occlusionRemoval = enabled;
         if (enabled) this.stacker.start();
@@ -394,7 +394,7 @@ export class WhiteboardProcessor {
                 this.cachedImageData.data.set(imageData.data);
                 dataToEnhance = this.cachedImageData;
             }
-            applyEnhancement(dataToEnhance, this.enhanceMode);
+            applyEnhancement(dataToEnhance, this.enhanceMode, this.threshold);
             this.ctx.putImageData(dataToEnhance, 0, 0);
         } else {
             this.ctx.putImageData(imageData, 0, 0);
@@ -412,7 +412,7 @@ export class WhiteboardProcessor {
             imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         }
         const warped = await this.transformer.getWarpedFrame(imageData);
-        const enhanced = applyEnhancement(warped, this.enhanceMode);
+        const enhanced = applyEnhancement(warped, this.enhanceMode, this.threshold);
         const outCanvas = document.createElement('canvas');
         outCanvas.width = enhanced.width; outCanvas.height = enhanced.height;
         outCanvas.getContext('2d').putImageData(enhanced, 0, 0);

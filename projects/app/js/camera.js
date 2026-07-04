@@ -94,6 +94,7 @@ export async function saveCameraSetting(deviceId, settings) {
     const updated = {
       customLabel: '',
       defaultRole: 'person',
+      mediaSettingsFixed: false,
       ...existing,
       ...settings,
       modes: {

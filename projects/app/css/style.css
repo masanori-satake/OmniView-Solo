@@ -497,6 +497,11 @@ video, .processed-canvas {
     flex-shrink: 0;
 }
 
+.m3-button-outlined-small.active-mode {
+    background-color: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+
 .whiteboard-only.hidden {
     display: none !important;
 }
@@ -702,6 +707,59 @@ video, .processed-canvas {
 .camera-list-item.disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Adjustment Panel */
+.adjustment-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(var(--md-sys-color-surface-rgb), 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 5;
+    padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    transition: transform 0.3s ease;
+    transform: translateY(100%);
+}
+
+.adjustment-panel.visible {
+    transform: translateY(0);
+}
+
+.adj-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.adj-label {
+    font-size: 12px;
+    min-width: 80px;
+    color: var(--md-sys-color-on-surface);
+}
+
+.adj-control {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.m3-slider {
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.adj-group {
+    display: flex;
+    gap: 4px;
 }
 
 /* Info List */

@@ -874,6 +874,16 @@ class App {
                 // Update cache
                 this.displayCameraInfo(deviceId);
 
+                // Restore lock state if saved
+                if (setting.mediaSettingsFixed) {
+                    await this.applyMediaLock(track, true);
+                    const lockBtn = slot.element.querySelector('.lock-btn');
+                    if (lockBtn) {
+                        lockBtn.classList.add('locked');
+                        lockBtn.querySelector('.material-symbols-outlined').textContent = 'lock';
+                    }
+                }
+
                 return true; // Success
             } catch (e) {
                 const errorDetail = `${e.name}: ${e.message}`;
@@ -993,6 +1003,28 @@ class App {
         <canvas class="processed-canvas whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}"></canvas>
         <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
+        <div class="adjustment-panel">
+            <div class="adj-row">
+                <span class="adj-label">写り込み排除</span>
+                <div class="adj-control">
+                    <button class="m3-button-outlined-small occlusion-btn-adj fixed-width-btn">OFF</button>
+                </div>
+            </div>
+            <div class="adj-row">
+                <span class="adj-label">強調</span>
+                <div class="adj-control adj-group">
+                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="none">ORIG</button>
+                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="bw">B&W</button>
+                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="color">CLR</button>
+                </div>
+            </div>
+            <div class="adj-row">
+                <span class="adj-label">しきい値</span>
+                <div class="adj-control">
+                    <input type="range" class="m3-slider threshold-slider" min="0" max="100" value="45">
+                </div>
+            </div>
+        </div>
         <div class="video-overlay-top-left pause-indicator">
             <span class="material-symbols-outlined">pause_circle</span>
         </div>
@@ -1023,14 +1055,15 @@ class App {
           </div>
           <input type="text" class="m3-textfield label-input" placeholder="Camera Name">
 
-          <button class="m3-button-outlined-small occlusion-btn whiteboard-only fixed-width-btn ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="写り込み排除">
-              OFF
-          </button>
-          <button class="m3-button-outlined-small enhance-btn whiteboard-only fixed-width-btn ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="強調">
-              ORIG
+          <button class="m3-icon-button-small lock-btn" title="フォーカス・露出を固定">
+              <span class="material-symbols-outlined">lock_open</span>
           </button>
 
-          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="セット">
+          <button class="m3-icon-button-small adjust-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="画質調整">
+              <span class="material-symbols-outlined">tune</span>
+          </button>
+
+          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="台形補正">
               <span class="material-symbols-outlined">settings_overscan</span>
           </button>
           <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="リセット">
@@ -1052,7 +1085,32 @@ class App {
     element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
-    element.querySelector('.video-wrapper').onclick = () => this.switchActiveCamera(deviceId);
+    element.querySelector('.video-wrapper').onclick = (e) => {
+        // Prevent click if clicking adjustment panel
+        if (e.target.closest('.adjustment-panel')) return;
+        this.switchActiveCamera(deviceId);
+    };
+
+    const lockBtn = element.querySelector('.lock-btn');
+    lockBtn.addEventListener('click', async () => {
+        const slot = this.slots.get(deviceId);
+        if (!slot || !slot.stream) return;
+        const track = slot.stream.getVideoTracks()[0];
+        if (!track) return;
+
+        const isLocked = lockBtn.classList.contains('locked');
+        const nextLocked = !isLocked;
+
+        const success = await this.applyMediaLock(track, nextLocked);
+        if (success || !nextLocked) {
+            lockBtn.classList.toggle('locked', nextLocked);
+            lockBtn.querySelector('.material-symbols-outlined').textContent = nextLocked ? 'lock' : 'lock_open';
+            saveCameraSetting(deviceId, { mediaSettingsFixed: nextLocked });
+            this.addLog(`Camera ${deviceId.slice(0, 8)} settings ${nextLocked ? 'locked' : 'unlocked'}`);
+        } else {
+            this.showSnackbar('このカメラは設定の固定に対応していない可能性があります');
+        }
+    });
 
     const roleSwitch = element.querySelector('.role-switch');
     roleSwitch.addEventListener('change', async (e) => {
@@ -1099,45 +1157,77 @@ class App {
       }
     });
 
-    const occlusionBtn = element.querySelector('.occlusion-btn');
-    const enhanceBtn = element.querySelector('.enhance-btn');
+    const adjPanel = element.querySelector('.adjustment-panel');
+    const adjustBtn = element.querySelector('.adjust-btn');
+    const occlusionBtnAdj = element.querySelector('.occlusion-btn-adj');
+    const enhanceBtnsAdj = element.querySelectorAll('.enhance-btn-adj');
+    const thresholdSlider = element.querySelector('.threshold-slider');
 
-    const updateWhiteboardButtons = () => {
+    const updateWhiteboardUI = () => {
         const s = this.settings[deviceId]?.modes?.whiteboard || {};
-        occlusionBtn.textContent = s.occlusionRemoval ? 'ON' : 'OFF';
-        occlusionBtn.classList.toggle('active', !!s.occlusionRemoval);
+        occlusionBtnAdj.textContent = s.occlusionRemoval ? 'ON' : 'OFF';
+        occlusionBtnAdj.classList.toggle('active-mode', !!s.occlusionRemoval);
 
-        const modeLabels = { 'none': 'ORIG', 'bw': 'B&W', 'color': 'CLR' };
-        enhanceBtn.textContent = modeLabels[s.enhanceMode || 'none'];
-        enhanceBtn.classList.toggle('active', (s.enhanceMode || 'none') !== 'none');
+        const currentMode = s.enhanceMode || 'none';
+        enhanceBtnsAdj.forEach(btn => {
+            btn.classList.toggle('active-mode', btn.dataset.mode === currentMode);
+        });
+
+        const threshold = s.threshold !== undefined ? s.threshold : 0.45;
+        thresholdSlider.value = threshold * 100;
     };
-    updateWhiteboardButtons();
+    updateWhiteboardUI();
 
-    occlusionBtn.addEventListener('click', async () => {
+    adjustBtn.addEventListener('click', () => {
+        adjPanel.classList.toggle('visible');
+        adjustBtn.classList.toggle('active', adjPanel.classList.contains('visible'));
+    });
+
+    occlusionBtnAdj.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
         if (slot && slot.processor) {
             const current = !!(this.settings[deviceId]?.modes?.whiteboard?.occlusionRemoval);
             const newValue = !current;
             slot.processor.setOcclusionRemoval(newValue);
+            if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
+            if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
             this.settings[deviceId].modes.whiteboard.occlusionRemoval = newValue;
             saveCameraSetting(deviceId, { modes: { whiteboard: { occlusionRemoval: newValue } } });
-            updateWhiteboardButtons();
+            updateWhiteboardUI();
         }
     });
 
-    enhanceBtn.addEventListener('click', async () => {
+    enhanceBtnsAdj.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const slot = this.slots.get(deviceId);
+            if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
+            if (slot && slot.processor) {
+                const next = btn.dataset.mode;
+                slot.processor.setEnhanceMode(next);
+                if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
+                if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
+                this.settings[deviceId].modes.whiteboard.enhanceMode = next;
+                saveCameraSetting(deviceId, { modes: { whiteboard: { enhanceMode: next } } });
+                updateWhiteboardUI();
+            }
+        });
+    });
+
+    thresholdSlider.addEventListener('input', (e) => {
         const slot = this.slots.get(deviceId);
-        if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
+        const val = parseFloat(e.target.value) / 100;
         if (slot && slot.processor) {
-            const modes = ['none', 'bw', 'color'];
-            const current = this.settings[deviceId]?.modes?.whiteboard?.enhanceMode || 'none';
-            const next = modes[(modes.indexOf(current) + 1) % modes.length];
-            slot.processor.setEnhanceMode(next);
-            this.settings[deviceId].modes.whiteboard.enhanceMode = next;
-            saveCameraSetting(deviceId, { modes: { whiteboard: { enhanceMode: next } } });
-            updateWhiteboardButtons();
+            slot.processor.setThreshold(val);
         }
+        if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
+        if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
+        this.settings[deviceId].modes.whiteboard.threshold = val;
+    });
+
+    thresholdSlider.addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value) / 100;
+        saveCameraSetting(deviceId, { modes: { whiteboard: { threshold: val } } });
     });
 
     const setBtn = element.querySelector('.set-btn');
@@ -1285,10 +1375,64 @@ class App {
       });
 
       processor.setEnhanceMode(wbSettings.enhanceMode || 'none');
+      processor.setThreshold(wbSettings.threshold !== undefined ? wbSettings.threshold : 0.45);
       processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
       processor.start();
 
       return processor;
+  }
+
+  async applyMediaLock(track, locked) {
+      if (!track.getCapabilities || !track.getSettings) return false;
+      const capabilities = track.getCapabilities();
+      const settings = track.getSettings();
+      const constraints = { advanced: [] };
+      const adv = {};
+
+      const modes = [
+          { prop: 'focusMode', setting: 'focusMode', constr: 'focusMode' },
+          { prop: 'exposureMode', setting: 'exposureMode', constr: 'exposureMode' },
+          { prop: 'whiteBalanceMode', setting: 'whiteBalanceMode', constr: 'whiteBalanceMode' }
+      ];
+
+      let anyChange = false;
+      for (const mode of modes) {
+          if (capabilities[mode.prop]) {
+              if (locked) {
+                  if (capabilities[mode.prop].includes('manual')) {
+                      adv[mode.constr] = 'manual';
+                      // Also try to fix current values
+                      const valProps = {
+                          'focusMode': 'focusDistance',
+                          'exposureMode': 'exposureTime',
+                          'whiteBalanceMode': 'colorTemperature'
+                      };
+                      const valProp = valProps[mode.prop];
+                      if (valProp && settings[valProp] !== undefined && capabilities[valProp]) {
+                          adv[valProp] = settings[valProp];
+                      }
+                      anyChange = true;
+                  }
+              } else {
+                  if (capabilities[mode.prop].includes('continuous')) {
+                      adv[mode.constr] = 'continuous';
+                      anyChange = true;
+                  }
+              }
+          }
+      }
+
+      if (Object.keys(adv).length > 0) {
+          constraints.advanced.push(adv);
+          try {
+              await track.applyConstraints(constraints);
+              return true;
+          } catch (e) {
+              this.addLog(`Failed to apply constraints: ${e.message}`, true);
+              return false;
+          }
+      }
+      return anyChange;
   }
 
   showSnackbar(message, actionLabel = null, actionCallback = null) {
