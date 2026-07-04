@@ -207,7 +207,7 @@ class App {
         a.href = url;
         a.download = `omniview_settings_${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
         this.addLog('Settings exported successfully');
     });
 
@@ -586,6 +586,7 @@ class App {
         clearTimeout(this.cycleTimeoutId);
         this.cycleTimeoutId = null;
     }
+    this.cycleCount++;
 
     const index = this.slotOrder.indexOf(deviceId);
     if (index === -1) return;
