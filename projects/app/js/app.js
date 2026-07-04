@@ -1222,6 +1222,7 @@ class App {
         if (slot && slot.processor) {
             slot.processor.setThreshold(val);
         }
+        if (!this.settings[deviceId]) this.settings[deviceId] = {};
         if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
         if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
         this.settings[deviceId].modes.whiteboard.threshold = val;
