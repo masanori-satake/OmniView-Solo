@@ -1,0 +1,27 @@
+# OmniView-Solo
+
+## プロジェクト概要
+OmniView-Soloは、ハイブリッド会議の視認性と体験を向上させるための、ローカル完結型Chrome拡張機能（サイドパネル専用）です。
+
+## 開発指針
+1. **完全ローカル完結**: 外部サーバー、クラウドAPI、トラッキング、外部CDNなどは一切使用禁止。
+2. **Material 3 (M3) 準拠**: GoogleのMaterial Design 3に完全準拠したUI/UXを提供すること。
+3. **Vanilla JS & ゼロ依存**: 画像処理ライブラリ（同梱必須）を除き、可能な限り生のJavaScriptで実装すること。
+
+## ディレクトリ構成
+- `projects/app/`: 拡張機能のソースコード
+- `projects/web/`: 紹介ページ・プライバシーポリシー（GitHub Pages）
+- `shared/`: 共通アセット・CSS
+- `scripts/`: ビルド・ユーティリティスクリプト
+- `docs/`: 要件定義・技術仕様書
+
+## 主要機能
+- 射影変換（歪み補正）
+- 写り込み除去（メディアンフィルタ）
+- 複数カメラ対応 & 設定自動復元
+- Material 3 準拠のスナックバー、ダイアログ、スイッチ
+
+## ビルド・リリース
+- `npm run build`: 拡張機能のパッケージ（zip）を作成
+- `npm run test`: バージョン整合性とビルドの検証
+- `python3 scripts/generate_png_icons.py`: SVGから各サイズのアイコン画像を生成

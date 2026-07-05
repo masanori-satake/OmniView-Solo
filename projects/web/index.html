@@ -1,26 +1,218 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>OmniView-Solo - 1秒でホワイトボードを劇的に美しく</title>
-    <link rel="stylesheet" href="../../shared/css/m3-theme.css">
-    <link rel="stylesheet" href="css/landing.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="title" content="OmniView-Solo" />
+    <meta name="description" content="Hybrid meeting assistant for whiteboard enhancement." />
+    <title>OmniView-Solo</title>
+    <style>
+      :root {
+        --md-sys-color-primary: #6D5E00;
+        --md-sys-color-on-primary: #ffffff;
+        --md-sys-color-primary-container: #FFF29C;
+        --md-sys-color-on-primary-container: #221B00;
+        --md-sys-color-surface: #FFFBFF;
+        --md-sys-color-on-surface: #1C1C00;
+        --md-sys-color-outline: #797869;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        line-height: 1.6;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--md-sys-color-outline);
+      }
+      .lang-switcher {
+        display: flex;
+        gap: 0.5rem;
+        margin-left: 1.5rem;
+      }
+      .lang-switch {
+        cursor: pointer;
+        background: none;
+        border: 1px solid var(--md-sys-color-outline);
+        border-radius: 4px;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+        color: var(--md-sys-color-on-surface);
+      }
+      .lang-switch.active {
+        background-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        border-color: var(--md-sys-color-primary);
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        text-decoration: none;
+        color: var(--md-sys-color-on-surface);
+      }
+      .logo img {
+          width: 32px;
+          height: 32px;
+          margin-right: 8px;
+      }
+      nav a {
+        margin-left: 1.5rem;
+        text-decoration: none;
+        color: var(--md-sys-color-on-surface);
+      }
+      main {
+        max-width: 800px;
+        margin: 4rem auto;
+        padding: 0 2rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+      .tagline {
+        font-size: 1.2rem;
+        color: var(--md-sys-color-outline);
+        margin-bottom: 2rem;
+      }
+      .cta-button {
+        display: inline-block;
+        background-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        padding: 0.8rem 2rem;
+        border-radius: 100px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-bottom: 4rem;
+      }
+      section {
+        text-align: left;
+        margin-bottom: 4rem;
+      }
+      h2 {
+        border-bottom: 2px solid var(--md-sys-color-primary);
+        display: inline-block;
+        margin-bottom: 2rem;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+      }
+      .feature-item {
+        padding: 1.5rem;
+        border: 1px solid var(--md-sys-color-outline);
+        border-radius: 16px;
+      }
+      .feature-item h3 {
+        margin-top: 0;
+        color: var(--md-sys-color-primary);
+      }
+      footer {
+        text-align: center;
+        padding: 2rem;
+        border-top: 1px solid var(--md-sys-color-outline);
+        color: var(--md-sys-color-outline);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
     <header>
-        <h1>OmniView-Solo</h1>
-        <p>ローカル完結型・ハイブリッド会議用ホワイトボード強化Chrome拡張機能</p>
+      <a href="index.html" class="logo">
+        <img src="assets/icon32.png" alt="OmniView-Solo Logo" />
+        OmniView-Solo
+      </a>
+      <nav style="display: flex; align-items: center">
+        <a href="usage.html" data-i18n="usage">使い方</a>
+        <a href="privacy.html" data-i18n="privacy">プライバシーポリシー</a>
+        <div class="lang-switcher">
+          <button class="lang-switch" data-lang="en" data-i18n="langEn">
+            English
+          </button>
+          <button class="lang-switch" data-lang="ja" data-i18n="langJa">
+            日本語
+          </button>
+        </div>
+      </nav>
     </header>
+
     <main>
-        <section>
-            <h2>特徴</h2>
-            <ul>
-                <li>完全ローカル完結: セキュリティが厳しい環境でも安心</li>
-                <li>射影変換: ホワイトボードの歪みを正面に補正</li>
-                <li>視認性向上: 適応的二値化による文字の強調</li>
-                <li>写り込み排除: 動く人をノイズとして自動除去</li>
-            </ul>
-        </section>
+      <h1>OmniView-Solo</h1>
+      <p class="tagline" data-i18n="tagline">
+        〜ハイブリッド会議のホワイトボードを劇的に見やすく〜
+      </p>
+      <a
+        href="#"
+        class="cta-button"
+        data-i18n="cta"
+        >Chrome ウェブストアで追加 (準備中)</a
+      >
+
+      <section>
+        <h2 data-i18n="projectOverview">プロジェクト概要</h2>
+        <p data-i18n="overviewText">
+          OmniView-Soloは、ハイブリッド会議において、物理的なホワイトボードの映像をリモート参加者にも見やすく共有するためのChrome拡張機能です。
+          歪みの補正、写り込みの除去、コントラスト強調などの処理をすべてローカルブラウザ上で行います。
+        </p>
+      </section>
+
+      <section>
+        <h2 data-i18n="features">特徴</h2>
+        <div class="features">
+          <div class="feature-item">
+            <h3 data-i18n="featurePerspective">射影変換</h3>
+            <p data-i18n="featurePerspectiveText">
+              斜めから撮影されたホワイトボードを、正面から見たような綺麗な長方形に補正します。
+            </p>
+          </div>
+          <div class="feature-item">
+            <h3 data-i18n="featureOcclusion">写り込み除去</h3>
+            <p data-i18n="featureOcclusionText">
+              時間的中央値フィルタにより、ホワイトボードの前を横切る人や腕を自動的に排除します。
+            </p>
+          </div>
+          <div class="feature-item">
+            <h3 data-i18n="featureLocal">完全ローカル実行</h3>
+            <p data-i18n="featureLocalText">
+              すべての画像処理はブラウザ内で行われ、外部サーバーへデータを送信することはありません。
+            </p>
+          </div>
+          <div class="feature-item">
+            <h3 data-i18n="featureM3">Material 3 UI</h3>
+            <p data-i18n="featureM3Text">
+              Google Material 3 デザインに準拠した直感的でモダンなインターフェースを提供します。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="install">インストール方法</h2>
+        <ol style="text-align: left; display: inline-block">
+          <li data-i18n="installStep1">
+            Chrome ウェブストアにアクセスします（公開後）。
+          </li>
+          <li data-i18n="installStep2">
+            「Chromeに追加」ボタンをクリックします。
+          </li>
+          <li data-i18n="installStep3">
+            サイドパネルから OmniView-Solo を起動し、カメラを選択してホワイトボード補正を開始しましょう。
+          </li>
+        </ol>
+      </section>
     </main>
-</body>
+
+    <footer>
+      <p data-i18n="copyright">&copy; 2024 OmniView-Solo. All rights reserved.</p>
+    </footer>
+    <script src="i18n.js"></script>
+  </body>
 </html>

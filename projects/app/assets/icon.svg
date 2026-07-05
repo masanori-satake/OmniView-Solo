@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outside wall (Dark Yellow) -->
+  <circle cx="12" cy="12" r="11" fill="#6D5E00"/>
+  <!-- Inside area (Light Yellow) -->
+  <circle cx="12" cy="12" r="9" fill="#FFF29C"/>
+  <!-- Video Camera Icon (Dark Yellow) -->
+  <path d="M15 10.5V8c0-.55-.45-1-1-1H6c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-2.5l3 3v-7l-3 3z" fill="#6D5E00"/>
+</svg>
