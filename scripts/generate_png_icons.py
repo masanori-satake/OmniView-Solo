@@ -29,37 +29,36 @@ def generate_icons(output_dir=None):
         if not os.path.exists(web_assets_dir): os.makedirs(web_assets_dir)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 512, "height": 512})
-        # Use a wrapper to center and ensure it fills the viewport
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
-                svg {{ width: 100%; height: 100%; display: block; }}
-            </style>
-        </head>
-        <body>
-            {svg_content}
-        </body>
-        </html>
-        """
-        page.set_content(html_content)
+        with p.chromium.launch() as browser:
+            page = browser.new_page(viewport={"width": 512, "height": 512})
+            # Use a wrapper to center and ensure it fills the viewport
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}
+                    svg {{ width: 100%; height: 100%; display: block; }}
+                </style>
+            </head>
+            <body>
+                {svg_content}
+            </body>
+            </html>
+            """
+            page.set_content(html_content)
 
-        for size in [16, 32, 48, 128]:
-            out = os.path.join(output_dir, f"icon{size}.png")
-            page.set_viewport_size({"width": size, "height": size})
-            page.wait_for_timeout(100)
-            page.screenshot(path=out, omit_background=True)
-            print(f"Generated {out}")
+            for size in [16, 32, 48, 128]:
+                out = os.path.join(output_dir, f"icon{size}.png")
+                page.set_viewport_size({"width": size, "height": size})
+                page.wait_for_timeout(100)
+                page.screenshot(path=out, omit_background=True)
+                print(f"Generated {out}")
 
-            # Sync to web assets
-            if os.path.exists(web_assets_dir):
-                import shutil
-                shutil.copy2(out, os.path.join(web_assets_dir, f"icon{size}.png"))
-        browser.close()
+                # Sync to web assets
+                if os.path.exists(web_assets_dir):
+                    import shutil
+                    shutil.copy2(out, os.path.join(web_assets_dir, f"icon{size}.png"))
     return True
 
 if __name__ == "__main__":
