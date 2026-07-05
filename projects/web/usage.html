@@ -4,34 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>使い方 - OmniView-Solo</title>
+    <link rel="stylesheet" href="css/shared.css" />
     <style>
-      :root {
-        --md-sys-color-primary: #6D5E00;
-        --md-sys-color-on-primary: #ffffff;
-        --md-sys-color-surface: #FFFBFF;
-        --md-sys-color-on-surface: #1C1C00;
-        --md-sys-color-outline: #797869;
-      }
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        background-color: var(--md-sys-color-surface);
-        color: var(--md-sys-color-on-surface);
-        line-height: 1.6;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 2rem;
-        border-bottom: 1px solid var(--md-sys-color-outline);
-      }
-      .logo {
-        font-weight: bold;
-        font-size: 1.2rem;
-        text-decoration: none;
-        color: var(--md-sys-color-on-surface);
-      }
       main {
         max-width: 800px;
         margin: 4rem auto;
@@ -50,18 +24,26 @@
       li {
           margin-bottom: 1rem;
       }
-      footer {
-        text-align: center;
-        padding: 2rem;
-        border-top: 1px solid var(--md-sys-color-outline);
-        color: var(--md-sys-color-outline);
-        font-size: 0.9rem;
-      }
     </style>
   </head>
   <body>
     <header>
-      <a href="index.html" class="logo">OmniView-Solo</a>
+      <a href="index.html" class="logo">
+        <img src="assets/icon32.png" alt="OmniView-Solo Logo" />
+        OmniView-Solo
+      </a>
+      <nav>
+        <a href="usage.html" data-i18n="usage">使い方</a>
+        <a href="privacy.html" data-i18n="privacy">プライバシーポリシー</a>
+        <div class="lang-switcher">
+          <button class="lang-switch" data-lang="en" data-i18n="langEn">
+            English
+          </button>
+          <button class="lang-switch" data-lang="ja" data-i18n="langJa">
+            日本語
+          </button>
+        </div>
+      </nav>
     </header>
 
     <main>

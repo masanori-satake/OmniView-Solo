@@ -1,0 +1,71 @@
+:root {
+  --md-sys-color-primary: #6D5E00;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #FFF29C;
+  --md-sys-color-on-primary-container: #221B00;
+  --md-sys-color-surface: #FFFBFF;
+  --md-sys-color-on-surface: #1C1C00;
+  --md-sys-color-outline: #797869;
+}
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.6;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--md-sys-color-outline);
+}
+.lang-switcher {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+}
+.lang-switch {
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface);
+}
+.lang-switch.active {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-decoration: none;
+  color: var(--md-sys-color-on-surface);
+}
+.logo img {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+}
+nav {
+    display: flex;
+    align-items: center;
+}
+nav a {
+  margin-left: 1.5rem;
+  text-decoration: none;
+  color: var(--md-sys-color-on-surface);
+}
+footer {
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-outline);
+  font-size: 0.9rem;
+}
