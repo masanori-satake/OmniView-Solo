@@ -13,6 +13,16 @@ export class PerspectiveTransformer {
         this.draggingPoint = null;
         this.showHandles = false;
         this.processedCanvas = null;
+        this.lastTransform = '';
+        this.lastObjectFit = '';
+
+        this.resizeObserver = new ResizeObserver(() => {
+            this.updateTransform();
+            this.draw();
+        });
+        this.resizeObserver.observe(this.canvas);
+
+        this.updateTransform();
 
         this.boundMouseMove = (e) => {
             if (this.draggingPoint !== null) {
@@ -57,7 +67,9 @@ export class PerspectiveTransformer {
     }
 
     setShowingHandles(visible) {
+        if (this.showHandles === visible) return;
         this.showHandles = visible;
+        this.updateTransform();
         this.draw();
     }
 
@@ -74,50 +86,62 @@ export class PerspectiveTransformer {
         const elements = [this.video];
         if (this.processedCanvas) elements.push(this.processedCanvas);
 
+        let transform = '';
+        let objectFit = 'fill';
+
         if (this.showHandles) {
-            elements.forEach(el => {
-                el.style.transform = '';
-                el.style.width = '100%';
-                el.style.height = '100%';
-                el.style.objectFit = 'contain';
-            });
-            return;
+            transform = '';
+            objectFit = 'contain';
+        } else {
+            const cw = this.canvas.clientWidth || 300;
+            const ch = this.canvas.clientHeight || 169;
+            const corners = [{x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}];
+
+            const target = this.points.map(p => ({
+                x: (p.x / 100) * cw,
+                y: (p.y / 100) * ch
+            }));
+
+            const H_inv = getHomography(target, corners);
+            transform = toMatrix3d(H_inv);
+            objectFit = 'fill';
         }
 
-        const cw = this.canvas.clientWidth || 300;
-        const ch = this.canvas.clientHeight || 169;
-        const corners = [{x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}];
-
-        elements.forEach(el => el.style.objectFit = 'fill');
-
-        const target = this.points.map(p => ({
-            x: (p.x / 100) * cw,
-            y: (p.y / 100) * ch
-        }));
-
-        const H_inv = getHomography(target, corners);
-        const transform = toMatrix3d(H_inv);
+        if (this.lastTransform === transform && this.lastObjectFit === objectFit) {
+            return;
+        }
 
         elements.forEach(el => {
             el.style.transformOrigin = '0 0';
             el.style.transform = transform;
             el.style.width = '100%';
             el.style.height = '100%';
+            el.style.objectFit = objectFit;
         });
+
+        this.lastTransform = transform;
+        this.lastObjectFit = objectFit;
     }
 
     destroy() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
         this.canvas.removeEventListener('mousedown', this.boundMouseDown);
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
         this.video.style.transform = '';
+        this.video.style.objectFit = 'contain';
         this.video.style.visibility = 'visible';
-        if (this.processedCanvas) this.processedCanvas.style.display = 'none';
+        if (this.processedCanvas) {
+            this.processedCanvas.style.transform = '';
+            this.processedCanvas.style.display = 'none';
+        }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     draw() {
-        this.updateTransform();
         const width = this.canvas.clientWidth;
         const height = this.canvas.clientHeight;
         if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -125,6 +149,7 @@ export class PerspectiveTransformer {
             this.canvas.height = height;
         }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
         if (!this.showHandles) return;
 
         this.ctx.beginPath();
@@ -287,9 +312,12 @@ export class WhiteboardProcessor {
         this.stacker = new MedianStacker(video);
         this.occlusionRemoval = false;
         this.animationFrame = null;
+        this.lastVisibility = '';
+        this.lastDisplay = '';
     }
 
     setOcclusionRemoval(enabled) {
+        if (this.occlusionRemoval === enabled) return;
         this.occlusionRemoval = enabled;
         if (enabled) this.stacker.start();
         else this.stacker.cleanup();
@@ -308,14 +336,24 @@ export class WhiteboardProcessor {
     }
 
     render() {
-        this.transformer.draw();
+        if (this.transformer.showHandles) {
+            this.transformer.draw();
+        }
+
+        const visibility = this.occlusionRemoval ? 'hidden' : 'visible';
+        const display = this.occlusionRemoval ? 'block' : 'none';
+
+        if (this.lastVisibility !== visibility) {
+            this.video.style.visibility = visibility;
+            this.lastVisibility = visibility;
+        }
+        if (this.lastDisplay !== display) {
+            this.processedCanvas.style.display = display;
+            this.lastDisplay = display;
+        }
+
         if (this.occlusionRemoval) {
-            this.video.style.visibility = 'hidden';
-            this.processedCanvas.style.display = 'block';
             this.drawProcessedFrame();
-        } else {
-            this.video.style.visibility = 'visible';
-            this.processedCanvas.style.display = 'none';
         }
     }
 
