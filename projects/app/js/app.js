@@ -20,10 +20,34 @@ class App {
     this.logs = [];
   }
 
+  initI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      let message;
+      if (key === 'aboutVersion') {
+          message = chrome.i18n.getMessage(key, [chrome.runtime.getManifest().version]);
+      } else {
+          message = chrome.i18n.getMessage(key);
+      }
+      if (message) el.textContent = message;
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      const message = chrome.i18n.getMessage(key);
+      if (message) el.title = message;
+    });
+    document.querySelectorAll('[data-i18n-tooltip]').forEach(el => {
+      const key = el.getAttribute('data-i18n-tooltip');
+      const message = chrome.i18n.getMessage(key);
+      if (message) el.dataset.tooltip = message;
+    });
+  }
+
   async init() {
+    this.initI18n();
     this.settings = await loadCameraSettings();
     this.globalSettings = await loadGlobalSettings();
-    this.addLog(`Global settings loaded: cyclingEnabled=${this.globalSettings.cyclingEnabled}, interval=${this.globalSettings.interval}`);
+    this.addLog(chrome.i18n.getMessage('logGlobalSettings', [String(this.globalSettings.cyclingEnabled), String(this.globalSettings.interval)]));
     this.cameras = await getCameras();
 
     this.setupStartButton();
@@ -32,10 +56,10 @@ class App {
     this.setupAddCameraButton();
 
     // Log initial device list
-    this.addLog('--- App initialized ---');
+    this.addLog(chrome.i18n.getMessage('logAppInitialized'));
     this.logDeviceList();
     navigator.mediaDevices.addEventListener('devicechange', () => {
-        this.addLog('Device configuration changed');
+        this.addLog(chrome.i18n.getMessage('logDeviceConfigChanged'));
         this.logDeviceList();
     });
 
@@ -164,9 +188,9 @@ class App {
         const text = this.logs.map(l => `[${l.time}] ${l.message}`).join('\n');
         try {
             await navigator.clipboard.writeText(text);
-            this.showSnackbar('ログをコピーしました');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarLogsCopied'));
         } catch (e) {
-            this.showSnackbar('コピーに失敗しました');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarCopyFailed'));
         }
     });
 
@@ -178,7 +202,7 @@ class App {
     const updateInterval = async (val) => {
         this.globalSettings.interval = Math.max(1, parseInt(val) || 1);
         intervalInput.value = this.globalSettings.interval;
-        this.addLog(`Interval changed to ${this.globalSettings.interval}s`);
+        this.addLog(chrome.i18n.getMessage('logIntervalChanged', [String(this.globalSettings.interval)]));
         await saveGlobalSettings(this.globalSettings);
     };
 
@@ -188,7 +212,7 @@ class App {
 
     cyclingSwitch.addEventListener('change', async (e) => {
         this.globalSettings.cyclingEnabled = e.target.checked;
-        this.addLog(`Cycling enabled: ${this.globalSettings.cyclingEnabled}`);
+        this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
         await saveGlobalSettings(this.globalSettings);
         updateIntervalUI();
         if (this.globalSettings.cyclingEnabled) {
@@ -231,7 +255,7 @@ class App {
         a.download = `omniview_settings_${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 100);
-        this.addLog('Settings exported successfully');
+        this.addLog(chrome.i18n.getMessage('logExportSuccess'));
     });
 
     importBtnTrigger.addEventListener('click', () => importInput.click());
@@ -245,7 +269,7 @@ class App {
             try {
                 const data = JSON.parse(event.target.result);
                 const mode = importModeSelect.value;
-                this.addLog(`Importing settings (mode: ${mode})`);
+                this.addLog(chrome.i18n.getMessage('logImporting', [mode]));
 
                 if (data.global_settings) {
                     this.globalSettings = { ...this.globalSettings, ...data.global_settings };
@@ -294,11 +318,11 @@ class App {
                     }
                 }
 
-                this.showSnackbar('設定をインポートしました。反映するには、必要に応じてカメラを再起動してください。');
-                this.addLog('Settings imported successfully');
+                this.showSnackbar(chrome.i18n.getMessage('snackbarImportSuccess'));
+                this.addLog(chrome.i18n.getMessage('logImportSuccess'));
             } catch (err) {
-                this.addLog('Import failed: ' + err.message, true);
-                this.showSnackbar('インポートに失敗しました: ' + err.message);
+                this.addLog(chrome.i18n.getMessage('logImportFailed', [err.message]), true);
+                this.showSnackbar(chrome.i18n.getMessage('snackbarImportFailed', [err.message]));
             }
             importInput.value = '';
         };
@@ -374,8 +398,8 @@ class App {
     this.cameras = await getCameras();
     if (this.cameras.length > 0 && !this.cameras[0].label) {
         this.showSnackbar(
-            'カメラの権限が必要です',
-            '許可する',
+            chrome.i18n.getMessage('snackbarPermissionRequired'),
+            chrome.i18n.getMessage('snackbarGrantPermission'),
             () => chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') })
         );
         window.addEventListener('focus', () => this.showCameraDialog(), { once: true });
@@ -393,7 +417,7 @@ class App {
     selectAllItem.className = `camera-list-item ${allAdded ? 'disabled' : ''}`;
     selectAllItem.innerHTML = `
         <input type="checkbox" id="select-all-cameras" ${allAdded ? 'checked disabled' : ''}>
-        <span style="font-weight: bold;">全てのカメラ</span>
+        <span style="font-weight: bold;">${chrome.i18n.getMessage('selectAllCameras')}</span>
     `;
     listContainer.appendChild(selectAllItem);
 
@@ -457,9 +481,9 @@ class App {
         }
 
         if (camerasToAdd.length > 0) {
-            this.addLog(`--- Adding ${camerasToAdd.length} cameras ---`);
+            this.addLog(chrome.i18n.getMessage('logAddingCameras', [String(camerasToAdd.length)]));
             for (const camera of camerasToAdd) {
-                this.addLog(`Adding camera: ${camera.label} (${camera.deviceId.slice(0, 8)})`);
+                this.addLog(chrome.i18n.getMessage('logAddingCamera', [camera.label, camera.deviceId.slice(0, 8)]));
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(camera.deviceId, slot);
                 this.slotOrder.push(camera.deviceId);
@@ -494,7 +518,7 @@ class App {
 
     if (this.slotOrder.length === 0) {
         const option = document.createElement('option');
-        option.textContent = 'カメラなし';
+        option.textContent = chrome.i18n.getMessage('noCameras');
         infoCameraSelect.appendChild(option);
         this.displayCameraInfo(null);
         return;
@@ -527,7 +551,7 @@ class App {
 
   async logDeviceList() {
       const devices = await getCameras();
-      this.addLog(`Connected devices: ${devices.length}`);
+      this.addLog(chrome.i18n.getMessage('logConnectedDevices', [String(devices.length)]));
       devices.forEach(d => {
           this.addLog(`- [${d.deviceId.slice(0, 8)}] ${d.label}`);
       });
@@ -571,23 +595,25 @@ class App {
         if (track) {
             const capabilities = track.getCapabilities ? track.getCapabilities() : {};
             const settings = track.getSettings ? track.getSettings() : {};
-            info = {
-                'デバイスID': settings.deviceId || 'N/A',
-                '解像度': (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A',
-                'フレームレート': settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A',
-                'アスペクト比': settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A',
-                'フォーカスモード': (capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A') + ` (現在: ${settings.focusMode || 'N/A'})`,
-                'フォーカス距離': settings.focusDistance !== undefined ? settings.focusDistance : 'N/A',
-                '露出モード': (capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A') + ` (現在: ${settings.exposureMode || 'N/A'})`,
-                '露出時間': settings.exposureTime !== undefined ? settings.exposureTime : 'N/A',
-                'ホワイトバランスモード': (capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A') + ` (現在: ${settings.whiteBalanceMode || 'N/A'})`,
-                '色温度': settings.colorTemperature !== undefined ? settings.colorTemperature : 'N/A',
-                'ISO': settings.iso !== undefined ? settings.iso : 'N/A',
-                '明るさ': settings.brightness !== undefined ? settings.brightness : 'N/A',
-                'コントラスト': settings.contrast !== undefined ? settings.contrast : 'N/A',
-                '彩度': settings.saturation !== undefined ? settings.saturation : 'N/A',
-                'シャープネス': settings.sharpness !== undefined ? settings.sharpness : 'N/A'
-            };
+            const curMsg = (val) => chrome.i18n.getMessage('infoCurrent', [String(val || 'N/A')]);
+
+            info = [
+                { key: 'infoDeviceId', value: settings.deviceId || 'N/A' },
+                { key: 'infoResolution', value: (settings.width && settings.height) ? `${settings.width}x${settings.height}` : 'N/A' },
+                { key: 'infoFrameRate', value: settings.frameRate ? settings.frameRate.toFixed(2) + ' fps' : 'N/A' },
+                { key: 'infoAspectRatio', value: settings.aspectRatio ? settings.aspectRatio.toFixed(2) : 'N/A' },
+                { key: 'infoFocusMode', value: (capabilities.focusMode ? capabilities.focusMode.join(', ') : 'N/A') + ' ' + curMsg(settings.focusMode) },
+                { key: 'infoFocusDistance', value: settings.focusDistance !== undefined ? settings.focusDistance : 'N/A' },
+                { key: 'infoExposureMode', value: (capabilities.exposureMode ? capabilities.exposureMode.join(', ') : 'N/A') + ' ' + curMsg(settings.exposureMode) },
+                { key: 'infoExposureTime', value: settings.exposureTime !== undefined ? settings.exposureTime : 'N/A' },
+                { key: 'infoWhiteBalanceMode', value: (capabilities.whiteBalanceMode ? capabilities.whiteBalanceMode.join(', ') : 'N/A') + ' ' + curMsg(settings.whiteBalanceMode) },
+                { key: 'infoColorTemperature', value: settings.colorTemperature !== undefined ? settings.colorTemperature : 'N/A' },
+                { key: 'infoIso', value: settings.iso !== undefined ? settings.iso : 'N/A' },
+                { key: 'infoBrightness', value: settings.brightness !== undefined ? settings.brightness : 'N/A' },
+                { key: 'infoContrast', value: settings.contrast !== undefined ? settings.contrast : 'N/A' },
+                { key: 'infoSaturation', value: settings.saturation !== undefined ? settings.saturation : 'N/A' },
+                { key: 'infoSharpness', value: settings.sharpness !== undefined ? settings.sharpness : 'N/A' }
+            ];
             this.cameraInfoCache.set(deviceId, info);
         }
     }
@@ -598,19 +624,19 @@ class App {
 
     if (!info) {
         if (shouldRender && listContainer) {
-            listContainer.innerHTML = '<p>ストリームが有効ではなく、キャッシュもありません。</p>';
+            listContainer.innerHTML = `<p>${chrome.i18n.getMessage('noStreamInfo')}</p>`;
         }
         return;
     }
 
     if (!shouldRender) return;
 
-    for (const [label, value] of Object.entries(info)) {
+    for (const entry of info) {
         const item = document.createElement('div');
         item.className = 'info-item';
         item.innerHTML = `
-            <span class="info-label">${label}</span>
-            <span class="info-value">${value}</span>
+            <span class="info-label">${chrome.i18n.getMessage(entry.key)}</span>
+            <span class="info-value">${entry.value}</span>
         `;
         listContainer.appendChild(item);
     }
@@ -676,7 +702,7 @@ class App {
         return;
     }
 
-    this.addLog(`Activating all cameras (cyclingEnabled=${this.globalSettings.cyclingEnabled})`);
+    this.addLog(chrome.i18n.getMessage('logActivatingAll', [String(this.globalSettings.cyclingEnabled)]));
     for (const deviceId of this.slotOrder) {
         const slot = this.slots.get(deviceId);
         if (slot && !slot.stream) {
@@ -689,7 +715,7 @@ class App {
 
   async activateMultipleCameras() {
     const initialOrder = [...this.slotOrder];
-    this.addLog(`--- Starting multi-camera activation search (Cameras: ${initialOrder.length}) ---`);
+    this.addLog(chrome.i18n.getMessage('logMultiActivationStart', [String(initialOrder.length)]));
 
     const isStateChanged = () => {
         return this.globalSettings.cyclingEnabled ||
@@ -699,12 +725,12 @@ class App {
 
     for (let levelIdx = 0; levelIdx < RESOLUTION_LEVELS.length; levelIdx++) {
         if (isStateChanged()) {
-            this.addLog('Multi-camera activation search aborted: state changed');
+            this.addLog(chrome.i18n.getMessage('logMultiActivationAborted'));
             return false;
         }
 
         const resolution = RESOLUTION_LEVELS[levelIdx];
-        this.addLog(`Attempting activation at resolution level: ${resolution.label}`);
+        this.addLog(chrome.i18n.getMessage('logAttemptActivation', [resolution.label]));
 
         // 1. Stop all current streams to release bandwidth
         for (const deviceId of initialOrder) {
@@ -736,7 +762,7 @@ class App {
                     // Small delay between activations to mitigate spikes
                     await new Promise(r => setTimeout(r, 1000));
                 } else {
-                    this.addLog(`Failed to activate ${deviceId.slice(0, 8)} at ${resolution.label}`);
+                    this.addLog(chrome.i18n.getMessage('logActivationFailed', [deviceId.slice(0, 8), resolution.label]));
                     allSuccessful = false;
                     break;
                 }
@@ -744,7 +770,7 @@ class App {
         }
 
         if (isStateChanged()) {
-            this.addLog('Multi-camera activation search aborted: state changed');
+            this.addLog(chrome.i18n.getMessage('logMultiActivationAborted'));
             for (const slot of activatedSlots) {
                 await this.deactivateSlot(slot);
             }
@@ -752,9 +778,9 @@ class App {
         }
 
         if (allSuccessful) {
-            this.addLog(`Successfully activated all cameras at ${resolution.label}`);
+            this.addLog(chrome.i18n.getMessage('logActivationAllSuccess', [resolution.label]));
             if (levelIdx > 0) {
-                this.showSnackbar(`帯域確保のため、解像度を ${resolution.label} に下げて接続しました`);
+                this.showSnackbar(chrome.i18n.getMessage('snackbarResolutionReduced', [resolution.label]));
             }
             return true;
         }
@@ -765,8 +791,8 @@ class App {
         }
     }
 
-    this.addLog('Failed to activate all cameras even at the lowest resolution level. Falling back to single camera mode.', true);
-    this.showSnackbar('すべてのカメラを同時に起動できませんでした。帯域不足のため、1台のみ表示します。');
+    this.addLog(chrome.i18n.getMessage('logMultiActivationFallback'), true);
+    this.showSnackbar(chrome.i18n.getMessage('snackbarMultiActivationFailed'));
 
     if (isStateChanged()) return false;
 
@@ -850,7 +876,7 @@ class App {
 
   async activateSlot(slot, deviceId, resolution = null) {
     if (slot.isActivating) {
-        this.addLog(`Skipping activation for ${deviceId.slice(0, 8)} - already in progress`);
+        this.addLog(chrome.i18n.getMessage('logSkippingActivation', [deviceId.slice(0, 8)]));
         return false;
     }
     slot.isActivating = true;
@@ -863,12 +889,12 @@ class App {
                 ? (this.slotOrder[this.activeSlotIndex] === deviceId)
                 : this.slotOrder.includes(deviceId);
             if (!isStillNeeded) {
-                this.addLog(`Activation aborted for ${deviceId.slice(0, 8)} - no longer needed`);
+                this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
             }
 
             const targetRes = resolution || (i === maxRetries - 1 ? RESOLUTION_LEVELS[RESOLUTION_LEVELS.length - 1] : RESOLUTION_LEVELS[0]);
-            this.addLog(`Activating camera ${deviceId.slice(0, 8)} (Attempt ${i + 1}/${maxRetries}) at ${targetRes.label}`);
+            this.addLog(chrome.i18n.getMessage('logActivatingAttempt', [deviceId.slice(0, 8), String(i + 1), String(maxRetries), targetRes.label]));
 
             try {
                 const stream = await startCamera(deviceId, targetRes);
@@ -878,7 +904,7 @@ class App {
                     ? (this.slotOrder[this.activeSlotIndex] === deviceId)
                     : this.slotOrder.includes(deviceId);
                 if (!isStillNeededPost) {
-                    this.addLog(`Activation aborted post-acquisition for ${deviceId.slice(0, 8)}`);
+                    this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
                     return false;
                 }
@@ -919,7 +945,7 @@ class App {
                 }
                 const track = stream.getVideoTracks()[0];
                 const settings = track ? track.getSettings() : {};
-                this.addLog(`Camera ${deviceId.slice(0, 8)} activated successfully. Obtained: ${settings.width}x${settings.height}@${settings.frameRate?.toFixed(2)}fps`);
+                this.addLog(chrome.i18n.getMessage('logActivationSuccess', [deviceId.slice(0, 8), String(settings.width), String(settings.height), settings.frameRate?.toFixed(2)]));
 
                 // Update cache
                 this.displayCameraInfo(deviceId);
@@ -939,7 +965,7 @@ class App {
                 return true; // Success
             } catch (e) {
                 const errorDetail = `${e.name}: ${e.message}`;
-                this.addLog(`Attempt ${i + 1} failed for ${deviceId.slice(0, 8)}: ${errorDetail}`, true);
+                this.addLog(chrome.i18n.getMessage('logAttemptFailed', [String(i + 1), deviceId.slice(0, 8), errorDetail]), true);
 
                 // Cleanup partial stream
                 if (slot.stream) {
@@ -955,7 +981,7 @@ class App {
                 }
                 const suffix = (deviceId || 'unknown').slice(0, 4);
                 if (!resolution) {
-                    this.showSnackbar(`カメラの起動に失敗しました (${suffix}): ${e.name} - ${e.message}`);
+                    this.showSnackbar(chrome.i18n.getMessage('snackbarCameraStartFailed', [suffix, e.name + ' - ' + e.message]));
                 }
             }
         }
@@ -1011,10 +1037,10 @@ class App {
     const oldActiveDeviceId = this.slotOrder[this.activeSlotIndex];
 
     if (direction === 'up' && index > 0) {
-        this.addLog(`Moving camera ${deviceId.slice(0, 8)} up`);
+        this.addLog(chrome.i18n.getMessage('logMovingUp', [deviceId.slice(0, 8)]));
         [this.slotOrder[index], this.slotOrder[index - 1]] = [this.slotOrder[index - 1], this.slotOrder[index]];
     } else if (direction === 'down' && index < this.slotOrder.length - 1) {
-        this.addLog(`Moving camera ${deviceId.slice(0, 8)} down`);
+        this.addLog(chrome.i18n.getMessage('logMovingDown', [deviceId.slice(0, 8)]));
         [this.slotOrder[index], this.slotOrder[index + 1]] = [this.slotOrder[index + 1], this.slotOrder[index]];
     } else {
         return;
@@ -1055,21 +1081,21 @@ class App {
         <div class="video-overlay-top-left pause-indicator">
             <span class="material-symbols-outlined">pause_circle</span>
         </div>
-        <button class="video-overlay-top-right delete-btn-overlay" title="削除">
+        <button class="video-overlay-top-right delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
             <span class="material-symbols-outlined">close</span>
         </button>
       </div>
       <div class="slot-controls">
         <div class="control-row">
           <div class="slot-move-controls">
-              <button class="m3-icon-button-small move-up-btn" title="上へ移動">
+              <button class="m3-icon-button-small move-up-btn" title="${chrome.i18n.getMessage('moveUpBtn')}">
                   <span class="material-symbols-outlined">arrow_upward</span>
               </button>
-              <button class="m3-icon-button-small move-down-btn" title="下へ移動">
+              <button class="m3-icon-button-small move-down-btn" title="${chrome.i18n.getMessage('moveDownBtn')}">
                   <span class="material-symbols-outlined">arrow_downward</span>
               </button>
           </div>
-          <div class="role-switch-wrapper" title="モード切替 (Person / Whiteboard)">
+          <div class="role-switch-wrapper" title="${chrome.i18n.getMessage('roleSwitchTitle')}">
               <span class="material-symbols-outlined switch-label-icon">person</span>
               <label class="m3-switch role-switch-container">
                 <input type="checkbox" class="role-switch" ${setting.role === 'whiteboard' ? 'checked' : ''}>
@@ -1080,23 +1106,23 @@ class App {
               </label>
               <span class="material-symbols-outlined switch-label-icon">edit_square</span>
           </div>
-          <input type="text" class="m3-textfield label-input" placeholder="Camera Name">
+          <input type="text" class="m3-textfield label-input" placeholder="${chrome.i18n.getMessage('cameraNamePlaceholder')}">
 
-          <button class="m3-icon-button-small lock-btn" title="フォーカス・露出を固定">
+          <button class="m3-icon-button-small lock-btn" title="${chrome.i18n.getMessage('lockBtnTitle')}">
               <span class="material-symbols-outlined">lock_open</span>
           </button>
 
-          <button class="m3-icon-button-small occlusion-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="写り込み排除">
+          <button class="m3-icon-button-small occlusion-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('occlusionBtnTitle')}">
               <span class="material-symbols-outlined">person_off</span>
           </button>
 
-          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="台形補正">
+          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('setBtnTitle')}">
               <span class="material-symbols-outlined">settings_overscan</span>
           </button>
-          <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="リセット">
+          <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('resetBtnTitle')}">
               <span class="material-symbols-outlined">restart_alt</span>
           </button>
-          <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="キャプチャ">
+          <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('copyBtnTitle')}">
               <span class="material-symbols-outlined">photo_camera</span>
           </button>
         </div>
@@ -1131,16 +1157,17 @@ class App {
             lockBtn.classList.toggle('locked', nextLocked);
             lockBtn.querySelector('.material-symbols-outlined').textContent = nextLocked ? 'lock' : 'lock_open';
             saveCameraSetting(deviceId, { mediaSettingsFixed: nextLocked });
-            this.addLog(`Camera ${deviceId.slice(0, 8)} settings ${nextLocked ? 'locked' : 'unlocked'}`);
+            const status = chrome.i18n.getMessage(nextLocked ? 'lockStatusLocked' : 'lockStatusUnlocked');
+            this.addLog(chrome.i18n.getMessage('logLockSettingsChanged', [deviceId.slice(0, 8), status]));
         } else {
-            this.showSnackbar('このカメラは設定の固定に対応していない可能性があります');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarLockNotSupported'));
         }
     });
 
     const roleSwitch = element.querySelector('.role-switch');
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
-      this.addLog(`Camera ${deviceId.slice(0, 8)} mode changed to ${role}`);
+      this.addLog(chrome.i18n.getMessage('logModeChanged', [deviceId.slice(0, 8), role]));
 
       // Update local settings first to ensure subsequent calls use the new role
       if (!this.settings[deviceId]) {
@@ -1239,13 +1266,13 @@ class App {
             await this.switchActiveCamera(deviceId);
         }
         if (slot && slot.processor) {
-            this.addLog(`Resetting perspective for camera ${deviceId.slice(0, 8)}`);
+            this.addLog(chrome.i18n.getMessage('logResetPerspective', [deviceId.slice(0, 8)]));
             slot.processor.transformer.resetPoints();
-            this.showSnackbar('調整をリセットしました');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarResetDone'));
         } else if (slot) {
-            this.addLog(`Resetting transform for camera ${deviceId.slice(0, 8)}`);
+            this.addLog(chrome.i18n.getMessage('logResetTransform', [deviceId.slice(0, 8)]));
             slot.video.style.transform = '';
-            this.showSnackbar('調整をリセットしました');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarResetDone'));
         }
     });
 
@@ -1253,7 +1280,7 @@ class App {
     copyBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (!slot) return;
-        this.addLog(`Capturing frame for camera ${deviceId.slice(0, 8)} (mode: ${this.settings[deviceId]?.defaultRole || 'person'})`);
+        this.addLog(chrome.i18n.getMessage('logCapturing', [deviceId.slice(0, 8), this.settings[deviceId]?.defaultRole || 'person']));
         try {
             let blob;
             if (slot.processor) {
@@ -1279,10 +1306,10 @@ class App {
             await navigator.clipboard.write([
                 new ClipboardItem({ 'image/png': blob })
             ]);
-            this.showSnackbar('クリップボードにコピーしました');
+            this.showSnackbar(chrome.i18n.getMessage('snackbarCaptured'));
         } catch (err) {
             console.error('Clipboard copy failed:', err);
-            this.showSnackbar('コピーに失敗しました: ' + err.message);
+            this.showSnackbar(chrome.i18n.getMessage('snackbarCaptureFailed', [err.message]));
         }
     });
 
@@ -1291,7 +1318,7 @@ class App {
         e.stopPropagation();
         const slot = this.slots.get(deviceId);
         if (slot) {
-            this.addLog(`Deleting camera slot: ${deviceId.slice(0, 8)}`);
+            this.addLog(chrome.i18n.getMessage('logDeletingSlot', [deviceId.slice(0, 8)]));
             const index = this.slotOrder.indexOf(deviceId);
             const wasActive = index === this.activeSlotIndex;
 
@@ -1357,7 +1384,7 @@ class App {
 
       const processor = new WhiteboardProcessor(video, canvas, processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
-          this.addLog(`Perspective adjusted for ${deviceId.slice(0, 8)}: [${ptsStr}]`);
+          this.addLog(chrome.i18n.getMessage('logPerspectiveAdjusted', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
           saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
           if (!this.settings[deviceId]) {
               this.settings[deviceId] = { modes: { person: {}, whiteboard: {} } };
@@ -1379,7 +1406,7 @@ class App {
       const constraints = { advanced: [] };
       const adv = {};
 
-      this.addLog(`ApplyMediaLock: locked=${locked}`);
+      this.addLog(chrome.i18n.getMessage('logApplyMediaLock', [String(locked)]));
 
       const modeProps = [
           { prop: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
@@ -1415,7 +1442,7 @@ class App {
       if (Object.keys(adv).length > 0) {
           constraints.advanced.push(adv);
           try {
-              this.addLog(`Applying constraints: ${JSON.stringify(constraints)}`);
+              this.addLog(chrome.i18n.getMessage('logApplyingConstraints', [JSON.stringify(constraints)]));
               await track.applyConstraints(constraints);
 
               // Verification & Fallback
@@ -1430,7 +1457,8 @@ class App {
               }
 
               if (failedModes.length > 0) {
-                  this.addLog(`Some modes failed to lock (current: ${failedModes.map(m => `${m.constr}=${newSettings[m.constr]}`).join(', ')}). Attempting fallback with values...`);
+                  const modesStr = failedModes.map(m => `${m.constr}=${newSettings[m.constr]}`).join(', ');
+                  this.addLog(chrome.i18n.getMessage('logLockFailedModes', [modesStr]));
                   const fallbackAdv = { ...adv };
                   const fallbackConstraints = { ...constraints, advanced: [fallbackAdv] };
                   let hasFallbackValues = false;
@@ -1439,7 +1467,7 @@ class App {
                       if (m.valProp && newSettings[m.valProp] !== undefined) {
                           fallbackAdv[m.valProp] = newSettings[m.valProp];
                           fallbackConstraints[m.valProp] = newSettings[m.valProp];
-                          this.addLog(`Fallback for ${m.constr}: manual + ${m.valProp}=${newSettings[m.valProp]}`);
+                          this.addLog(chrome.i18n.getMessage('logLockFallback', [m.constr, m.valProp, String(newSettings[m.valProp])]));
                           hasFallbackValues = true;
                       }
                   }
@@ -1448,16 +1476,20 @@ class App {
                       try {
                           await track.applyConstraints(fallbackConstraints);
                       } catch (fallbackError) {
-                          this.addLog(`Failed to apply fallback constraints: ${fallbackError.message}`, true);
+                          this.addLog(chrome.i18n.getMessage('logLockFallbackFailed', [fallbackError.message]), true);
                       }
                   }
               }
 
               const finalSettings = track.getSettings();
-              this.addLog(`Final settings: focus=${finalSettings.focusMode}(${finalSettings.focusDistance}), exposure=${finalSettings.exposureMode}(${finalSettings.exposureTime}), wb=${finalSettings.whiteBalanceMode}(${finalSettings.colorTemperature})`);
+              this.addLog(chrome.i18n.getMessage('logLockFinal', [
+                  String(finalSettings.focusMode), String(finalSettings.focusDistance),
+                  String(finalSettings.exposureMode), String(finalSettings.exposureTime),
+                  String(finalSettings.whiteBalanceMode), String(finalSettings.colorTemperature)
+              ]));
               return true;
           } catch (e) {
-              this.addLog(`Failed to apply constraints: ${e.message}`, true);
+              this.addLog(chrome.i18n.getMessage('logLockError', [e.message]), true);
               return false;
           }
       }

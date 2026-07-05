@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniView-Solo</title>
+    <title data-i18n="extensionName">OmniView-Solo</title>
     <link rel="stylesheet" href="shared/css/m3-theme.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -12,10 +12,10 @@
     <div id="app" class="layout-narrow">
         <header id="app-header">
             <div class="header-actions">
-                <button id="add-camera-nav-btn" class="m3-icon-button" title="カメラ追加">
+                <button id="add-camera-nav-btn" class="m3-icon-button" data-i18n-title="addCameraNavBtn">
                     <span class="material-symbols-outlined">video_call</span>
                 </button>
-                <button id="settings-btn" class="m3-icon-button" title="設定">
+                <button id="settings-btn" class="m3-icon-button" data-i18n-title="settingsBtn">
                     <span class="material-symbols-outlined">settings</span>
                 </button>
             </div>
@@ -25,22 +25,22 @@
             <div id="settings-overlay"></div>
             <div class="settings-content m3-surface">
                 <nav class="settings-tabs">
-                    <button class="tab-btn active" data-tab="general" data-tooltip="一般">
+                    <button class="tab-btn active" data-tab="general" data-i18n-tooltip="tabGeneral">
                         <span class="material-symbols-outlined">tune</span>
                     </button>
-                    <button class="tab-btn" data-tab="camera-info" data-tooltip="カメラ情報">
+                    <button class="tab-btn" data-tab="camera-info" data-i18n-tooltip="tabCameraInfo">
                         <span class="material-symbols-outlined">videocam</span>
                     </button>
-                    <button class="tab-btn" data-tab="logs" data-tooltip="ログ">
+                    <button class="tab-btn" data-tab="logs" data-i18n-tooltip="tabLogs">
                         <span class="material-symbols-outlined">description</span>
                     </button>
-                    <button class="tab-btn" data-tab="about" data-tooltip="About">
+                    <button class="tab-btn" data-tab="about" data-i18n-tooltip="tabAbout">
                         <span class="material-symbols-outlined">info</span>
                     </button>
                 </nav>
                 <div class="tab-content" id="tab-general">
                     <div class="settings-row">
-                        <label for="cycling-switch">自動切り替え</label>
+                        <label for="cycling-switch" data-i18n="cyclingSwitch">自動切り替え</label>
                         <label class="m3-switch">
                             <input type="checkbox" id="cycling-switch">
                             <span class="slider">
@@ -50,7 +50,7 @@
                         </label>
                     </div>
                     <div class="settings-row">
-                        <label for="interval-input" id="interval-label">表示間隔 (秒)</label>
+                        <label for="interval-input" id="interval-label" data-i18n="intervalLabel">表示間隔 (秒)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="interval-input" value="5" min="1" step="1">
                             <div class="spinbox-controls">
@@ -65,30 +65,30 @@
                     </div>
                     <hr class="m3-divider">
                     <div class="settings-row-vertical">
-                        <label>設定の入出力</label>
+                        <label data-i18n="aboutDataTitle">設定の入出力</label>
                         <div class="settings-action-group">
                             <button id="export-btn" class="m3-button">
                                 <span class="material-symbols-outlined">download</span>
-                                エクスポート
+                                <span data-i18n="exportBtn">エクスポート</span>
                             </button>
                             <button id="import-btn-trigger" class="m3-button">
                                 <span class="material-symbols-outlined">upload</span>
-                                インポート
+                                <span data-i18n="importBtn">インポート</span>
                             </button>
                             <input type="file" id="import-input" class="hidden" accept=".json">
                         </div>
                     </div>
                     <div class="settings-row">
-                        <label for="import-mode-select">インポート設定:</label>
+                        <label for="import-mode-select" data-i18n="importModeLabel">インポート設定:</label>
                         <select id="import-mode-select" class="m3-select">
-                            <option value="add">追記</option>
-                            <option value="overwrite">上書き</option>
+                            <option value="add" data-i18n="importModeAdd">追記</option>
+                            <option value="overwrite" data-i18n="importModeOverwrite">上書き</option>
                         </select>
                     </div>
                 </div>
                 <div class="tab-content hidden" id="tab-camera-info">
                     <div class="settings-row">
-                        <label for="info-camera-select">カメラ選択</label>
+                        <label for="info-camera-select" data-i18n="infoCameraSelectLabel">カメラ選択</label>
                         <select id="info-camera-select" class="m3-select"></select>
                     </div>
                     <div id="camera-capabilities-list" class="info-list">
@@ -99,11 +99,11 @@
                     <div class="logs-header">
                         <button id="copy-logs-btn" class="m3-button">
                             <span class="material-symbols-outlined">content_copy</span>
-                            ログをコピー
+                            <span data-i18n="copyLogsBtn">ログをコピー</span>
                         </button>
                         <button id="clear-logs-btn" class="m3-button">
                             <span class="material-symbols-outlined">delete</span>
-                            消去
+                            <span data-i18n="clearLogsBtn">消去</span>
                         </button>
                     </div>
                     <div id="logs-container" class="logs-list">
@@ -113,16 +113,17 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p>Version: 0.4.4</p>
-                        <p>ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
+                        <p data-i18n="aboutVersion">Version: 0.5.0</p>
+                        <!-- <p>Version: 0.5.0</p> -->
+                        <p data-i18n="aboutDesc">ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
-                        <p><strong>データの保存場所とリスク</strong></p>
-                        <p>記録されたデータ（カメラ設定等）はすべてブラウザ内の IndexedDB に保存されます。ブラウザのキャッシュクリア等によりデータが削除される可能性がありますのでご注意ください。</p>
+                        <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>
+                        <p data-i18n="aboutDataText">記録されたデータ（カメラ設定等）はすべてブラウザ内の IndexedDB に保存されます。ブラウザのキャッシュクリア等によりデータが削除される可能性がありますのでご注意ください。</p>
                         <hr>
-                        <p><strong>プライバシーとセキュリティ</strong></p>
-                        <p>本アプリは外部への通信を一切行いません。トラッキングやデータ収集も行わない完全ローカル動作です。</p>
+                        <p><strong data-i18n="aboutPrivacyTitle">プライバシーとセキュリティ</strong></p>
+                        <p data-i18n="aboutPrivacyText">本アプリは外部への通信を一切行いません。トラッキングやデータ収集も行わない完全ローカル動作です。</p>
                         <hr>
-                        <p>開発者<br>Masanori SATAKE</p>
+                        <p><span data-i18n="aboutDeveloper">開発者</span><br>Masanori SATAKE</p>
                     </div>
                 </div>
             </div>
@@ -131,7 +132,7 @@
         <div id="initial-overlay">
             <button id="start-btn" class="m3-button-filled">
                 <span class="material-symbols-outlined">videocam</span>
-                カメラを起動
+                <span data-i18n="startBtn">カメラを起動</span>
             </button>
         </div>
 
@@ -139,7 +140,7 @@
             <div id="camera-dialog-overlay"></div>
             <div class="dialog-content m3-surface">
                 <div class="dialog-header">
-                    <h2 class="m3-title">カメラ追加</h2>
+                    <h2 class="m3-title" data-i18n="dialogHeader">カメラ追加</h2>
                 </div>
                 <div class="dialog-body">
                     <div id="camera-list-container">
@@ -147,8 +148,8 @@
                     </div>
                 </div>
                 <div class="dialog-actions">
-                    <button id="dialog-cancel-btn" class="m3-button">キャンセル</button>
-                    <button id="dialog-add-btn" class="m3-button-filled">追加</button>
+                    <button id="dialog-cancel-btn" class="m3-button" data-i18n="dialogCancel">キャンセル</button>
+                    <button id="dialog-add-btn" class="m3-button-filled" data-i18n="dialogAdd">追加</button>
                 </div>
             </div>
         </div>

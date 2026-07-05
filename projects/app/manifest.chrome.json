@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "OmniView-Solo",
-  "version": "0.4.4",
-  "description": "Hybrid meeting assistant for whiteboard enhancement.",
+  "name": "__MSG_extensionName__",
+  "version": "0.5.0",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "permissions": [
     "sidePanel",
     "storage",

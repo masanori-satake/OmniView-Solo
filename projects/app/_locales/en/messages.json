@@ -1,0 +1,444 @@
+{
+  "extensionName": {
+    "message": "OmniView-Solo"
+  },
+  "extensionDescription": {
+    "message": "Hybrid meeting assistant for whiteboard enhancement."
+  },
+  "addCameraNavBtn": {
+    "message": "Add Camera"
+  },
+  "settingsBtn": {
+    "message": "Settings"
+  },
+  "tabGeneral": {
+    "message": "General"
+  },
+  "tabCameraInfo": {
+    "message": "Camera Info"
+  },
+  "tabLogs": {
+    "message": "Logs"
+  },
+  "tabAbout": {
+    "message": "About"
+  },
+  "cyclingSwitch": {
+    "message": "Auto Switching"
+  },
+  "intervalLabel": {
+    "message": "Display Interval (sec)"
+  },
+  "exportBtn": {
+    "message": "Export"
+  },
+  "importBtn": {
+    "message": "Import"
+  },
+  "importModeLabel": {
+    "message": "Import Mode:"
+  },
+  "importModeAdd": {
+    "message": "Add"
+  },
+  "importModeOverwrite": {
+    "message": "Overwrite"
+  },
+  "infoCameraSelectLabel": {
+    "message": "Select Camera"
+  },
+  "copyLogsBtn": {
+    "message": "Copy Logs"
+  },
+  "clearLogsBtn": {
+    "message": "Clear"
+  },
+  "aboutDesc": {
+    "message": "A local-first tool to enhance whiteboard visibility for hybrid meetings."
+  },
+  "aboutDataTitle": {
+    "message": "Data Storage and Risks"
+  },
+  "aboutDataText": {
+    "message": "All recorded data (camera settings, etc.) is stored in the browser's IndexedDB. Please note that data may be deleted due to browser cache clearing or other factors."
+  },
+  "aboutPrivacyTitle": {
+    "message": "Privacy and Security"
+  },
+  "aboutPrivacyText": {
+    "message": "This app does not perform any external communication. It operates completely locally, with no tracking or data collection."
+  },
+  "aboutDeveloper": {
+    "message": "Developer"
+  },
+  "aboutVersion": {
+    "message": "Version: $VERSION$",
+    "placeholders": {
+      "version": { "content": "$1" }
+    }
+  },
+  "startBtn": {
+    "message": "Start Camera"
+  },
+  "dialogHeader": {
+    "message": "Add Camera"
+  },
+  "dialogCancel": {
+    "message": "Cancel"
+  },
+  "dialogAdd": {
+    "message": "Add"
+  },
+  "selectAllCameras": {
+    "message": "All Cameras"
+  },
+  "noCameras": {
+    "message": "No cameras"
+  },
+  "noStreamInfo": {
+    "message": "No active stream or cached info available."
+  },
+  "snackbarLogsCopied": {
+    "message": "Logs copied to clipboard"
+  },
+  "snackbarCopyFailed": {
+    "message": "Failed to copy"
+  },
+  "snackbarImportSuccess": {
+    "message": "Settings imported. Restart cameras if necessary to apply changes."
+  },
+  "snackbarImportFailed": {
+    "message": "Import failed: $ERROR$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "snackbarPermissionRequired": {
+    "message": "Camera permission is required"
+  },
+  "snackbarGrantPermission": {
+    "message": "Grant"
+  },
+  "snackbarResolutionReduced": {
+    "message": "Resolution reduced to $RES$ to secure bandwidth",
+    "placeholders": {
+      "res": { "content": "$1" }
+    }
+  },
+  "snackbarMultiActivationFailed": {
+    "message": "Could not start all cameras simultaneously. Displaying only one due to bandwidth limits."
+  },
+  "snackbarResetDone": {
+    "message": "Adjustments reset"
+  },
+  "snackbarCaptured": {
+    "message": "Captured to clipboard"
+  },
+  "snackbarCaptureFailed": {
+    "message": "Capture failed: $ERROR$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "snackbarLockNotSupported": {
+    "message": "This camera might not support locking settings"
+  },
+  "snackbarCameraStartFailed": {
+    "message": "Failed to start camera ($ID$): $ERROR$",
+    "placeholders": {
+      "id": { "content": "$1" },
+      "error": { "content": "$2" }
+    }
+  },
+  "deleteBtnOverlay": {
+    "message": "Delete"
+  },
+  "moveUpBtn": {
+    "message": "Move Up"
+  },
+  "moveDownBtn": {
+    "message": "Move Down"
+  },
+  "roleSwitchTitle": {
+    "message": "Switch Mode (Person / Whiteboard)"
+  },
+  "cameraNamePlaceholder": {
+    "message": "Camera Name"
+  },
+  "lockBtnTitle": {
+    "message": "Lock Focus & Exposure"
+  },
+  "occlusionBtnTitle": {
+    "message": "Occlusion Removal"
+  },
+  "setBtnTitle": {
+    "message": "Perspective Correction"
+  },
+  "resetBtnTitle": {
+    "message": "Reset"
+  },
+  "copyBtnTitle": {
+    "message": "Capture"
+  },
+  "infoDeviceId": { "message": "Device ID" },
+  "infoResolution": { "message": "Resolution" },
+  "infoFrameRate": { "message": "Frame Rate" },
+  "infoAspectRatio": { "message": "Aspect Ratio" },
+  "infoFocusMode": { "message": "Focus Mode" },
+  "infoFocusDistance": { "message": "Focus Distance" },
+  "infoExposureMode": { "message": "Exposure Mode" },
+  "infoExposureTime": { "message": "Exposure Time" },
+  "infoWhiteBalanceMode": { "message": "White Balance Mode" },
+  "infoColorTemperature": { "message": "Color Temperature" },
+  "infoIso": { "message": "ISO" },
+  "infoBrightness": { "message": "Brightness" },
+  "infoContrast": { "message": "Contrast" },
+  "infoSaturation": { "message": "Saturation" },
+  "infoSharpness": { "message": "Sharpness" },
+  "infoCurrent": { "message": "(Current: $VAL$)", "placeholders": { "val": { "content": "$1" } } },
+  "permissionTitle": { "message": "Camera Permission - OmniView-Solo" },
+  "permissionHeader": { "message": "Camera Permission Required" },
+  "permissionDesc": { "message": "OmniView-Solo needs camera access to function. Please click the button below and select 'Allow' in the browser dialog." },
+  "permissionGrantBtn": { "message": "Grant Camera Permission" },
+  "permissionGranted": { "message": "Permission granted. You can close this tab." },
+  "permissionError": { "message": "Error: $ERROR$", "placeholders": { "error": { "content": "$1" } } },
+  "logGlobalSettings": {
+    "message": "Global settings loaded: cyclingEnabled=$ENABLED$, interval=$INTERVAL$",
+    "placeholders": {
+        "enabled": { "content": "$1" },
+        "interval": { "content": "$2" }
+    }
+  },
+  "logAppInitialized": { "message": "--- App initialized ---" },
+  "logDeviceConfigChanged": { "message": "Device configuration changed" },
+  "logConnectedDevices": {
+    "message": "Connected devices: $COUNT$",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logAddingCameras": {
+    "message": "--- Adding $COUNT$ cameras ---",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logAddingCamera": {
+    "message": "Adding camera: $LABEL$ ($ID$)",
+    "placeholders": {
+        "label": { "content": "$1" },
+        "id": { "content": "$2" }
+    }
+  },
+  "logIntervalChanged": {
+    "message": "Interval changed to $INTERVAL$s",
+    "placeholders": {
+        "interval": { "content": "$1" }
+    }
+  },
+  "logCyclingEnabled": {
+    "message": "Cycling enabled: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logExportSuccess": { "message": "Settings exported successfully" },
+  "logImporting": {
+    "message": "Importing settings (mode: $MODE$)",
+    "placeholders": {
+        "mode": { "content": "$1" }
+    }
+  },
+  "logImportSuccess": { "message": "Settings imported successfully" },
+  "logImportFailed": {
+    "message": "Import failed: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logActivatingAll": {
+    "message": "Activating all cameras (cyclingEnabled=$ENABLED$)",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logMultiActivationStart": {
+    "message": "--- Starting multi-camera activation search (Cameras: $COUNT$) ---",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logMultiActivationAborted": { "message": "Multi-camera activation search aborted: state changed" },
+  "logAttemptActivation": {
+    "message": "Attempting activation at resolution level: $LEVEL$",
+    "placeholders": {
+        "level": { "content": "$1" }
+    }
+  },
+  "logActivationFailed": {
+    "message": "Failed to activate $ID$ at $LEVEL$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "level": { "content": "$2" }
+    }
+  },
+  "logActivationAllSuccess": {
+    "message": "Successfully activated all cameras at $LEVEL$",
+    "placeholders": {
+        "level": { "content": "$1" }
+    }
+  },
+  "logMultiActivationFallback": { "message": "Failed to activate all cameras even at the lowest resolution level. Falling back to single camera mode." },
+  "logSkippingActivation": {
+    "message": "Skipping activation for $ID$ - already in progress",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivationAborted": {
+    "message": "Activation aborted for $ID$ - no longer needed",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivationAbortedPost": {
+    "message": "Activation aborted post-acquisition for $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivatingAttempt": {
+    "message": "Activating camera $ID$ (Attempt $CURRENT$/$MAX$) at $RES$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "current": { "content": "$2" },
+        "max": { "content": "$3" },
+        "res": { "content": "$4" }
+    }
+  },
+  "logActivationSuccess": {
+    "message": "Camera $ID$ activated successfully. Obtained: $WIDTH$x$HEIGHT$@$FPS$fps",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "width": { "content": "$2" },
+        "height": { "content": "$3" },
+        "fps": { "content": "$4" }
+    }
+  },
+  "logAttemptFailed": {
+    "message": "Attempt $INDEX$ failed for $ID$: $ERROR$",
+    "placeholders": {
+        "index": { "content": "$1" },
+        "id": { "content": "$2" },
+        "error": { "content": "$3" }
+    }
+  },
+  "logMovingUp": {
+    "message": "Moving camera $ID$ up",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logMovingDown": {
+    "message": "Moving camera $ID$ down",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logModeChanged": {
+    "message": "Camera $ID$ mode changed to $MODE$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "mode": { "content": "$2" }
+    }
+  },
+  "logPerspectiveAdjusted": {
+    "message": "Perspective adjusted for camera $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logResetPerspective": {
+    "message": "Resetting perspective for camera $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logResetTransform": {
+    "message": "Resetting transform for camera $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logCapturing": {
+    "message": "Capturing frame for camera $ID$ (mode: $MODE$)",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "mode": { "content": "$2" }
+    }
+  },
+  "logDeletingSlot": {
+    "message": "Deleting camera slot: $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logApplyMediaLock": {
+    "message": "ApplyMediaLock: locked=$LOCKED$",
+    "placeholders": {
+        "locked": { "content": "$1" }
+    }
+  },
+  "logApplyingConstraints": {
+    "message": "Applying constraints: $CONSTRAINTS$",
+    "placeholders": {
+        "constraints": { "content": "$1" }
+    }
+  },
+  "logLockFailedModes": {
+    "message": "Some modes failed to lock (current: $MODES$). Attempting fallback with values...",
+    "placeholders": {
+        "modes": { "content": "$1" }
+    }
+  },
+  "logLockFallback": {
+    "message": "Fallback for $CONSTR$: manual + $VALPROP$=$VALUE$",
+    "placeholders": {
+        "constr": { "content": "$1" },
+        "valprop": { "content": "$2" },
+        "value": { "content": "$3" }
+    }
+  },
+  "logLockFallbackFailed": {
+    "message": "Failed to apply fallback constraints: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logLockFinal": {
+    "message": "Final settings: focus=$FOCUS$($FOCUS_DIST$), exposure=$EXPOSURE$($EXPOSURE_TIME$), wb=$WB$($COLOR_TEMP$)",
+    "placeholders": {
+        "focus": { "content": "$1" },
+        "focus_dist": { "content": "$2" },
+        "exposure": { "content": "$3" },
+        "exposure_time": { "content": "$4" },
+        "wb": { "content": "$5" },
+        "color_temp": { "content": "$6" }
+    }
+  },
+  "logLockError": {
+    "message": "Failed to apply constraints: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logLockSettingsChanged": {
+    "message": "Camera $ID$ settings $STATUS$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "status": { "content": "$2" }
+    }
+  },
+  "lockStatusLocked": { "message": "locked" },
+  "lockStatusUnlocked": { "message": "unlocked" }
+}

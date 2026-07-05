@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>カメラ権限の許可 - OmniView-Solo</title>
+    <title data-i18n="permissionTitle">カメラ権限の許可 - OmniView-Solo</title>
     <link rel="stylesheet" href="shared/css/m3-theme.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
@@ -31,9 +31,9 @@
 </head>
 <body class="theme-light">
     <div class="container">
-        <h1>カメラ権限が必要です</h1>
-        <p>OmniView-Soloがカメラを使用するには、ブラウザの権限許可が必要です。下のボタンを押して、表示されるダイアログで「許可」を選択してください。</p>
-        <button id="grant-btn" class="m3-button-filled">
+        <h1 data-i18n="permissionHeader">カメラ権限が必要です</h1>
+        <p data-i18n="permissionDesc">OmniView-Soloがカメラを使用するには、ブラウザの権限許可が必要です。下のボタンを押して、表示されるダイアログで「許可」を選択してください。</p>
+        <button id="grant-btn" class="m3-button-filled" data-i18n="permissionGrantBtn">
             カメラの使用を許可する
         </button>
         <p id="status-msg" style="margin-top: 16px;"></p>
