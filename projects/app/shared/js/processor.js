@@ -15,14 +15,13 @@ export class PerspectiveTransformer {
         this.processedCanvas = null;
         this.lastTransform = '';
         this.lastObjectFit = '';
+        this.lastElementCount = 0;
 
         this.resizeObserver = new ResizeObserver(() => {
             this.updateTransform();
             this.draw();
         });
         this.resizeObserver.observe(this.canvas);
-
-        this.updateTransform();
 
         this.boundMouseMove = (e) => {
             if (this.draggingPoint !== null) {
@@ -107,7 +106,7 @@ export class PerspectiveTransformer {
             objectFit = 'fill';
         }
 
-        if (this.lastTransform === transform && this.lastObjectFit === objectFit) {
+        if (this.lastTransform === transform && this.lastObjectFit === objectFit && this.lastElementCount === elements.length) {
             return;
         }
 
@@ -121,6 +120,7 @@ export class PerspectiveTransformer {
 
         this.lastTransform = transform;
         this.lastObjectFit = objectFit;
+        this.lastElementCount = elements.length;
     }
 
     destroy() {
@@ -340,8 +340,9 @@ export class WhiteboardProcessor {
             this.transformer.draw();
         }
 
-        const visibility = this.occlusionRemoval ? 'hidden' : 'visible';
-        const display = this.occlusionRemoval ? 'block' : 'none';
+        const showProcessed = this.occlusionRemoval && !!this.stacker.lastMedian;
+        const visibility = showProcessed ? 'hidden' : 'visible';
+        const display = showProcessed ? 'block' : 'none';
 
         if (this.lastVisibility !== visibility) {
             this.video.style.visibility = visibility;
