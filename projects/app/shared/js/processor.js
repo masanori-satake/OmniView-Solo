@@ -328,6 +328,11 @@ export class WhiteboardProcessor {
 
         let imageData = this.stacker.lastMedian;
         if (!imageData) return;
+        if (imageData.width !== w || imageData.height !== h) {
+            this.stacker.cleanup();
+            this.stacker.start();
+            return;
+        }
 
         this.ctx.putImageData(imageData, 0, 0);
     }

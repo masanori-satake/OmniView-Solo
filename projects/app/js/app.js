@@ -1172,7 +1172,7 @@ class App {
 
                   // Auto-enter perspective adjustment if points are default
                   const pts = this.settings[deviceId]?.modes?.whiteboard?.points;
-                  const isDefault = !Array.isArray(pts) || pts.length < 4 || (
+                  const isDefault = !pts || (
                       pts[0].x === 20 && pts[0].y === 20 &&
                       pts[1].x === 80 && pts[1].y === 20 &&
                       pts[2].x === 80 && pts[2].y === 80 &&
@@ -1300,9 +1300,6 @@ class App {
             this.slots.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
-            // We no longer delete camera settings here to allow persistence
-            saveSessionState(this.slotOrder, this.activeSlotIndex);
-
             if (this.slotOrder.length === 0) {
                 this.activeSlotIndex = -1;
                 if (this.cycleTimeoutId) {
@@ -1334,6 +1331,7 @@ class App {
             }
             const cyclingSwitch = document.getElementById('cycling-switch');
             if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     });
 
