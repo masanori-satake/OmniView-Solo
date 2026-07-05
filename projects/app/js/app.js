@@ -74,7 +74,15 @@ class App {
                 this.activeSlotIndex = activeIndex;
                 await this.activateAllCameras();
             }
+        } else {
+            // No connected cameras found in session
+            document.getElementById('initial-overlay').classList.add('hidden');
+            this.showCameraDialog();
         }
+    } else {
+        // No session or empty session
+        document.getElementById('initial-overlay').classList.add('hidden');
+        this.showCameraDialog();
     }
   }
 
@@ -102,6 +110,7 @@ class App {
     const intervalUp = document.getElementById('interval-up');
     const intervalDown = document.getElementById('interval-down');
     const cyclingSwitch = document.getElementById('cycling-switch');
+    const intervalLabel = document.getElementById('interval-label');
     const copyLogsBtn = document.getElementById('copy-logs-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
     const exportBtn = document.getElementById('export-btn');
@@ -109,11 +118,24 @@ class App {
     const importInput = document.getElementById('import-input');
     const importModeSelect = document.getElementById('import-mode-select');
 
+    const updateIntervalUI = () => {
+        const enabled = this.globalSettings.cyclingEnabled && this.slotOrder.length >= 2;
+        intervalInput.disabled = !enabled;
+        intervalUp.disabled = !enabled;
+        intervalDown.disabled = !enabled;
+        if (enabled) {
+            intervalLabel.classList.remove('disabled');
+        } else {
+            intervalLabel.classList.add('disabled');
+        }
+    };
+
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
         cyclingSwitch.disabled = this.slotOrder.length < 2;
+        updateIntervalUI();
         this.updateCameraInfoTab();
         this.renderLogs();
     });
@@ -168,6 +190,7 @@ class App {
         this.globalSettings.cyclingEnabled = e.target.checked;
         this.addLog(`Cycling enabled: ${this.globalSettings.cyclingEnabled}`);
         await saveGlobalSettings(this.globalSettings);
+        updateIntervalUI();
         if (this.globalSettings.cyclingEnabled) {
             this.startCycling();
         } else {
@@ -308,11 +331,12 @@ class App {
   }
 
   reorganizeForNarrow() {
-    this.slotOrder.forEach(deviceId => {
+    this.slotOrder.forEach((deviceId, index) => {
         const slot = this.slots.get(deviceId);
         if (slot) {
             this.container.appendChild(slot.element);
             slot.element.classList.remove('main-region', 'sub-region-item');
+            this.updateMoveButtons(slot, index);
         }
     });
     const mr = this.container.querySelector('.main-region');
@@ -322,10 +346,22 @@ class App {
   }
 
   reorganizeForWide() {
-    this.slotOrder.forEach((deviceId) => {
+    this.slotOrder.forEach((deviceId, index) => {
         const slot = this.slots.get(deviceId);
-        if (slot) this.container.appendChild(slot.element);
+        if (slot) {
+            this.container.appendChild(slot.element);
+            this.updateMoveButtons(slot, index);
+        }
     });
+  }
+
+  updateMoveButtons(slot, index) {
+      const upBtn = slot.element.querySelector('.move-up-btn');
+      const downBtn = slot.element.querySelector('.move-down-btn');
+      if (upBtn && downBtn) {
+          upBtn.disabled = (index === 0);
+          downBtn.disabled = (index === this.slotOrder.length - 1);
+      }
   }
 
   async showCameraDialog() {
@@ -435,6 +471,8 @@ class App {
 
             if (this.currentLayout === 'wide') {
                 this.reorganizeForWide();
+            } else {
+                this.reorganizeForNarrow();
             }
 
             if (this.globalSettings.cyclingEnabled) {
@@ -993,10 +1031,7 @@ class App {
     if (this.currentLayout === 'wide') {
         this.reorganizeForWide();
     } else {
-        this.slotOrder.forEach(id => {
-            const slot = this.slots.get(id);
-            if (slot) this.container.appendChild(slot.element);
-        });
+        this.reorganizeForNarrow();
     }
   }
 
@@ -1017,28 +1052,6 @@ class App {
         <canvas class="processed-canvas whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}"></canvas>
         <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
-        <div class="adjustment-panel">
-            <div class="adj-row">
-                <span class="adj-label">写り込み排除</span>
-                <div class="adj-control">
-                    <button class="m3-button-outlined-small occlusion-btn-adj fixed-width-btn">OFF</button>
-                </div>
-            </div>
-            <div class="adj-row">
-                <span class="adj-label">強調</span>
-                <div class="adj-control adj-group">
-                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="none">ORIG</button>
-                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="bw">B&W</button>
-                    <button class="m3-button-outlined-small enhance-btn-adj" data-mode="color">CLR</button>
-                </div>
-            </div>
-            <div class="adj-row">
-                <span class="adj-label">しきい値</span>
-                <div class="adj-control">
-                    <input type="range" class="m3-slider threshold-slider" min="0" max="100" value="45">
-                </div>
-            </div>
-        </div>
         <div class="video-overlay-top-left pause-indicator">
             <span class="material-symbols-outlined">pause_circle</span>
         </div>
@@ -1073,8 +1086,8 @@ class App {
               <span class="material-symbols-outlined">lock_open</span>
           </button>
 
-          <button class="m3-icon-button-small adjust-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="画質調整">
-              <span class="material-symbols-outlined">tune</span>
+          <button class="m3-icon-button-small occlusion-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="写り込み排除">
+              <span class="material-symbols-outlined">person_off</span>
           </button>
 
           <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="台形補正">
@@ -1100,8 +1113,6 @@ class App {
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
     element.querySelector('.video-wrapper').onclick = (e) => {
-        // Prevent click if clicking adjustment panel
-        if (e.target.closest('.adjustment-panel')) return;
         this.switchActiveCamera(deviceId);
     };
 
@@ -1158,6 +1169,19 @@ class App {
                   }
                   // Restore points will happen inside initProcessor
                   slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
+
+                  // Auto-enter perspective adjustment if points are default
+                  const pts = this.settings[deviceId]?.modes?.whiteboard?.points;
+                  const isDefault = !pts || (
+                      pts[0].x === 20 && pts[0].y === 20 &&
+                      pts[1].x === 80 && pts[1].y === 20 &&
+                      pts[2].x === 80 && pts[2].y === 80 &&
+                      pts[3].x === 20 && pts[3].y === 80
+                  );
+                  if (isDefault) {
+                      slot.processor.transformer.setShowingHandles(true);
+                      if (setBtn) setBtn.classList.add('active');
+                  }
               } else {
                   if (slot.processor) {
                       slot.processor.stop();
@@ -1171,33 +1195,15 @@ class App {
       }
     });
 
-    const adjPanel = element.querySelector('.adjustment-panel');
-    const adjustBtn = element.querySelector('.adjust-btn');
-    const occlusionBtnAdj = element.querySelector('.occlusion-btn-adj');
-    const enhanceBtnsAdj = element.querySelectorAll('.enhance-btn-adj');
-    const thresholdSlider = element.querySelector('.threshold-slider');
+    const occlusionBtn = element.querySelector('.occlusion-btn');
 
     const updateWhiteboardUI = () => {
         const s = this.settings[deviceId]?.modes?.whiteboard || {};
-        occlusionBtnAdj.textContent = s.occlusionRemoval ? 'ON' : 'OFF';
-        occlusionBtnAdj.classList.toggle('active-mode', !!s.occlusionRemoval);
-
-        const currentMode = s.enhanceMode || 'none';
-        enhanceBtnsAdj.forEach(btn => {
-            btn.classList.toggle('active-mode', btn.dataset.mode === currentMode);
-        });
-
-        const threshold = s.threshold !== undefined ? s.threshold : 0.45;
-        thresholdSlider.value = threshold * 100;
+        occlusionBtn.classList.toggle('active', !!s.occlusionRemoval);
     };
     updateWhiteboardUI();
 
-    adjustBtn.addEventListener('click', () => {
-        adjPanel.classList.toggle('visible');
-        adjustBtn.classList.toggle('active', adjPanel.classList.contains('visible'));
-    });
-
-    occlusionBtnAdj.addEventListener('click', async () => {
+    occlusionBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
         if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
         if (slot && slot.processor) {
@@ -1211,40 +1217,6 @@ class App {
             saveCameraSetting(deviceId, { modes: { whiteboard: { occlusionRemoval: newValue } } });
             updateWhiteboardUI();
         }
-    });
-
-    enhanceBtnsAdj.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const slot = this.slots.get(deviceId);
-            if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
-            if (slot && slot.processor) {
-                const next = btn.dataset.mode;
-                slot.processor.setEnhanceMode(next);
-                if (!this.settings[deviceId]) this.settings[deviceId] = {};
-                if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
-                if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
-                this.settings[deviceId].modes.whiteboard.enhanceMode = next;
-                saveCameraSetting(deviceId, { modes: { whiteboard: { enhanceMode: next } } });
-                updateWhiteboardUI();
-            }
-        });
-    });
-
-    thresholdSlider.addEventListener('input', (e) => {
-        const slot = this.slots.get(deviceId);
-        const val = parseFloat(e.target.value) / 100;
-        if (slot && slot.processor) {
-            slot.processor.setThreshold(val);
-        }
-        if (!this.settings[deviceId]) this.settings[deviceId] = {};
-        if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
-        if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
-        this.settings[deviceId].modes.whiteboard.threshold = val;
-    });
-
-    thresholdSlider.addEventListener('change', (e) => {
-        const val = parseFloat(e.target.value) / 100;
-        saveCameraSetting(deviceId, { modes: { whiteboard: { threshold: val } } });
     });
 
     const setBtn = element.querySelector('.set-btn');
@@ -1328,16 +1300,19 @@ class App {
             this.slots.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
-            // We no longer delete camera settings here to allow persistence
-            saveSessionState(this.slotOrder, this.activeSlotIndex);
-
             if (this.slotOrder.length === 0) {
                 this.activeSlotIndex = -1;
                 if (this.cycleTimeoutId) {
                     clearTimeout(this.cycleTimeoutId);
                     this.cycleTimeoutId = null;
                 }
+                this.showCameraDialog();
             } else {
+                if (this.currentLayout === 'wide') {
+                    this.reorganizeForWide();
+                } else {
+                    this.reorganizeForNarrow();
+                }
                 if (wasActive) {
                     this.activeSlotIndex = index % this.slotOrder.length;
                     const nextDeviceId = this.slotOrder[this.activeSlotIndex];
@@ -1356,6 +1331,7 @@ class App {
             }
             const cyclingSwitch = document.getElementById('cycling-switch');
             if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     });
 
@@ -1391,8 +1367,6 @@ class App {
           this.settings[deviceId].modes.whiteboard.points = newPts;
       });
 
-      processor.setEnhanceMode(wbSettings.enhanceMode || 'none');
-      processor.setThreshold(wbSettings.threshold !== undefined ? wbSettings.threshold : 0.45);
       processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
       processor.start();
 
