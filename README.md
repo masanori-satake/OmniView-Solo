@@ -6,7 +6,7 @@
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
 
-『OmniView-Solo』は、ハイブリッド会議においてホワイトボードの視認性を劇的に向上させるためのChrome拡張機能（サイドパネル専用）です。
+『OmniView-Solo』は、ハイブリッド会議では伝わりにくい会議室の雰囲気と見やすいホワイトボードの映像をリモートワークメンバーと共有するためのChrome拡張機能（サイドパネル専用）です。
 
 ## 特徴
 
