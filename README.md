@@ -1,10 +1,12 @@
 # OmniView-Solo
 
-[![Version](https://img.shields.io/badge/version-0.4.3-blue)](https://github.com/masanori-satake/OmniView-Solo)
+[![Version](https://img.shields.io/badge/version-0.4.4-blue)](https://github.com/masanori-satake/OmniView-Solo)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-brightgreen)](SECURITY.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-pending-lightgrey)](#)
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
+[![Web Deploy](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml)
 
 『OmniView-Solo』は、ハイブリッド会議では伝わりにくい会議室の雰囲気と見やすいホワイトボードの映像をリモートワークメンバーと共有するためのChrome拡張機能（サイドパネル専用）です。
 
