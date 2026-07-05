@@ -1,0 +1,431 @@
+{
+  "extensionName": {
+    "message": "OmniView-Solo"
+  },
+  "extensionDescription": {
+    "message": "ハイブリッド会議のホワイトボードを劇的に見やすくするアシスタント"
+  },
+  "addCameraNavBtn": {
+    "message": "カメラ追加"
+  },
+  "settingsBtn": {
+    "message": "設定"
+  },
+  "tabGeneral": {
+    "message": "一般"
+  },
+  "tabCameraInfo": {
+    "message": "カメラ情報"
+  },
+  "tabLogs": {
+    "message": "ログ"
+  },
+  "tabAbout": {
+    "message": "About"
+  },
+  "cyclingSwitch": {
+    "message": "自動切り替え"
+  },
+  "intervalLabel": {
+    "message": "表示間隔 (秒)"
+  },
+  "exportBtn": {
+    "message": "エクスポート"
+  },
+  "importBtn": {
+    "message": "インポート"
+  },
+  "importModeLabel": {
+    "message": "インポート設定:"
+  },
+  "importModeAdd": {
+    "message": "追記"
+  },
+  "importModeOverwrite": {
+    "message": "上書き"
+  },
+  "infoCameraSelectLabel": {
+    "message": "カメラ選択"
+  },
+  "copyLogsBtn": {
+    "message": "ログをコピー"
+  },
+  "clearLogsBtn": {
+    "message": "消去"
+  },
+  "aboutDesc": {
+    "message": "ハイブリッド会議の視認性を向上させるローカル完結型ツール"
+  },
+  "aboutDataTitle": {
+    "message": "データの保存場所とリスク"
+  },
+  "aboutDataText": {
+    "message": "記録されたデータ（カメラ設定等）はすべてブラウザ内の IndexedDB に保存されます。ブラウザのキャッシュクリア等によりデータが削除される可能性がありますのでご注意ください。"
+  },
+  "aboutPrivacyTitle": {
+    "message": "プライバシーとセキュリティ"
+  },
+  "aboutPrivacyText": {
+    "message": "本アプリは外部への通信を一切行いません。トラッキングやデータ収集も行わない完全ローカル動作です。"
+  },
+  "aboutDeveloper": {
+    "message": "開発者"
+  },
+  "aboutVersion": {
+    "message": "バージョン: $VERSION$",
+    "placeholders": {
+      "version": { "content": "$1" }
+    }
+  },
+  "startBtn": {
+    "message": "カメラを起動"
+  },
+  "dialogHeader": {
+    "message": "カメラ追加"
+  },
+  "dialogCancel": {
+    "message": "キャンセル"
+  },
+  "dialogAdd": {
+    "message": "追加"
+  },
+  "selectAllCameras": {
+    "message": "全てのカメラ"
+  },
+  "noCameras": {
+    "message": "カメラなし"
+  },
+  "noStreamInfo": {
+    "message": "ストリームが有効ではなく、キャッシュもありません。"
+  },
+  "snackbarLogsCopied": {
+    "message": "ログをコピーしました"
+  },
+  "snackbarCopyFailed": {
+    "message": "コピーに失敗しました"
+  },
+  "snackbarImportSuccess": {
+    "message": "設定をインポートしました。反映するには、必要に応じてカメラを再起動してください。"
+  },
+  "snackbarImportFailed": {
+    "message": "インポートに失敗しました: $ERROR$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "snackbarPermissionRequired": {
+    "message": "カメラの権限が必要です"
+  },
+  "snackbarGrantPermission": {
+    "message": "許可する"
+  },
+  "snackbarResolutionReduced": {
+    "message": "帯域確保のため、解像度を $RES$ に下げて接続しました",
+    "placeholders": {
+      "res": { "content": "$1" }
+    }
+  },
+  "snackbarMultiActivationFailed": {
+    "message": "すべてのカメラを同時に起動できませんでした。帯域不足のため、1台のみ表示します。"
+  },
+  "snackbarResetDone": {
+    "message": "調整をリセットしました"
+  },
+  "snackbarCaptured": {
+    "message": "クリップボードにコピーしました"
+  },
+  "snackbarCaptureFailed": {
+    "message": "コピーに失敗しました: $ERROR$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "snackbarLockNotSupported": {
+    "message": "このカメラは設定の固定に対応していない可能性があります"
+  },
+  "deleteBtnOverlay": {
+    "message": "削除"
+  },
+  "moveUpBtn": {
+    "message": "上へ移動"
+  },
+  "moveDownBtn": {
+    "message": "下へ移動"
+  },
+  "roleSwitchTitle": {
+    "message": "モード切替 (Person / Whiteboard)"
+  },
+  "cameraNamePlaceholder": {
+    "message": "カメラの名前"
+  },
+  "lockBtnTitle": {
+    "message": "フォーカス・露出を固定"
+  },
+  "occlusionBtnTitle": {
+    "message": "写り込み排除"
+  },
+  "setBtnTitle": {
+    "message": "台形補正"
+  },
+  "resetBtnTitle": {
+    "message": "リセット"
+  },
+  "copyBtnTitle": {
+    "message": "キャプチャ"
+  },
+  "infoDeviceId": { "message": "デバイスID" },
+  "infoResolution": { "message": "解像度" },
+  "infoFrameRate": { "message": "フレームレート" },
+  "infoAspectRatio": { "message": "アスペクト比" },
+  "infoFocusMode": { "message": "フォーカスモード" },
+  "infoFocusDistance": { "message": "フォーカス距離" },
+  "infoExposureMode": { "message": "露出モード" },
+  "infoExposureTime": { "message": "露出時間" },
+  "infoWhiteBalanceMode": { "message": "ホワイトバランスモード" },
+  "infoColorTemperature": { "message": "色温度" },
+  "infoIso": { "message": "ISO" },
+  "infoBrightness": { "message": "明るさ" },
+  "infoContrast": { "message": "コントラスト" },
+  "infoSaturation": { "message": "彩度" },
+  "infoSharpness": { "message": "シャープネス" },
+  "infoCurrent": { "message": "(現在: $VAL$)", "placeholders": { "val": { "content": "$1" } } },
+  "permissionTitle": { "message": "カメラ権限の許可 - OmniView-Solo" },
+  "permissionHeader": { "message": "カメラ権限が必要です" },
+  "permissionDesc": { "message": "OmniView-Soloがカメラを使用するには、ブラウザの権限許可が必要です。下のボタンを押して、表示されるダイアログで「許可」を選択してください。" },
+  "permissionGrantBtn": { "message": "カメラの使用を許可する" },
+  "permissionGranted": { "message": "権限が許可されました。このタブを閉じても構いません。" },
+  "permissionError": { "message": "エラー: $ERROR$", "placeholders": { "error": { "content": "$1" } } },
+  "logGlobalSettings": {
+    "message": "グローバル設定を読み込みました: 自動切り替え=$ENABLED$, 間隔=$INTERVAL$s",
+    "placeholders": {
+        "enabled": { "content": "$1" },
+        "interval": { "content": "$2" }
+    }
+  },
+  "logAppInitialized": { "message": "--- アプリが初期化されました ---" },
+  "logDeviceConfigChanged": { "message": "デバイス構成が変更されました" },
+  "logConnectedDevices": {
+    "message": "接続されているデバイス: $COUNT$",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logAddingCameras": {
+    "message": "--- $COUNT$台のカメラを追加しています ---",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logAddingCamera": {
+    "message": "カメラを追加中: $LABEL$ ($ID$)",
+    "placeholders": {
+        "label": { "content": "$1" },
+        "id": { "content": "$2" }
+    }
+  },
+  "logIntervalChanged": {
+    "message": "表示間隔が $INTERVAL$秒に変更されました",
+    "placeholders": {
+        "interval": { "content": "$1" }
+    }
+  },
+  "logCyclingEnabled": {
+    "message": "自動切り替え: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logExportSuccess": { "message": "設定をエクスポートしました" },
+  "logImporting": {
+    "message": "設定をインポート中 (モード: $MODE$)",
+    "placeholders": {
+        "mode": { "content": "$1" }
+    }
+  },
+  "logImportSuccess": { "message": "設定をインポートしました" },
+  "logImportFailed": {
+    "message": "インポートに失敗しました: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logActivatingAll": {
+    "message": "すべてのカメラを起動中 (自動切り替え=$ENABLED$)",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logMultiActivationStart": {
+    "message": "--- 複数カメラの起動検索を開始 (カメラ数: $COUNT$) ---",
+    "placeholders": {
+        "count": { "content": "$1" }
+    }
+  },
+  "logMultiActivationAborted": { "message": "複数カメラの起動検索を中止しました: 状態が変更されました" },
+  "logAttemptActivation": {
+    "message": "解像度レベル $LEVEL$ で起動を試行中",
+    "placeholders": {
+        "level": { "content": "$1" }
+    }
+  },
+  "logActivationFailed": {
+    "message": "$ID$ の $LEVEL$ での起動に失敗しました",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "level": { "content": "$2" }
+    }
+  },
+  "logActivationAllSuccess": {
+    "message": "すべてのカメラを $LEVEL$ で起動しました",
+    "placeholders": {
+        "level": { "content": "$1" }
+    }
+  },
+  "logMultiActivationFallback": { "message": "最低解像度でもすべてのカメラを起動できませんでした。1台のみ表示するモードに切り替えます。" },
+  "logSkippingActivation": {
+    "message": "$ID$ の起動をスキップします - 既に実行中です",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivationAborted": {
+    "message": "$ID$ の起動を中止しました - 必要なくなりました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivationAbortedPost": {
+    "message": "$ID$ の取得後の起動を中止しました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logActivatingAttempt": {
+    "message": "カメラ $ID$ を起動中 (試行 $CURRENT$/$MAX$) 解像度: $RES$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "current": { "content": "$2" },
+        "max": { "content": "$3" },
+        "res": { "content": "$4" }
+    }
+  },
+  "logActivationSuccess": {
+    "message": "カメラ $ID$ が正常に起動しました。取得: $WIDTH$x$HEIGHT$@$FPS$fps",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "width": { "content": "$2" },
+        "height": { "content": "$3" },
+        "fps": { "content": "$4" }
+    }
+  },
+  "logAttemptFailed": {
+    "message": "試行 $INDEX$ が $ID$ で失敗しました: $ERROR$",
+    "placeholders": {
+        "index": { "content": "$1" },
+        "id": { "content": "$2" },
+        "error": { "content": "$3" }
+    }
+  },
+  "logMovingUp": {
+    "message": "カメラ $ID$ を上に移動",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logMovingDown": {
+    "message": "カメラ $ID$ を下に移動",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logModeChanged": {
+    "message": "カメラ $ID$ のモードを $MODE$ に変更しました",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "mode": { "content": "$2" }
+    }
+  },
+  "logResetPerspective": {
+    "message": "カメラ $ID$ のパースペクティブをリセットしました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logResetTransform": {
+    "message": "カメラ $ID$ の変形をリセットしました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logCapturing": {
+    "message": "カメラ $ID$ のフレームをキャプチャ中 (モード: $MODE$)",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "mode": { "content": "$2" }
+    }
+  },
+  "logDeletingSlot": {
+    "message": "カメラスロットを削除中: $ID$",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
+  "logApplyMediaLock": {
+    "message": "設定固定適用: locked=$LOCKED$",
+    "placeholders": {
+        "locked": { "content": "$1" }
+    }
+  },
+  "logApplyingConstraints": {
+    "message": "制約を適用中: $CONSTRAINTS$",
+    "placeholders": {
+        "constraints": { "content": "$1" }
+    }
+  },
+  "logLockFailedModes": {
+    "message": "一部のモードの固定に失敗しました (現在: $MODES$)。値によるフォールバックを試行します...",
+    "placeholders": {
+        "modes": { "content": "$1" }
+    }
+  },
+  "logLockFallback": {
+    "message": "$CONSTR$ のフォールバック: manual + $VALPROP$=$VALUE$",
+    "placeholders": {
+        "constr": { "content": "$1" },
+        "valprop": { "content": "$2" },
+        "value": { "content": "$3" }
+    }
+  },
+  "logLockFallbackFailed": {
+    "message": "フォールバック制約の適用に失敗しました: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logLockFinal": {
+    "message": "最終設定: フォーカス=$FOCUS$($FOCUS_DIST$), 露出=$EXPOSURE$($EXPOSURE_TIME$), ホワイトバランス=$WB$($COLOR_TEMP$)",
+    "placeholders": {
+        "focus": { "content": "$1" },
+        "focus_dist": { "content": "$2" },
+        "exposure": { "content": "$3" },
+        "exposure_time": { "content": "$4" },
+        "wb": { "content": "$5" },
+        "color_temp": { "content": "$6" }
+    }
+  },
+  "logLockError": {
+    "message": "制約の適用に失敗しました: $ERROR$",
+    "placeholders": {
+        "error": { "content": "$1" }
+    }
+  },
+  "logLockSettingsChanged": {
+    "message": "カメラ $ID$ の設定を $STATUS$ しました",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "status": { "content": "$2" }
+    }
+  },
+  "lockStatusLocked": { "message": "固定" },
+  "lockStatusUnlocked": { "message": "解除" }
+}

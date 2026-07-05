@@ -107,7 +107,10 @@ function setLanguage(lang) {
 document.addEventListener("DOMContentLoaded", () => {
   let savedLang = "en";
   try {
-    savedLang = localStorage.getItem("preferred-lang") || (navigator.language.startsWith("ja") ? "ja" : "en");
+    savedLang = localStorage.getItem("preferred-lang");
+    if (!savedLang) {
+      savedLang = navigator.language.startsWith("ja") ? "ja" : "en";
+    }
   } catch (e) {
     savedLang = navigator.language.startsWith("ja") ? "ja" : "en";
   }
