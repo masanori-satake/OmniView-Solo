@@ -25,7 +25,7 @@ class App {
       const key = el.getAttribute('data-i18n');
       let message;
       if (key === 'aboutVersion') {
-          message = chrome.i18n.getMessage(key, ['0.5.0']);
+          message = chrome.i18n.getMessage(key, [chrome.runtime.getManifest().version]);
       } else {
           message = chrome.i18n.getMessage(key);
       }
@@ -981,7 +981,7 @@ class App {
                 }
                 const suffix = (deviceId || 'unknown').slice(0, 4);
                 if (!resolution) {
-                    this.showSnackbar(chrome.i18n.getMessage('logAttemptFailed', [String(i + 1), suffix, e.name + ' - ' + e.message]));
+                    this.showSnackbar(chrome.i18n.getMessage('snackbarCameraStartFailed', [suffix, e.name + ' - ' + e.message]));
                 }
             }
         }
@@ -1384,7 +1384,7 @@ class App {
 
       const processor = new WhiteboardProcessor(video, canvas, processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
-          this.addLog(chrome.i18n.getMessage('logResetPerspective', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
+          this.addLog(chrome.i18n.getMessage('logPerspectiveAdjusted', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
           saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
           if (!this.settings[deviceId]) {
               this.settings[deviceId] = { modes: { person: {}, whiteboard: {} } };
