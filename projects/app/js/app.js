@@ -1172,7 +1172,7 @@ class App {
 
                   // Auto-enter perspective adjustment if points are default
                   const pts = this.settings[deviceId]?.modes?.whiteboard?.points;
-                  const isDefault = !pts || (
+                  const isDefault = !Array.isArray(pts) || pts.length < 4 || (
                       pts[0].x === 20 && pts[0].y === 20 &&
                       pts[1].x === 80 && pts[1].y === 20 &&
                       pts[2].x === 80 && pts[2].y === 80 &&
