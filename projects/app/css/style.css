@@ -610,6 +610,8 @@ video, .processed-canvas {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
     gap: 16px;
     overflow-y: auto;
     padding: 8px;
