@@ -879,7 +879,7 @@ class App {
         this.addLog(chrome.i18n.getMessage('logSkippingActivation', [deviceId.slice(0, 8)]));
         return false;
     }
-    if (slot.stream && !resolution) {
+    if (slot.stream && slot.stream.active && !resolution) {
         return true;
     }
     slot.isActivating = true;
