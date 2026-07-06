@@ -239,10 +239,8 @@ class App {
             if (slot) {
                 const role = slot.element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
                 settingsToExport[deviceId].defaultRole = role;
-                const zoomMatch = slot.element.className.match(/zoom-(\d+)/);
-                if (zoomMatch) {
-                    settingsToExport[deviceId].zoom = parseInt(zoomMatch[1]);
-                }
+                const currentZoom = parseInt(slot.element.dataset.zoom || '1');
+                settingsToExport[deviceId].zoom = currentZoom;
             }
         }
 
@@ -325,6 +323,7 @@ class App {
                                 const updateZoomUI = (zoom) => {
                                     slot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
                                     slot.element.classList.add(`zoom-${zoom}`);
+                                    slot.element.dataset.zoom = zoom;
                                     if (zoomInBtn) zoomInBtn.disabled = (zoom === 1);
                                     if (zoomOutBtn) zoomOutBtn.disabled = (zoom === 4);
                                 };
@@ -1116,6 +1115,7 @@ class App {
 
     const element = document.createElement('div');
     element.className = `camera-slot zoom-${setting.zoom}`;
+    element.dataset.zoom = setting.zoom;
     element.innerHTML = `
       <div class="video-wrapper">
         <video autoplay playsinline muted></video>
@@ -1200,6 +1200,7 @@ class App {
     const updateZoomUI = (zoom) => {
         element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
         element.classList.add(`zoom-${zoom}`);
+        element.dataset.zoom = zoom;
         zoomInBtn.disabled = (zoom === 1);
         zoomOutBtn.disabled = (zoom === 4);
     };
@@ -1208,7 +1209,7 @@ class App {
 
     zoomInBtn.onclick = (e) => {
         e.stopPropagation();
-        const currentZoom = parseInt(element.className.match(/zoom-(\d+)/)[1]);
+        const currentZoom = parseInt(element.dataset.zoom || '1');
         if (currentZoom === 2) {
             updateZoomUI(1);
             saveCameraSetting(deviceId, { zoom: 1 });
@@ -1220,7 +1221,7 @@ class App {
 
     zoomOutBtn.onclick = (e) => {
         e.stopPropagation();
-        const currentZoom = parseInt(element.className.match(/zoom-(\d+)/)[1]);
+        const currentZoom = parseInt(element.dataset.zoom || '1');
         if (currentZoom === 1) {
             updateZoomUI(2);
             saveCameraSetting(deviceId, { zoom: 2 });
