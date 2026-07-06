@@ -153,6 +153,12 @@
   "deleteBtnOverlay": {
     "message": "削除"
   },
+  "zoomInBtnTitle": {
+    "message": "拡大"
+  },
+  "zoomOutBtnTitle": {
+    "message": "縮小"
+  },
   "moveUpBtn": {
     "message": "上へ移動"
   },

@@ -153,6 +153,12 @@
   "deleteBtnOverlay": {
     "message": "Delete"
   },
+  "zoomInBtnTitle": {
+    "message": "Zoom In"
+  },
+  "zoomOutBtnTitle": {
+    "message": "Zoom Out"
+  },
   "moveUpBtn": {
     "message": "Move Up"
   },
