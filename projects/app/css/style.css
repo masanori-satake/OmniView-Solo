@@ -426,6 +426,28 @@ video, .processed-canvas {
     color: #FFEB3B; /* Yellow */
 }
 
+.adjusting-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--md-sys-shape-full);
+    font-size: 14px;
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.adjusting-overlay.hidden {
+    display: none;
+}
+
 .slot-controls {
     padding: 8px;
     display: flex;
@@ -466,6 +488,11 @@ video, .processed-canvas {
 .m3-icon-button-small.active {
     background-color: var(--md-sys-color-primary-container);
     color: var(--md-sys-color-on-primary-container);
+}
+
+.m3-icon-button-small.locked {
+    background-color: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-primary);
 }
 
 .m3-button-outlined-small {

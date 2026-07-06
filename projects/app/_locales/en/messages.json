@@ -166,7 +166,10 @@
     "message": "Camera Name"
   },
   "lockBtnTitle": {
-    "message": "Lock Focus & Exposure"
+    "message": "Lock Focus"
+  },
+  "adjustingMsg": {
+    "message": "Adjusting..."
   },
   "occlusionBtnTitle": {
     "message": "Occlusion Removal"
@@ -416,14 +419,10 @@
     }
   },
   "logLockFinal": {
-    "message": "Final settings: focus=$FOCUS$($FOCUS_DIST$), exposure=$EXPOSURE$($EXPOSURE_TIME$), wb=$WB$($COLOR_TEMP$)",
+    "message": "Final settings: focus=$FOCUS$($FOCUS_DIST$)",
     "placeholders": {
         "focus": { "content": "$1" },
-        "focus_dist": { "content": "$2" },
-        "exposure": { "content": "$3" },
-        "exposure_time": { "content": "$4" },
-        "wb": { "content": "$5" },
-        "color_temp": { "content": "$6" }
+        "focus_dist": { "content": "$2" }
     }
   },
   "logLockError": {
