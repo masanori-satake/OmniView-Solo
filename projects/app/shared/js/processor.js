@@ -186,8 +186,10 @@ export class PerspectiveTransformer {
                 this.ctx.textBaseline = 'middle';
 
                 // Position outside the quad
-                const dx = p.x - centerX;
-                const dy = p.y - centerY;
+                const pixelCenterX = (centerX / 100) * this.canvas.width;
+                const pixelCenterY = (centerY / 100) * this.canvas.height;
+                const dx = x - pixelCenterX;
+                const dy = y - pixelCenterY;
                 const mag = Math.hypot(dx, dy) || 1;
                 const offsetX = (dx / mag) * 20;
                 const offsetY = (dy / mag) * 20;
