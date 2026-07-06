@@ -10,6 +10,8 @@
     "icons": "python3 scripts/generate_png_icons.py"
   },
   "devDependencies": {
-    "eslint": "^10.0.2"
+    "@playwright/test": "^1.61.1",
+    "eslint": "^10.0.2",
+    "playwright": "^1.61.1"
   }
 }
