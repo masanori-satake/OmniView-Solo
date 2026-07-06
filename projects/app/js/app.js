@@ -879,6 +879,9 @@ class App {
         this.addLog(chrome.i18n.getMessage('logSkippingActivation', [deviceId.slice(0, 8)]));
         return false;
     }
+    if (slot.stream && !resolution) {
+        return true;
+    }
     slot.isActivating = true;
 
     const maxRetries = resolution ? 1 : 3; // No retries during multi-camera search
@@ -941,6 +944,9 @@ class App {
                 const setting = this.settings[deviceId] || {};
                 const role = setting.defaultRole || 'person';
                 if (role === 'whiteboard') {
+                    if (slot.processor) {
+                        slot.processor.stop();
+                    }
                     slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
                 }
                 const track = stream.getVideoTracks()[0];
@@ -1213,8 +1219,11 @@ class App {
                   if (slot.processor) {
                       slot.processor.stop();
                       slot.processor = null;
+                  } else {
+                      // Fallback: Ensure no other leaked transformer is affecting the video
+                      slot.video.style.transform = '';
+                      slot.video.style.objectFit = 'contain';
                   }
-                  slot.video.style.transform = '';
                   const ctx = slot.canvas.getContext('2d');
                   ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
               }
