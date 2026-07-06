@@ -879,7 +879,7 @@ class App {
         this.addLog(chrome.i18n.getMessage('logSkippingActivation', [deviceId.slice(0, 8)]));
         return false;
     }
-    if (slot.stream && slot.stream.active && !resolution) {
+    if (slot.stream && !resolution) {
         return true;
     }
     slot.isActivating = true;
@@ -1220,9 +1220,13 @@ class App {
                       slot.processor.stop();
                       slot.processor = null;
                   } else {
-                      // Fallback: Ensure no other leaked transformer is affecting the video
+                      // Fallback: Ensure no other leaked transformer is affecting the video or canvas
                       slot.video.style.transform = '';
                       slot.video.style.objectFit = 'contain';
+                      if (slot.processedCanvas) {
+                          slot.processedCanvas.style.transform = '';
+                          slot.processedCanvas.style.display = 'none';
+                      }
                   }
                   const ctx = slot.canvas.getContext('2d');
                   ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
