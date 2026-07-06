@@ -233,12 +233,16 @@ class App {
 
     exportBtn.addEventListener('click', async () => {
         const settingsToExport = await loadCameraSettings();
-        // Record current mode as defaultRole for export
+        // Record current mode and zoom as default for export
         for (const deviceId of Object.keys(settingsToExport)) {
             const slot = this.slots.get(deviceId);
             if (slot) {
                 const role = slot.element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
                 settingsToExport[deviceId].defaultRole = role;
+                const zoomMatch = slot.element.className.match(/zoom-(\d+)/);
+                if (zoomMatch) {
+                    settingsToExport[deviceId].zoom = parseInt(zoomMatch[1]);
+                }
             }
         }
 
@@ -313,6 +317,18 @@ class App {
                                     roleSwitch.checked = s.defaultRole === 'whiteboard';
                                     roleSwitch.dispatchEvent(new Event('change'));
                                 }
+                            }
+                            if (s.zoom) {
+                                const zoomInBtn = slot.element.querySelector('.zoom-in-btn');
+                                const zoomOutBtn = slot.element.querySelector('.zoom-out-btn');
+
+                                const updateZoomUI = (zoom) => {
+                                    slot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
+                                    slot.element.classList.add(`zoom-${zoom}`);
+                                    if (zoomInBtn) zoomInBtn.disabled = (zoom === 1);
+                                    if (zoomOutBtn) zoomOutBtn.disabled = (zoom === 4);
+                                };
+                                updateZoomUI(s.zoom);
                             }
                         }
                     }
@@ -1094,11 +1110,12 @@ class App {
     const defaultLabel = (camera.label || 'Camera') + ` (${deviceId.slice(0, 4)})`;
     const setting = {
       role: savedSetting.defaultRole || 'person',
-      customLabel: savedSetting.customLabel || defaultLabel
+      customLabel: savedSetting.customLabel || defaultLabel,
+      zoom: savedSetting.zoom || 1
     };
 
     const element = document.createElement('div');
-    element.className = 'camera-slot';
+    element.className = `camera-slot zoom-${setting.zoom}`;
     element.innerHTML = `
       <div class="video-wrapper">
         <video autoplay playsinline muted></video>
@@ -1111,6 +1128,14 @@ class App {
         <button class="video-overlay-top-right delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
             <span class="material-symbols-outlined">close</span>
         </button>
+        <div class="video-overlay-bottom-right">
+            <button class="zoom-btn-overlay zoom-out-btn" title="${chrome.i18n.getMessage('zoomOutBtnTitle')}">
+                <span class="material-symbols-outlined">zoom_out</span>
+            </button>
+            <button class="zoom-btn-overlay zoom-in-btn" title="${chrome.i18n.getMessage('zoomInBtnTitle')}">
+                <span class="material-symbols-outlined">zoom_in</span>
+            </button>
+        </div>
         <div class="adjusting-overlay hidden">
             <span class="material-symbols-outlined">sync</span>
             <span data-i18n="adjustingMsg">${chrome.i18n.getMessage('adjustingMsg')}</span>
@@ -1169,7 +1194,44 @@ class App {
     element.querySelector('.move-up-btn').onclick = () => this.moveCamera(deviceId, 'up');
     element.querySelector('.move-down-btn').onclick = () => this.moveCamera(deviceId, 'down');
 
+    const zoomInBtn = element.querySelector('.zoom-in-btn');
+    const zoomOutBtn = element.querySelector('.zoom-out-btn');
+
+    const updateZoomUI = (zoom) => {
+        element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
+        element.classList.add(`zoom-${zoom}`);
+        zoomInBtn.disabled = (zoom === 1);
+        zoomOutBtn.disabled = (zoom === 4);
+    };
+
+    updateZoomUI(setting.zoom);
+
+    zoomInBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentZoom = parseInt(element.className.match(/zoom-(\d+)/)[1]);
+        if (currentZoom === 2) {
+            updateZoomUI(1);
+            saveCameraSetting(deviceId, { zoom: 1 });
+        } else if (currentZoom === 4) {
+            updateZoomUI(2);
+            saveCameraSetting(deviceId, { zoom: 2 });
+        }
+    };
+
+    zoomOutBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentZoom = parseInt(element.className.match(/zoom-(\d+)/)[1]);
+        if (currentZoom === 1) {
+            updateZoomUI(2);
+            saveCameraSetting(deviceId, { zoom: 2 });
+        } else if (currentZoom === 2) {
+            updateZoomUI(4);
+            saveCameraSetting(deviceId, { zoom: 4 });
+        }
+    };
+
     element.querySelector('.video-wrapper').onclick = (e) => {
+        if (e.target.closest('.zoom-btn-overlay')) return;
         this.switchActiveCamera(deviceId);
     };
 

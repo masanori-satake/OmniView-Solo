@@ -366,9 +366,9 @@ video, .processed-canvas {
 }
 
 .video-overlay-top-left,
-.video-overlay-top-right {
+.video-overlay-top-right,
+.video-overlay-bottom-right {
     position: absolute;
-    top: 8px;
     z-index: 10;
     display: flex;
     align-items: center;
@@ -377,16 +377,26 @@ video, .processed-canvas {
 }
 
 .video-overlay-top-left {
+    top: 8px;
     left: 8px;
 }
 
 .video-overlay-top-right {
+    top: 8px;
     right: 8px;
     pointer-events: auto; /* Allow clicking delete button */
 }
 
+.video-overlay-bottom-right {
+    bottom: 8px;
+    right: 8px;
+    pointer-events: auto;
+    gap: 4px;
+}
+
 .video-overlay-top-left .material-symbols-outlined,
-.video-overlay-top-right .material-symbols-outlined {
+.video-overlay-top-right .material-symbols-outlined,
+.video-overlay-bottom-right .material-symbols-outlined {
     font-size: 24px;
     color: white;
     text-shadow:
@@ -397,7 +407,8 @@ video, .processed-canvas {
          0px  0px 4px rgba(0,0,0,0.5);
 }
 
-.delete-btn-overlay {
+.delete-btn-overlay,
+.zoom-btn-overlay {
     background: none;
     border: none;
     padding: 0;
@@ -410,8 +421,14 @@ video, .processed-canvas {
     justify-content: center;
 }
 
-.delete-btn-overlay:hover {
+.delete-btn-overlay:hover,
+.zoom-btn-overlay:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+.zoom-btn-overlay:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .pause-indicator {
@@ -461,6 +478,7 @@ video, .processed-canvas {
     gap: 4px;
     width: 100%;
     box-sizing: border-box;
+    flex-wrap: wrap;
 }
 
 .slot-move-controls {
@@ -582,14 +600,16 @@ video, .processed-canvas {
 
 .layout-narrow #camera-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
     overflow-y: auto;
 }
 
 .layout-wide #camera-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 16px;
     overflow-y: auto;
     padding: 8px;
@@ -599,16 +619,31 @@ video, .processed-canvas {
 
 .layout-wide .camera-slot {
     flex: none;
-    min-height: 200px;
 }
 
 .layout-wide .camera-slot:first-child {
     flex: none;
 }
 
-/* Override for consistent slot size in all modes */
-.camera-slot {
+/* Slot sizes */
+.camera-slot.zoom-1 {
     width: 100%;
+}
+
+.layout-narrow .camera-slot.zoom-2 {
+    width: calc(50% - 4px);
+}
+
+.layout-narrow .camera-slot.zoom-4 {
+    width: calc(25% - 6px);
+}
+
+.layout-wide .camera-slot.zoom-2 {
+    width: calc(50% - 8px);
+}
+
+.layout-wide .camera-slot.zoom-4 {
+    width: calc(25% - 12px);
 }
 
 #snackbar {
