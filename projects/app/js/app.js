@@ -1453,6 +1453,13 @@ class App {
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
 
+      const labels = [
+          chrome.i18n.getMessage('handleTopLeft'),
+          chrome.i18n.getMessage('handleTopRight'),
+          chrome.i18n.getMessage('handleBottomRight'),
+          chrome.i18n.getMessage('handleBottomLeft')
+      ];
+
       const processor = new WhiteboardProcessor(video, canvas, processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(chrome.i18n.getMessage('logPerspectiveAdjusted', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
@@ -1463,7 +1470,7 @@ class App {
           if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
           if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
           this.settings[deviceId].modes.whiteboard.points = newPts;
-      });
+      }, labels);
 
       processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
       processor.start();

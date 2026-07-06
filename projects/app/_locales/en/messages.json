@@ -439,5 +439,9 @@
     }
   },
   "lockStatusLocked": { "message": "locked" },
-  "lockStatusUnlocked": { "message": "unlocked" }
+  "lockStatusUnlocked": { "message": "unlocked" },
+  "handleTopLeft": { "message": "Top Left" },
+  "handleTopRight": { "message": "Top Right" },
+  "handleBottomRight": { "message": "Bottom Right" },
+  "handleBottomLeft": { "message": "Bottom Left" }
 }

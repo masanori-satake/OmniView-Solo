@@ -439,5 +439,9 @@
     }
   },
   "lockStatusLocked": { "message": "固定" },
-  "lockStatusUnlocked": { "message": "解除" }
+  "lockStatusUnlocked": { "message": "解除" },
+  "handleTopLeft": { "message": "左上" },
+  "handleTopRight": { "message": "右上" },
+  "handleBottomRight": { "message": "右下" },
+  "handleBottomLeft": { "message": "左下" }
 }
