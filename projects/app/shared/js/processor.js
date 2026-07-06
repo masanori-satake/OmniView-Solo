@@ -4,12 +4,13 @@ import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
  * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
-    constructor(video, canvas, points, onPointsChange) {
+    constructor(video, canvas, points, onPointsChange, labels = []) {
         this.video = video;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.points = points;
         this.onPointsChange = onPointsChange;
+        this.labels = labels;
         this.draggingPoint = null;
         this.showHandles = false;
         this.processedCanvas = null;
@@ -165,7 +166,10 @@ export class PerspectiveTransformer {
         this.ctx.closePath();
         this.ctx.stroke();
 
-        this.points.forEach(p => {
+        const centerX = this.points.reduce((sum, p) => sum + p.x, 0) / this.points.length;
+        const centerY = this.points.reduce((sum, p) => sum + p.y, 0) / this.points.length;
+
+        this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
             this.ctx.fillStyle = '#00e676';
@@ -174,6 +178,34 @@ export class PerspectiveTransformer {
             this.ctx.fill();
             this.ctx.strokeStyle = '#fff';
             this.ctx.stroke();
+
+            // Draw label
+            if (this.labels[i] && this.draggingPoint !== i) {
+                this.ctx.font = 'bold 14px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                // Position outside the quad
+                const pixelCenterX = (centerX / 100) * this.canvas.width;
+                const pixelCenterY = (centerY / 100) * this.canvas.height;
+                const dx = x - pixelCenterX;
+                const dy = y - pixelCenterY;
+                const mag = Math.hypot(dx, dy) || 1;
+                const offsetX = (dx / mag) * 20;
+                const offsetY = (dy / mag) * 20;
+
+                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowOffsetX = 2;
+                this.ctx.shadowOffsetY = 2;
+                this.ctx.fillText(this.labels[i], x + offsetX, y + offsetY);
+
+                // Reset shadow
+                this.ctx.shadowColor = 'transparent';
+                this.ctx.shadowBlur = 0;
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 0;
+            }
         });
     }
 
@@ -303,12 +335,12 @@ export class MedianStacker {
  * Orchestrates whiteboard features.
  */
 export class WhiteboardProcessor {
-    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange) {
+    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange, labels = []) {
         this.video = video;
         this.overlayCanvas = overlayCanvas;
         this.processedCanvas = processedCanvas;
         this.ctx = processedCanvas.getContext('2d', { willReadFrequently: true });
-        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange);
+        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange, labels);
         this.transformer.processedCanvas = processedCanvas;
         this.stacker = new MedianStacker(video);
         this.occlusionRemoval = false;
