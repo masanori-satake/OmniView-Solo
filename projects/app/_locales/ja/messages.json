@@ -166,7 +166,10 @@
     "message": "カメラの名前"
   },
   "lockBtnTitle": {
-    "message": "フォーカス・露出を固定"
+    "message": "フォーカスを固定"
+  },
+  "adjustingMsg": {
+    "message": "調整中・・・"
   },
   "occlusionBtnTitle": {
     "message": "写り込み排除"
@@ -416,14 +419,10 @@
     }
   },
   "logLockFinal": {
-    "message": "最終設定: フォーカス=$FOCUS$($FOCUS_DIST$), 露出=$EXPOSURE$($EXPOSURE_TIME$), ホワイトバランス=$WB$($COLOR_TEMP$)",
+    "message": "最終設定: フォーカス=$FOCUS$($FOCUS_DIST$)",
     "placeholders": {
         "focus": { "content": "$1" },
-        "focus_dist": { "content": "$2" },
-        "exposure": { "content": "$3" },
-        "exposure_time": { "content": "$4" },
-        "wb": { "content": "$5" },
-        "color_temp": { "content": "$6" }
+        "focus_dist": { "content": "$2" }
     }
   },
   "logLockError": {

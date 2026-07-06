@@ -958,14 +958,28 @@ class App {
 
                 // Restore lock state if saved
                 if (setting.mediaSettingsFixed) {
-                    const success = await this.applyMediaLock(track, true);
-                    if (success) {
-                        const lockBtn = slot.element.querySelector('.lock-btn');
-                        if (lockBtn) {
-                            lockBtn.classList.add('locked');
-                            lockBtn.querySelector('.material-symbols-outlined').textContent = 'lock';
-                        }
+                    if (slot.adjustingTimeoutId) {
+                        clearTimeout(slot.adjustingTimeoutId);
                     }
+                    const adjOverlay = slot.element.querySelector('.adjusting-overlay');
+                    if (adjOverlay) adjOverlay.classList.remove('hidden');
+
+                    // Small delay to let camera stabilize (auto-focus) before locking
+                    slot.adjustingTimeoutId = setTimeout(async () => {
+                        slot.adjustingTimeoutId = null;
+                        // Check if still active and track is still live
+                        if (slot.stream && track.readyState === 'live') {
+                            const success = await this.applyMediaLock(track, true);
+                            if (success) {
+                                const lockBtn = slot.element.querySelector('.lock-btn');
+                                if (lockBtn) {
+                                    lockBtn.classList.add('locked');
+                                    lockBtn.querySelector('.material-symbols-outlined').textContent = 'lock';
+                                }
+                            }
+                        }
+                        if (adjOverlay) adjOverlay.classList.add('hidden');
+                    }, 3000);
                 }
 
                 return true; // Success
@@ -998,6 +1012,13 @@ class App {
   }
 
   async deactivateSlot(slot) {
+    if (slot.adjustingTimeoutId) {
+        clearTimeout(slot.adjustingTimeoutId);
+        slot.adjustingTimeoutId = null;
+        const adjOverlay = slot.element.querySelector('.adjusting-overlay');
+        if (adjOverlay) adjOverlay.classList.add('hidden');
+    }
+
     // Capture current frame to freezeCanvas
     const { video, freezeCanvas, canvas, processor } = slot;
     if (processor) {
@@ -1090,6 +1111,10 @@ class App {
         <button class="video-overlay-top-right delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
             <span class="material-symbols-outlined">close</span>
         </button>
+        <div class="adjusting-overlay hidden">
+            <span class="material-symbols-outlined">sync</span>
+            <span data-i18n="adjustingMsg">${chrome.i18n.getMessage('adjustingMsg')}</span>
+        </div>
       </div>
       <div class="slot-controls">
         <div class="control-row">
@@ -1174,6 +1199,39 @@ class App {
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
       this.addLog(chrome.i18n.getMessage('logModeChanged', [deviceId.slice(0, 8), role]));
+
+      // If switching from whiteboard to person, unlock focus if it was locked
+      if (role === 'person') {
+          const slot = this.slots.get(deviceId);
+          const lockBtn = element.querySelector('.lock-btn');
+          const isLocked = lockBtn && lockBtn.classList.contains('locked');
+          const hasPendingTimeout = slot && slot.adjustingTimeoutId;
+
+          if (isLocked || hasPendingTimeout) {
+              if (slot && slot.adjustingTimeoutId) {
+                  clearTimeout(slot.adjustingTimeoutId);
+                  slot.adjustingTimeoutId = null;
+                  const adjOverlay = slot.element.querySelector('.adjusting-overlay');
+                  if (adjOverlay) adjOverlay.classList.add('hidden');
+              }
+
+              if (lockBtn) {
+                  lockBtn.classList.remove('locked');
+                  const icon = lockBtn.querySelector('.material-symbols-outlined');
+                  if (icon) icon.textContent = 'lock_open';
+              }
+
+              saveCameraSetting(deviceId, { mediaSettingsFixed: false });
+              this.addLog(chrome.i18n.getMessage('logLockSettingsChanged', [deviceId.slice(0, 8), chrome.i18n.getMessage('lockStatusUnlocked')]));
+
+              if (slot && slot.stream) {
+                  const track = slot.stream.getVideoTracks()[0];
+                  if (track) {
+                      await this.applyMediaLock(track, false);
+                  }
+              }
+          }
+      }
 
       // Update local settings first to ensure subsequent calls use the new role
       if (!this.settings[deviceId]) {
@@ -1422,9 +1480,7 @@ class App {
       this.addLog(chrome.i18n.getMessage('logApplyMediaLock', [String(locked)]));
 
       const modeProps = [
-          { prop: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' },
-          { prop: 'exposureMode', constr: 'exposureMode', valProp: 'exposureTime' },
-          { prop: 'whiteBalanceMode', constr: 'whiteBalanceMode', valProp: 'colorTemperature' }
+          { prop: 'focusMode', constr: 'focusMode', valProp: 'focusDistance' }
       ];
 
       if (locked) {
@@ -1496,9 +1552,7 @@ class App {
 
               const finalSettings = track.getSettings();
               this.addLog(chrome.i18n.getMessage('logLockFinal', [
-                  String(finalSettings.focusMode), String(finalSettings.focusDistance),
-                  String(finalSettings.exposureMode), String(finalSettings.exposureTime),
-                  String(finalSettings.whiteBalanceMode), String(finalSettings.colorTemperature)
+                  String(finalSettings.focusMode), String(finalSettings.focusDistance)
               ]));
               return true;
           } catch (e) {
