@@ -1063,6 +1063,17 @@ class App {
     const setBtn = slot.element.querySelector('.set-btn');
     if (setBtn) setBtn.classList.remove('active');
 
+    // Reset adjustment states to ensure clean state on re-activation
+    const videoWrapper = slot.element.querySelector('.video-wrapper');
+    if (videoWrapper) {
+        videoWrapper.classList.remove('adjusting-perspective');
+    }
+    const vOverlay = slot.element.querySelector('.vscale-overlay');
+    const role = slot.element.querySelector('.role-switch')?.checked ? 'whiteboard' : 'person';
+    if (vOverlay && role === 'whiteboard') {
+        vOverlay.classList.remove('hidden');
+    }
+
     // Stop stream
     if (slot.stream) {
         slot.stream.getTracks().forEach(track => track.stop());
@@ -1264,7 +1275,7 @@ class App {
 
         // Upper limit: 9:16 (scale ≈ 3.1605)
         // Lower limit: 16:9 (scale = 1.0)
-        vExpandBtn.disabled = (scale >= 3.16);
+        vExpandBtn.disabled = (scale >= 3.1);
         vCompressBtn.disabled = (scale <= 1.05); // Use slightly more than 1.0 to handle floating point
     };
 
@@ -1379,6 +1390,8 @@ class App {
       this.settings[deviceId].defaultRole = role;
 
       const wbControls = element.querySelectorAll('.whiteboard-only');
+      const vScaleOverlay = element.querySelector('.vscale-overlay');
+
       wbControls.forEach(ctrl => {
           if (role === 'whiteboard') {
               ctrl.classList.remove('hidden');
