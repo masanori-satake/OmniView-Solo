@@ -1110,14 +1110,20 @@ class App {
     const setting = {
       role: savedSetting.defaultRole || 'person',
       customLabel: savedSetting.customLabel || defaultLabel,
-      zoom: savedSetting.zoom || 1
+      zoom: savedSetting.zoom || 1,
+      vScale: savedSetting.modes?.whiteboard?.vScale || 1.0
     };
 
     const element = document.createElement('div');
     element.className = `camera-slot zoom-${setting.zoom}`;
     element.dataset.zoom = setting.zoom;
+    element.dataset.vScale = setting.vScale;
+
+    const vScaleHiddenClass = (setting.role !== 'whiteboard') ? 'hidden' : '';
+    const initialAspectRatio = (setting.role === 'whiteboard') ? `16 / ${9 * setting.vScale}` : '16 / 9';
+
     element.innerHTML = `
-      <div class="video-wrapper">
+      <div class="video-wrapper" style="aspect-ratio: ${initialAspectRatio}">
         <video autoplay playsinline muted></video>
         <canvas class="processed-canvas whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}"></canvas>
         <canvas class="freeze-canvas"></canvas>
@@ -1128,6 +1134,17 @@ class App {
         <button class="video-overlay-top-right delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
             <span class="material-symbols-outlined">close</span>
         </button>
+        <div class="video-overlay-bottom-left vscale-overlay whiteboard-only ${vScaleHiddenClass}">
+            <button class="vscale-btn-overlay vscale-expand-btn" title="${chrome.i18n.getMessage('vExpandBtnTitle')}">
+                <span class="material-symbols-outlined">expand</span>
+            </button>
+            <button class="vscale-btn-overlay vscale-compress-btn" title="${chrome.i18n.getMessage('vCompressBtnTitle')}">
+                <span class="material-symbols-outlined">compress</span>
+            </button>
+            <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}">
+                <span class="material-symbols-outlined">restart_alt</span>
+            </button>
+        </div>
         <div class="video-overlay-bottom-right">
             <button class="zoom-btn-overlay zoom-out-btn" title="${chrome.i18n.getMessage('zoomOutBtnTitle')}">
                 <span class="material-symbols-outlined">zoom_out</span>
@@ -1197,6 +1214,11 @@ class App {
     const zoomInBtn = element.querySelector('.zoom-in-btn');
     const zoomOutBtn = element.querySelector('.zoom-out-btn');
 
+    const vExpandBtn = element.querySelector('.vscale-expand-btn');
+    const vCompressBtn = element.querySelector('.vscale-compress-btn');
+    const vResetBtn = element.querySelector('.vscale-reset-btn');
+    const videoWrapper = element.querySelector('.video-wrapper');
+
     const updateZoomUI = (zoom) => {
         element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
         element.classList.add(`zoom-${zoom}`);
@@ -1231,8 +1253,51 @@ class App {
         }
     };
 
+    const updateVScaleUI = (scale) => {
+        element.dataset.vScale = scale;
+        const role = element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
+        if (role === 'whiteboard' && !videoWrapper.classList.contains('adjusting-perspective')) {
+            videoWrapper.style.aspectRatio = `16 / ${9 * scale}`;
+        } else {
+            videoWrapper.style.aspectRatio = '16 / 9';
+        }
+
+        // Upper limit: 9:16 (scale ≈ 3.1605)
+        // Lower limit: 16:9 (scale = 1.0)
+        vExpandBtn.disabled = (scale >= 3.1);
+        vCompressBtn.disabled = (scale <= 1.05); // Use slightly more than 1.0 to handle floating point
+    };
+
+    updateVScaleUI(setting.vScale);
+
+    vExpandBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentScale = parseFloat(element.dataset.vScale || '1.0');
+        const nextScale = Math.min(3.1605, currentScale + 0.1);
+        updateVScaleUI(nextScale);
+        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), nextScale.toFixed(2)]));
+    };
+
+    vCompressBtn.onclick = (e) => {
+        e.stopPropagation();
+        const currentScale = parseFloat(element.dataset.vScale || '1.0');
+        const nextScale = Math.max(1.0, currentScale - 0.1);
+        updateVScaleUI(nextScale);
+        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), nextScale.toFixed(2)]));
+    };
+
+    vResetBtn.onclick = (e) => {
+        e.stopPropagation();
+        updateVScaleUI(1.0);
+        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
+        this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), '1.00']));
+    };
+
     element.querySelector('.video-wrapper').onclick = (e) => {
         if (e.target.closest('.zoom-btn-overlay')) return;
+        if (e.target.closest('.vscale-btn-overlay')) return;
         this.switchActiveCamera(deviceId);
     };
 
@@ -1262,6 +1327,14 @@ class App {
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
       this.addLog(chrome.i18n.getMessage('logModeChanged', [deviceId.slice(0, 8), role]));
+
+      // Update aspect ratio based on mode
+      const currentVScale = parseFloat(element.dataset.vScale || '1.0');
+      if (role === 'whiteboard') {
+          videoWrapper.style.aspectRatio = `16 / ${9 * currentVScale}`;
+      } else {
+          videoWrapper.style.aspectRatio = '16 / 9';
+      }
 
       // If switching from whiteboard to person, unlock focus if it was locked
       if (role === 'person') {
@@ -1306,9 +1379,14 @@ class App {
       this.settings[deviceId].defaultRole = role;
 
       const wbControls = element.querySelectorAll('.whiteboard-only');
+      const vScaleOverlay = element.querySelector('.vscale-overlay');
+
       wbControls.forEach(ctrl => {
-          if (role === 'whiteboard') ctrl.classList.remove('hidden');
-          else ctrl.classList.add('hidden');
+          if (role === 'whiteboard') {
+              ctrl.classList.remove('hidden');
+          } else {
+              ctrl.classList.add('hidden');
+          }
       });
 
       const slot = this.slots.get(deviceId);
@@ -1334,8 +1412,8 @@ class App {
                   );
                   if (isDefault) {
                       slot.processor.transformer.setShowingHandles(true);
-                      if (setBtn) setBtn.classList.add('active');
                   }
+                  updateAdjustingUI(slot, slot.processor.transformer.showHandles);
               } else {
                   if (slot.processor) {
                       slot.processor.stop();
@@ -1380,6 +1458,23 @@ class App {
         }
     });
 
+    const updateAdjustingUI = (slot, isAdjusting) => {
+        const sBtn = slot.element.querySelector('.set-btn');
+        const vOverlay = slot.element.querySelector('.vscale-overlay');
+        const vWrapper = slot.element.querySelector('.video-wrapper');
+        const role = slot.element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
+
+        if (sBtn) sBtn.classList.toggle('active', isAdjusting);
+
+        if (isAdjusting) {
+            if (vOverlay) vOverlay.classList.add('hidden');
+            if (vWrapper) vWrapper.classList.add('adjusting-perspective');
+        } else {
+            if (role === 'whiteboard' && vOverlay) vOverlay.classList.remove('hidden');
+            if (vWrapper) vWrapper.classList.remove('adjusting-perspective');
+        }
+    };
+
     const setBtn = element.querySelector('.set-btn');
     setBtn.addEventListener('click', async () => {
         const slot = this.slots.get(deviceId);
@@ -1387,9 +1482,9 @@ class App {
             await this.switchActiveCamera(deviceId);
         }
         if (slot && slot.processor) {
-            const isVisible = !slot.processor.transformer.showHandles;
-            slot.processor.transformer.setShowingHandles(isVisible);
-            setBtn.classList.toggle('active', isVisible);
+            const nextAdjusting = !slot.processor.transformer.showHandles;
+            slot.processor.transformer.setShowingHandles(nextAdjusting);
+            updateAdjustingUI(slot, nextAdjusting);
         }
     });
 

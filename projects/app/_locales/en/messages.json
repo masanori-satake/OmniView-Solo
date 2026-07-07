@@ -189,6 +189,15 @@
   "copyBtnTitle": {
     "message": "Capture"
   },
+  "vExpandBtnTitle": {
+    "message": "Expand Vertically"
+  },
+  "vCompressBtnTitle": {
+    "message": "Compress Vertically"
+  },
+  "vResetBtnTitle": {
+    "message": "Reset Vertical Scale"
+  },
   "infoDeviceId": { "message": "Device ID" },
   "infoResolution": { "message": "Resolution" },
   "infoFrameRate": { "message": "Frame Rate" },
@@ -365,6 +374,13 @@
     "message": "Perspective adjusted for camera $ID$",
     "placeholders": {
         "id": { "content": "$1" }
+    }
+  },
+  "logVScaleChanged": {
+    "message": "Vertical scale for camera $ID$ changed to $SCALE$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "scale": { "content": "$2" }
     }
   },
   "logResetPerspective": {

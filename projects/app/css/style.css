@@ -367,6 +367,7 @@ video, .processed-canvas {
 
 .video-overlay-top-left,
 .video-overlay-top-right,
+.video-overlay-bottom-left,
 .video-overlay-bottom-right {
     position: absolute;
     z-index: 10;
@@ -387,6 +388,13 @@ video, .processed-canvas {
     pointer-events: auto; /* Allow clicking delete button */
 }
 
+.video-overlay-bottom-left {
+    bottom: 8px;
+    left: 8px;
+    pointer-events: auto;
+    gap: 4px;
+}
+
 .video-overlay-bottom-right {
     bottom: 8px;
     right: 8px;
@@ -396,6 +404,7 @@ video, .processed-canvas {
 
 .video-overlay-top-left .material-symbols-outlined,
 .video-overlay-top-right .material-symbols-outlined,
+.video-overlay-bottom-left .material-symbols-outlined,
 .video-overlay-bottom-right .material-symbols-outlined {
     font-size: 24px;
     color: white;
@@ -408,7 +417,8 @@ video, .processed-canvas {
 }
 
 .delete-btn-overlay,
-.zoom-btn-overlay {
+.zoom-btn-overlay,
+.vscale-btn-overlay {
     background: none;
     border: none;
     padding: 0;
@@ -422,11 +432,13 @@ video, .processed-canvas {
 }
 
 .delete-btn-overlay:hover,
-.zoom-btn-overlay:hover {
+.zoom-btn-overlay:hover,
+.vscale-btn-overlay:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-.zoom-btn-overlay:disabled {
+.zoom-btn-overlay:disabled,
+.vscale-btn-overlay:disabled {
     opacity: 0.3;
     cursor: default;
 }
@@ -630,6 +642,10 @@ video, .processed-canvas {
 /* Slot sizes */
 .camera-slot.zoom-1 {
     width: 100%;
+}
+
+.video-wrapper.adjusting-perspective {
+    aspect-ratio: 16 / 9 !important;
 }
 
 .layout-narrow .camera-slot.zoom-2 {
