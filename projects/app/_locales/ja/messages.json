@@ -189,6 +189,15 @@
   "copyBtnTitle": {
     "message": "キャプチャ"
   },
+  "vExpandBtnTitle": {
+    "message": "縦に伸ばす"
+  },
+  "vCompressBtnTitle": {
+    "message": "縦に縮める"
+  },
+  "vResetBtnTitle": {
+    "message": "縦方向のリセット"
+  },
   "infoDeviceId": { "message": "デバイスID" },
   "infoResolution": { "message": "解像度" },
   "infoFrameRate": { "message": "フレームレート" },
@@ -365,6 +374,13 @@
     "message": "カメラ $ID$ のパースペクティブを調整しました",
     "placeholders": {
         "id": { "content": "$1" }
+    }
+  },
+  "logVScaleChanged": {
+    "message": "カメラ $ID$ の垂直スケールを $SCALE$ に変更しました",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "scale": { "content": "$2" }
     }
   },
   "logResetPerspective": {
