@@ -1264,7 +1264,7 @@ class App {
 
         // Upper limit: 9:16 (scale ≈ 3.1605)
         // Lower limit: 16:9 (scale = 1.0)
-        vExpandBtn.disabled = (scale >= 3.1);
+        vExpandBtn.disabled = (scale >= 3.16);
         vCompressBtn.disabled = (scale <= 1.05); // Use slightly more than 1.0 to handle floating point
     };
 
