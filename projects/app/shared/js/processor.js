@@ -1,4 +1,4 @@
-import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
+import { getHomography, toMatrix3d } from '../../projects/app/js/matrix3d-calc.js';
 
 /**
  * Perspective transformation logic.
@@ -166,6 +166,10 @@ export class PerspectiveTransformer {
         this.ctx.closePath();
         this.ctx.stroke();
 
+        if (this.draggingPoint === null) {
+            this.drawLandmarkF();
+        }
+
         const centerX = this.points.reduce((sum, p) => sum + p.x, 0) / this.points.length;
         const centerY = this.points.reduce((sum, p) => sum + p.y, 0) / this.points.length;
 
@@ -207,6 +211,59 @@ export class PerspectiveTransformer {
                 this.ctx.shadowOffsetY = 0;
             }
         });
+    }
+
+    drawLandmarkF() {
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        const src = [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 }
+        ];
+        const dst = this.points.map(p => ({
+            x: (p.x / 100) * cw,
+            y: (p.y / 100) * ch
+        }));
+
+        const H = getHomography(src, dst);
+
+        const transform = (x, y) => {
+            const den = H[6] * x + H[7] * y + H[8];
+            if (Math.abs(den) < 1e-9) return { x: 0, y: 0 };
+            return {
+                x: (H[0] * x + H[1] * y + H[2]) / den,
+                y: (H[3] * x + H[4] * y + H[5]) / den
+            };
+        };
+
+        const fLines = [
+            // Vertical bar
+            [{ x: 30, y: 20 }, { x: 30, y: 80 }],
+            // Top bar
+            [{ x: 30, y: 20 }, { x: 70, y: 20 }],
+            // Middle bar
+            [{ x: 30, y: 50 }, { x: 60, y: 50 }]
+        ];
+
+        this.ctx.save();
+        this.ctx.strokeStyle = '#00e676';
+        this.ctx.globalAlpha = 0.4;
+        this.ctx.lineWidth = 10;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        fLines.forEach(line => {
+            const p1 = transform(line[0].x, line[0].y);
+            const p2 = transform(line[1].x, line[1].y);
+            this.ctx.beginPath();
+            this.ctx.moveTo(p1.x, p1.y);
+            this.ctx.lineTo(p2.x, p2.y);
+            this.ctx.stroke();
+        });
+
+        this.ctx.restore();
     }
 
     async getWarpedFrame(imageData) {
@@ -271,6 +328,10 @@ export class MedianStacker {
         const h = this.video.videoHeight;
         if (!w || !h) return;
 
+        if (this.history.length > 0 && (this.history[0].width !== w || this.history[0].height !== h)) {
+            this.history = [];
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
@@ -295,7 +356,18 @@ export class MedianStacker {
         for (let i = 0; i < size; i += 4) {
             for (let c = 0; c < 3; c++) {
                 for (let j = 0; j < len; j++) vals[j] = this.history[j].data[i + c];
-                vals.sort(); // Optimized sort
+
+                // Insertion sort for small array
+                for (let j = 1; j < len; j++) {
+                    const key = vals[j];
+                    let k = j - 1;
+                    while (k >= 0 && vals[k] > key) {
+                        vals[k + 1] = vals[k];
+                        k--;
+                    }
+                    vals[k + 1] = key;
+                }
+
                 result.data[i + c] = vals[Math.floor(len / 2)];
             }
             result.data[i + 3] = 255;

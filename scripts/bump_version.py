@@ -37,7 +37,8 @@ def bump_version(part='patch'):
     app_html_path = 'projects/app/app.html'
     with open(app_html_path, 'r') as f:
         content = f.read()
-    new_content = re.sub(r'<p>Version: \d+\.\d+\.\d+</p>', f'<p>Version: {new_version}</p>', content)
+    # Match both active tag (with attributes) and comment tag
+    new_content = re.sub(r'(<p[^>]*>Version: )\d+\.\d+\.\d+(</p>)', rf'\g<1>{new_version}\g<2>', content)
     with open(app_html_path, 'w') as f:
         f.write(new_content)
 
