@@ -174,6 +174,9 @@
   "lockBtnTitle": {
     "message": "Lock Focus"
   },
+  "guidelineBtnTitle": {
+    "message": "Display Guidelines"
+  },
   "adjustingMsg": {
     "message": "Adjusting..."
   },
@@ -455,6 +458,13 @@
   },
   "logLockSettingsChanged": {
     "message": "Camera $ID$ settings $STATUS$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "status": { "content": "$2" }
+    }
+  },
+  "logGuidelineChanged": {
+    "message": "Guidelines for camera $ID$ turned $STATUS$",
     "placeholders": {
         "id": { "content": "$1" },
         "status": { "content": "$2" }

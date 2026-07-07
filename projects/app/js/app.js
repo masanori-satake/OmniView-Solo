@@ -1192,6 +1192,10 @@ class App {
           </div>
           <input type="text" class="m3-textfield label-input" placeholder="${chrome.i18n.getMessage('cameraNamePlaceholder')}">
 
+          <button class="m3-icon-button-small guideline-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('guidelineBtnTitle')}">
+              <span class="material-symbols-outlined">grid_on</span>
+          </button>
+
           <button class="m3-icon-button-small lock-btn" title="${chrome.i18n.getMessage('lockBtnTitle')}">
               <span class="material-symbols-outlined">lock_open</span>
           </button>
@@ -1446,10 +1450,12 @@ class App {
     });
 
     const occlusionBtn = element.querySelector('.occlusion-btn');
+    const guidelineBtn = element.querySelector('.guideline-btn');
 
     const updateWhiteboardUI = () => {
         const s = this.settings[deviceId]?.modes?.whiteboard || {};
         occlusionBtn.classList.toggle('active', !!s.occlusionRemoval);
+        guidelineBtn.classList.toggle('active', !!s.guidelines);
     };
     updateWhiteboardUI();
 
@@ -1469,17 +1475,49 @@ class App {
         }
     });
 
+    guidelineBtn.addEventListener('click', async () => {
+        const slot = this.slots.get(deviceId);
+        if (slot && !slot.processor) await this.switchActiveCamera(deviceId);
+        if (slot && slot.processor) {
+            const current = !!(this.settings[deviceId]?.modes?.whiteboard?.guidelines);
+            const newValue = !current;
+            slot.processor.transformer.showGuidelines = newValue;
+            if (!this.settings[deviceId]) this.settings[deviceId] = {};
+            if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
+            if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
+            this.settings[deviceId].modes.whiteboard.guidelines = newValue;
+            saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: newValue } } });
+            updateWhiteboardUI();
+            const status = chrome.i18n.getMessage(newValue ? 'lockStatusLocked' : 'lockStatusUnlocked');
+            this.addLog(chrome.i18n.getMessage('logGuidelineChanged', [deviceId.slice(0, 8), status]));
+        }
+    });
+
     const updateAdjustingUI = (slot, isAdjusting) => {
         const sBtn = slot.element.querySelector('.set-btn');
+        const gBtn = slot.element.querySelector('.guideline-btn');
         const vOverlay = slot.element.querySelector('.vscale-overlay');
         const vWrapper = slot.element.querySelector('.video-wrapper');
         const role = slot.element.querySelector('.role-switch').checked ? 'whiteboard' : 'person';
 
         if (sBtn) sBtn.classList.toggle('active', isAdjusting);
+        if (gBtn) gBtn.disabled = isAdjusting;
 
         if (isAdjusting) {
             if (vOverlay) vOverlay.classList.add('hidden');
             if (vWrapper) vWrapper.classList.add('adjusting-perspective');
+
+            // Turn off guidelines if they were ON
+            if (slot.processor && slot.processor.transformer.showGuidelines) {
+                slot.processor.transformer.showGuidelines = false;
+                const dId = Array.from(this.slots.entries()).find(([_, s]) => s === slot)?.[0];
+                if (dId && this.settings[dId]?.modes?.whiteboard) {
+                    this.settings[dId].modes.whiteboard.guidelines = false;
+                    saveCameraSetting(dId, { modes: { whiteboard: { guidelines: false } } });
+                }
+                const currentGuidelineBtn = slot.element.querySelector('.guideline-btn');
+                if (currentGuidelineBtn) currentGuidelineBtn.classList.remove('active');
+            }
         } else {
             if (role === 'whiteboard' && vOverlay) vOverlay.classList.remove('hidden');
             if (vWrapper) vWrapper.classList.remove('adjusting-perspective');
@@ -1622,6 +1660,8 @@ class App {
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
       ];
 
+      const showGuidelines = !!wbSettings.guidelines;
+
       const labels = [
           chrome.i18n.getMessage('handleTopLeft'),
           chrome.i18n.getMessage('handleTopRight'),
@@ -1642,6 +1682,7 @@ class App {
       }, labels);
 
       processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
+      processor.transformer.showGuidelines = showGuidelines;
       processor.start();
 
       return processor;
