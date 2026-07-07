@@ -1379,8 +1379,6 @@ class App {
       this.settings[deviceId].defaultRole = role;
 
       const wbControls = element.querySelectorAll('.whiteboard-only');
-      const vScaleOverlay = element.querySelector('.vscale-overlay');
-
       wbControls.forEach(ctrl => {
           if (role === 'whiteboard') {
               ctrl.classList.remove('hidden');
