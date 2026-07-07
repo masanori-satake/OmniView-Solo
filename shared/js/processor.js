@@ -1,14 +1,28 @@
+import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
+
 /**
- * Image processing logic using OpenCV.js.
+ * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
-    constructor(video, canvas, points, onPointsChange) {
+    constructor(video, canvas, points, onPointsChange, labels = []) {
         this.video = video;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.points = points; // [{x, y}, ...]
+        this.points = points;
         this.onPointsChange = onPointsChange;
+        this.labels = labels;
         this.draggingPoint = null;
+        this.showHandles = false;
+        this.processedCanvas = null;
+        this.lastTransform = '';
+        this.lastObjectFit = '';
+        this.lastElementCount = 0;
+
+        this.resizeObserver = new ResizeObserver(() => {
+            this.updateTransform();
+            this.draw();
+        });
+        this.resizeObserver.observe(this.canvas);
 
         this.boundMouseMove = (e) => {
             if (this.draggingPoint !== null) {
@@ -19,6 +33,7 @@ export class PerspectiveTransformer {
                     x: Math.max(0, Math.min(100, x)),
                     y: Math.max(0, Math.min(100, y))
                 };
+                this.updateTransform();
             }
         };
 
@@ -30,6 +45,7 @@ export class PerspectiveTransformer {
         };
 
         this.boundMouseDown = (e) => {
+            if (!this.showHandles) return;
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -42,6 +58,7 @@ export class PerspectiveTransformer {
         };
 
         this.initEvents();
+        this.updateTransform();
     }
 
     initEvents() {
@@ -50,22 +67,96 @@ export class PerspectiveTransformer {
         window.addEventListener('mouseup', this.boundMouseUp);
     }
 
+    setShowingHandles(visible) {
+        if (this.showHandles === visible) return;
+        this.showHandles = visible;
+        this.updateTransform();
+        this.draw();
+    }
+
+    resetPoints() {
+        this.points.splice(0, this.points.length,
+            {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
+        );
+        this.updateTransform();
+        this.draw();
+        if (this.onPointsChange) this.onPointsChange(this.points);
+    }
+
+    updateTransform() {
+        const elements = [this.video];
+        if (this.processedCanvas) elements.push(this.processedCanvas);
+
+        let transform = '';
+        let objectFit = 'fill';
+
+        if (this.showHandles) {
+            transform = '';
+            objectFit = 'contain';
+        } else {
+            const cw = this.canvas.clientWidth || 300;
+            const ch = this.canvas.clientHeight || 169;
+            const corners = [{x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}];
+
+            const target = this.points.map(p => ({
+                x: (p.x / 100) * cw,
+                y: (p.y / 100) * ch
+            }));
+
+            const H_inv = getHomography(target, corners);
+            transform = toMatrix3d(H_inv);
+            objectFit = 'fill';
+        }
+
+        if (this.lastTransform === transform && this.lastObjectFit === objectFit && this.lastElementCount === elements.length) {
+            return;
+        }
+
+        elements.forEach(el => {
+            el.style.transformOrigin = '0 0';
+            el.style.transform = transform;
+            el.style.width = '100%';
+            el.style.height = '100%';
+            el.style.objectFit = objectFit;
+        });
+
+        this.lastTransform = transform;
+        this.lastObjectFit = objectFit;
+        this.lastElementCount = elements.length;
+    }
+
     destroy() {
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+            this.resizeObserver = null;
+        }
         this.canvas.removeEventListener('mousedown', this.boundMouseDown);
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
+        this.video.style.transform = '';
+        this.video.style.objectFit = 'contain';
+        this.video.style.visibility = 'visible';
+        if (this.processedCanvas) {
+            this.processedCanvas.style.transform = '';
+            this.processedCanvas.style.display = 'none';
+        }
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     draw() {
-        this.canvas.width = this.video.videoWidth || 640;
-        this.canvas.height = this.video.videoHeight || 360;
-
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw polygon
+        if (!this.showHandles) return;
+
         this.ctx.beginPath();
-        this.ctx.strokeStyle = '#0056d2';
-        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#00e676';
+        this.ctx.lineWidth = 2;
         this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
@@ -75,112 +166,319 @@ export class PerspectiveTransformer {
         this.ctx.closePath();
         this.ctx.stroke();
 
-        // Draw handles
-        this.points.forEach(p => {
+        if (this.draggingPoint === null) {
+            this.drawLandmarkF();
+        }
+
+        const centerX = this.points.reduce((sum, p) => sum + p.x, 0) / this.points.length;
+        const centerY = this.points.reduce((sum, p) => sum + p.y, 0) / this.points.length;
+
+        this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
-            this.ctx.fillStyle = '#0056d2';
+            this.ctx.fillStyle = '#00e676';
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 8, 0, Math.PI * 2);
+            this.ctx.arc(x, y, 6, 0, Math.PI * 2);
             this.ctx.fill();
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.stroke();
+
+            // Draw label
+            if (this.labels[i] && this.draggingPoint !== i) {
+                this.ctx.font = 'bold 14px sans-serif';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                // Position outside the quad
+                const pixelCenterX = (centerX / 100) * this.canvas.width;
+                const pixelCenterY = (centerY / 100) * this.canvas.height;
+                const dx = x - pixelCenterX;
+                const dy = y - pixelCenterY;
+                const mag = Math.hypot(dx, dy) || 1;
+                const offsetX = (dx / mag) * 20;
+                const offsetY = (dy / mag) * 20;
+
+                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowOffsetX = 2;
+                this.ctx.shadowOffsetY = 2;
+                this.ctx.fillText(this.labels[i], x + offsetX, y + offsetY);
+
+                // Reset shadow
+                this.ctx.shadowColor = 'transparent';
+                this.ctx.shadowBlur = 0;
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 0;
+            }
         });
     }
 
-    async getWarpedFrame() {
-        if (!window.cv) return null;
-        const cv = window.cv;
+    drawLandmarkF() {
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        const src = [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 }
+        ];
+        const dst = this.points.map(p => ({
+            x: (p.x / 100) * cw,
+            y: (p.y / 100) * ch
+        }));
 
-        let src, dst, srcPts, dstPts, M;
-        try {
-            src = cv.imread(this.video);
-            dst = new cv.Mat();
+        const H = getHomography(src, dst);
 
-            const srcCoords = [];
-            this.points.forEach(p => {
-                srcCoords.push((p.x / 100) * src.cols, (p.y / 100) * src.rows);
-            });
+        const transform = (x, y) => {
+            const den = H[6] * x + H[7] * y + H[8];
+            return {
+                x: (H[0] * x + H[1] * y + H[2]) / den,
+                y: (H[3] * x + H[4] * y + H[5]) / den
+            };
+        };
 
-            srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, srcCoords);
-            const dstCoords = [0, 0, src.cols, 0, src.cols, src.rows, 0, src.rows];
-            dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, dstCoords);
+        const fLines = [
+            // Vertical bar
+            [{ x: 30, y: 20 }, { x: 30, y: 80 }],
+            // Top bar
+            [{ x: 30, y: 20 }, { x: 70, y: 20 }],
+            // Middle bar
+            [{ x: 30, y: 50 }, { x: 60, y: 50 }]
+        ];
 
-            M = cv.getPerspectiveTransform(srcPts, dstPts);
-            cv.warpPerspective(src, dst, M, new cv.Size(src.cols, src.rows));
-            return dst;
-        } catch (e) {
-            console.error("Error in getWarpedFrame:", e);
-            if (dst) dst.delete();
-            return null;
-        } finally {
-            if (src) src.delete();
-            if (srcPts) srcPts.delete();
-            if (dstPts) dstPts.delete();
-            if (M) M.delete();
+        this.ctx.save();
+        this.ctx.strokeStyle = '#00e676';
+        this.ctx.globalAlpha = 0.4;
+        this.ctx.lineWidth = 10;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        fLines.forEach(line => {
+            const p1 = transform(line[0].x, line[0].y);
+            const p2 = transform(line[1].x, line[1].y);
+            this.ctx.beginPath();
+            this.ctx.moveTo(p1.x, p1.y);
+            this.ctx.lineTo(p2.x, p2.y);
+            this.ctx.stroke();
+        });
+
+        this.ctx.restore();
+    }
+
+    async getWarpedFrame(imageData) {
+        const w = imageData.width;
+        const h = imageData.height;
+        const out = new ImageData(w, h);
+        const cw = this.canvas.clientWidth || 100;
+        const ch = this.canvas.clientHeight || 100;
+        const vRatio = w / h;
+        const cRatio = cw / ch;
+        let rW = cw, rH = ch, xO = 0, yO = 0;
+        if (vRatio > cRatio) { rH = cw / vRatio; yO = (ch - rH) / 2; }
+        else { rW = ch * vRatio; xO = (cw - rW) / 2; }
+
+        const target = this.points.map(p => ({
+            x: (((p.x / 100) * cw - xO) / rW) * w,
+            y: (((p.y / 100) * ch - yO) / rH) * h
+        }));
+        const corners = [{x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}];
+        const H = getHomography(corners, target);
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const den = H[6] * x + H[7] * y + H[8];
+                const sx = (H[0] * x + H[1] * y + H[2]) / den;
+                const sy = (H[3] * x + H[4] * y + H[5]) / den;
+                if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
+                    const ix = Math.floor(sx), iy = Math.floor(sy);
+                    const idx = (iy * w + ix) * 4, oidx = (y * w + x) * 4;
+                    const dx = sx - ix, dy = sy - iy;
+                    for (let c = 0; c < 4; c++) {
+                        const p00 = imageData.data[idx + c], p10 = imageData.data[idx + 4 + c];
+                        const p01 = imageData.data[idx + w * 4 + c], p11 = imageData.data[idx + w * 4 + 4 + c];
+                        out.data[oidx + c] = p00 * (1 - dx) * (1 - dy) + p10 * dx * (1 - dy) + p01 * (1 - dx) * dy + p11 * dx * dy;
+                    }
+                }
+            }
         }
+        return out;
     }
 }
 
+/**
+ * Accumulates frames and computes median to remove moving objects.
+ */
 export class MedianStacker {
     constructor(video) {
         this.video = video;
         this.history = [];
         this.maxHistory = 5;
-        this.lastCapture = 0;
+        this.interval = null;
+        this.lastMedian = null;
+    }
+
+    start() {
+        if (this.interval) return;
+        this.interval = setInterval(() => this.capture(), 2000);
+    }
+
+    capture() {
+        const w = this.video.videoWidth;
+        const h = this.video.videoHeight;
+        if (!w || !h) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.video, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h);
+
+        this.history.push(data);
+        if (this.history.length > this.maxHistory) this.history.shift();
+        this.computeMedian();
+    }
+
+    computeMedian() {
+        if (this.history.length === 0) { this.lastMedian = null; return; }
+        if (this.history.length < 2) { this.lastMedian = this.history[0]; return; }
+
+        const w = this.history[0].width, h = this.history[0].height;
+        const size = w * h * 4;
+        const result = new ImageData(new Uint8ClampedArray(size), w, h);
+        const len = this.history.length;
+        const vals = new Uint8Array(len);
+
+        for (let i = 0; i < size; i += 4) {
+            for (let c = 0; c < 3; c++) {
+                for (let j = 0; j < len; j++) vals[j] = this.history[j].data[i + c];
+                vals.sort(); // Optimized sort
+                result.data[i + c] = vals[Math.floor(len / 2)];
+            }
+            result.data[i + 3] = 255;
+        }
+        this.lastMedian = result;
     }
 
     cleanup() {
-        this.history.forEach(mat => {
-            if (mat && typeof mat.delete === 'function') {
-                mat.delete();
-            }
-        });
+        if (this.interval) { clearInterval(this.interval); this.interval = null; }
         this.history = [];
+        this.lastMedian = null;
     }
 
-    async getMedianFrame(warpedMat) {
-        if (!window.cv) return null;
-        const cv = window.cv;
-
-        const now = Date.now();
-        if (now - this.lastCapture > 5000) {
-            this.history.push(warpedMat.clone());
-            if (this.history.length > this.maxHistory) {
-                const old = this.history.shift();
-                old.delete();
-            }
-            this.lastCapture = now;
-        }
-
-        if (this.history.length === 0) return this.matToBlob(warpedMat);
-
-        const result = this.enhance(warpedMat);
-        const blob = await this.matToBlob(result);
-        result.delete();
-        return blob;
-    }
-
-    enhance(src) {
-        const cv = window.cv;
-        let gray, dst;
-        try {
-            gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-            dst = new cv.Mat();
-            cv.adaptiveThreshold(gray, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
-            return dst;
-        } catch (e) {
-            console.error("Error in enhance:", e);
-            if (dst) dst.delete();
-            return src.clone();
-        } finally {
-            if (gray) gray.delete();
-        }
-    }
-
-    matToBlob(mat) {
-        const cv = window.cv;
+    async getMedianFrame(transformer) {
+        const base = this.lastMedian || (this.history.length > 0 ? this.history[this.history.length - 1] : null);
+        if (!base) return null;
+        const warped = await transformer.getWarpedFrame(base);
         const canvas = document.createElement('canvas');
-        cv.imshow(canvas, mat);
+        canvas.width = warped.width; canvas.height = warped.height;
+        canvas.getContext('2d').putImageData(warped, 0, 0);
         return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    }
+
+    async getWarpedCurrentFrame(transformer) {
+        const w = this.video.videoWidth, h = this.video.videoHeight;
+        if (!w || !h) return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.video, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h);
+        return await transformer.getWarpedFrame(data);
+    }
+}
+
+/**
+ * Orchestrates whiteboard features.
+ */
+export class WhiteboardProcessor {
+    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange, labels = []) {
+        this.video = video;
+        this.overlayCanvas = overlayCanvas;
+        this.processedCanvas = processedCanvas;
+        this.ctx = processedCanvas.getContext('2d', { willReadFrequently: true });
+        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange, labels);
+        this.transformer.processedCanvas = processedCanvas;
+        this.stacker = new MedianStacker(video);
+        this.occlusionRemoval = false;
+        this.animationFrame = null;
+        this.lastVisibility = '';
+        this.lastDisplay = '';
+    }
+
+    setOcclusionRemoval(enabled) {
+        if (this.occlusionRemoval === enabled) return;
+        this.occlusionRemoval = enabled;
+        if (enabled) this.stacker.start();
+        else this.stacker.cleanup();
+        this.transformer.updateTransform();
+    }
+
+    start() {
+        const loop = () => { this.render(); this.animationFrame = requestAnimationFrame(loop); };
+        loop();
+    }
+
+    stop() {
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+        this.transformer.destroy();
+        this.stacker.cleanup();
+    }
+
+    render() {
+        if (this.transformer.showHandles) {
+            this.transformer.draw();
+        }
+
+        const showProcessed = this.occlusionRemoval && !!this.stacker.lastMedian;
+        const visibility = showProcessed ? 'hidden' : 'visible';
+        const display = showProcessed ? 'block' : 'none';
+
+        if (this.lastVisibility !== visibility) {
+            this.video.style.visibility = visibility;
+            this.lastVisibility = visibility;
+        }
+        if (this.lastDisplay !== display) {
+            this.processedCanvas.style.display = display;
+            this.lastDisplay = display;
+        }
+
+        if (this.occlusionRemoval) {
+            this.drawProcessedFrame();
+        }
+    }
+
+    drawProcessedFrame() {
+        const w = this.video.videoWidth, h = this.video.videoHeight;
+        if (!w || !h) return;
+        if (this.processedCanvas.width !== w || this.processedCanvas.height !== h) {
+            this.processedCanvas.width = w; this.processedCanvas.height = h;
+        }
+
+        let imageData = this.stacker.lastMedian;
+        if (!imageData) return;
+        if (imageData.width !== w || imageData.height !== h) {
+            this.stacker.cleanup();
+            this.stacker.start();
+            return;
+        }
+
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    async capture() {
+        const base = (this.occlusionRemoval && this.stacker.lastMedian) ? this.stacker.lastMedian : null;
+        let imageData = base;
+        if (!imageData) {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.video.videoWidth; canvas.height = this.video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(this.video, 0, 0);
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+        const warped = await this.transformer.getWarpedFrame(imageData);
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = warped.width; outCanvas.height = warped.height;
+        outCanvas.getContext('2d').putImageData(warped, 0, 0);
+        return new Promise(resolve => outCanvas.toBlob(resolve, 'image/png'));
     }
 }
