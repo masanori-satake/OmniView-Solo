@@ -1,4 +1,4 @@
-import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
+import { getHomography, toMatrix3d } from '../../projects/app/js/matrix3d-calc.js';
 
 /**
  * Perspective transformation logic.
@@ -231,6 +231,7 @@ export class PerspectiveTransformer {
 
         const transform = (x, y) => {
             const den = H[6] * x + H[7] * y + H[8];
+            if (Math.abs(den) < 1e-9) return { x: 0, y: 0 };
             return {
                 x: (H[0] * x + H[1] * y + H[2]) / den,
                 y: (H[3] * x + H[4] * y + H[5]) / den
@@ -327,6 +328,10 @@ export class MedianStacker {
         const h = this.video.videoHeight;
         if (!w || !h) return;
 
+        if (this.history.length > 0 && (this.history[0].width !== w || this.history[0].height !== h)) {
+            this.history = [];
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
@@ -351,7 +356,18 @@ export class MedianStacker {
         for (let i = 0; i < size; i += 4) {
             for (let c = 0; c < 3; c++) {
                 for (let j = 0; j < len; j++) vals[j] = this.history[j].data[i + c];
-                vals.sort(); // Optimized sort
+
+                // Insertion sort for small array
+                for (let j = 1; j < len; j++) {
+                    const key = vals[j];
+                    let k = j - 1;
+                    while (k >= 0 && vals[k] > key) {
+                        vals[k + 1] = vals[k];
+                        k--;
+                    }
+                    vals[k + 1] = key;
+                }
+
                 result.data[i + c] = vals[Math.floor(len / 2)];
             }
             result.data[i + 3] = 255;
