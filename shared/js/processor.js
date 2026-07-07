@@ -1,4 +1,4 @@
-import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
+import { getHomography, toMatrix3d } from '../../projects/app/js/matrix3d-calc.js';
 
 /**
  * Perspective transformation logic.
