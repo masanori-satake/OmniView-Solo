@@ -1510,13 +1510,11 @@ class App {
             // Turn off guidelines if they were ON
             if (slot.processor && slot.processor.transformer.showGuidelines) {
                 slot.processor.transformer.showGuidelines = false;
-                const dId = Array.from(this.slots.entries()).find(([_, s]) => s === slot)?.[0];
-                if (dId && this.settings[dId]?.modes?.whiteboard) {
-                    this.settings[dId].modes.whiteboard.guidelines = false;
-                    saveCameraSetting(dId, { modes: { whiteboard: { guidelines: false } } });
+                if (this.settings[deviceId]?.modes?.whiteboard) {
+                    this.settings[deviceId].modes.whiteboard.guidelines = false;
+                    saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: false } } });
                 }
-                const currentGuidelineBtn = slot.element.querySelector('.guideline-btn');
-                if (currentGuidelineBtn) currentGuidelineBtn.classList.remove('active');
+                if (gBtn) gBtn.classList.remove('active');
             }
         } else {
             if (role === 'whiteboard' && vOverlay) vOverlay.classList.remove('hidden');
