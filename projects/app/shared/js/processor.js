@@ -503,6 +503,9 @@ export class WhiteboardProcessor {
     render() {
         if (this.transformer.showHandles || this.transformer.showGuidelines) {
             this.transformer.draw();
+        } else {
+            const canvas = this.transformer.canvas;
+            this.transformer.ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         const showProcessed = this.occlusionRemoval && !!this.stacker.lastMedian;
