@@ -1,4 +1,4 @@
-import { getHomography, toMatrix3d } from '../../projects/app/js/matrix3d-calc.js';
+import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
 
 /**
  * Perspective transformation logic.
@@ -13,6 +13,7 @@ export class PerspectiveTransformer {
         this.labels = labels;
         this.draggingPoint = null;
         this.showHandles = false;
+        this.showGuidelines = false;
         this.processedCanvas = null;
         this.lastTransform = '';
         this.lastObjectFit = '';
@@ -152,6 +153,10 @@ export class PerspectiveTransformer {
         }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        if (this.showGuidelines && !this.showHandles) {
+            this.drawGuidelines();
+        }
+
         if (!this.showHandles) return;
 
         this.ctx.beginPath();
@@ -211,6 +216,61 @@ export class PerspectiveTransformer {
                 this.ctx.shadowOffsetY = 0;
             }
         });
+    }
+
+    drawGuidelines() {
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        this.ctx.save();
+        this.ctx.strokeStyle = '#00e676';
+        this.ctx.lineWidth = 1;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        this.ctx.shadowBlur = 2;
+        this.ctx.shadowOffsetX = 1;
+        this.ctx.shadowOffsetY = 1;
+
+        // Draw vertical lines
+        for (let i = 1; i <= 3; i++) {
+            const x = (i / 4) * cw;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, ch);
+            this.ctx.stroke();
+        }
+
+        // Draw horizontal lines
+        for (let i = 1; i <= 3; i++) {
+            const y = (i / 4) * ch;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(cw, y);
+            this.ctx.stroke();
+        }
+
+        // Draw labels
+        this.ctx.setLineDash([]);
+        this.ctx.font = 'bold 24px sans-serif';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.shadowColor = 'rgba(0,0,0,1.0)';
+        this.ctx.shadowBlur = 4;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
+
+        const cols = ['A', 'B', 'C', 'D'];
+        for (let i = 0; i < 4; i++) {
+            // Columns (A, B, C, D)
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(cols[i], (i / 4 + 1 / 8) * cw, 10);
+
+            // Rows (1, 2, 3, 4)
+            this.ctx.textAlign = 'left';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText((i + 1).toString(), 10, (i / 4 + 1 / 8) * ch);
+        }
+
+        this.ctx.restore();
     }
 
     drawLandmarkF() {
@@ -441,8 +501,11 @@ export class WhiteboardProcessor {
     }
 
     render() {
-        if (this.transformer.showHandles) {
+        if (this.transformer.showHandles || this.transformer.showGuidelines) {
             this.transformer.draw();
+        } else {
+            const canvas = this.transformer.canvas;
+            this.transformer.ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         const showProcessed = this.occlusionRemoval && !!this.stacker.lastMedian;
