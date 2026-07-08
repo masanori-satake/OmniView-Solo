@@ -472,6 +472,8 @@
   },
   "lockStatusLocked": { "message": "固定" },
   "lockStatusUnlocked": { "message": "解除" },
+  "guidelineStatusOn": { "message": "表示" },
+  "guidelineStatusOff": { "message": "非表示" },
   "handleTopLeft": { "message": "左上" },
   "handleTopRight": { "message": "右上" },
   "handleBottomRight": { "message": "右下" },

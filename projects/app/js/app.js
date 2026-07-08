@@ -1488,7 +1488,7 @@ class App {
             this.settings[deviceId].modes.whiteboard.guidelines = newValue;
             saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: newValue } } });
             updateWhiteboardUI();
-            const status = chrome.i18n.getMessage(newValue ? 'lockStatusLocked' : 'lockStatusUnlocked');
+            const status = chrome.i18n.getMessage(newValue ? 'guidelineStatusOn' : 'guidelineStatusOff');
             this.addLog(chrome.i18n.getMessage('logGuidelineChanged', [deviceId.slice(0, 8), status]));
         }
     });

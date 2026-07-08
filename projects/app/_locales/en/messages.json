@@ -472,6 +472,8 @@
   },
   "lockStatusLocked": { "message": "locked" },
   "lockStatusUnlocked": { "message": "unlocked" },
+  "guidelineStatusOn": { "message": "ON" },
+  "guidelineStatusOff": { "message": "OFF" },
   "handleTopLeft": { "message": "Top Left" },
   "handleTopRight": { "message": "Top Right" },
   "handleBottomRight": { "message": "Bottom Right" },
