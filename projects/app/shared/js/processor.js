@@ -331,7 +331,8 @@ export class PerspectiveTransformer {
         const h = imageData.height;
 
         const slotEl = this.canvas.closest('.camera-slot');
-        const vScale = slotEl ? parseFloat(slotEl.dataset.vScale || '1.0') : 1.0;
+        const rawScale = slotEl ? parseFloat(slotEl.dataset.vScale) : 1.0;
+        const vScale = isNaN(rawScale) || rawScale <= 0 ? 1.0 : rawScale;
 
         const outW = w;
         const outH = Math.round(h * vScale);
