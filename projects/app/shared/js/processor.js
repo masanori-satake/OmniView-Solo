@@ -12,6 +12,9 @@ export class PerspectiveTransformer {
         this.onPointsChange = onPointsChange;
         this.labels = labels;
         this.draggingPoint = null;
+        this.isMultiDragging = false;
+        this.lastDragX = 0;
+        this.lastDragY = 0;
         this.showHandles = false;
         this.showGuidelines = false;
         this.processedCanvas = null;
@@ -26,7 +29,7 @@ export class PerspectiveTransformer {
         this.resizeObserver.observe(this.canvas);
 
         this.boundMouseMove = (e) => {
-            if (this.draggingPoint !== null) {
+            if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 const rect = this.canvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -35,11 +38,52 @@ export class PerspectiveTransformer {
                     y: Math.max(0, Math.min(100, y))
                 };
                 this.updateTransform();
+            } else if (this.isMultiDragging) {
+                const rect = this.canvas.getBoundingClientRect();
+                const dxPct = ((e.clientX - this.lastDragX) / rect.width) * 100;
+                const dyPct = ((e.clientY - this.lastDragY) / rect.height) * 100;
+
+                let minDx = -Infinity;
+                let maxDx = Infinity;
+                let minDy = -Infinity;
+                let maxDy = Infinity;
+
+                this.points.forEach(p => {
+                    const minAllowedX = -p.x;
+                    const maxAllowedX = 100 - p.x;
+                    if (minAllowedX > minDx) minDx = minAllowedX;
+                    if (maxAllowedX < maxDx) maxDx = maxAllowedX;
+
+                    const minAllowedY = -p.y;
+                    const maxAllowedY = 100 - p.y;
+                    if (minAllowedY > minDy) minDy = minAllowedY;
+                    if (maxAllowedY < maxDy) maxDy = maxAllowedY;
+                });
+
+                const actualDx = Math.max(minDx, Math.min(maxDx, dxPct));
+                const actualDy = Math.max(minDy, Math.min(maxDy, dyPct));
+
+                if (actualDx !== 0 || actualDy !== 0) {
+                    this.points.forEach(p => {
+                        p.x += actualDx;
+                        p.y += actualDy;
+                        p.x = Math.max(0, Math.min(100, p.x));
+                        p.y = Math.max(0, Math.min(100, p.y));
+                    });
+                    this.updateTransform();
+                }
+
+                this.lastDragX += (actualDx / 100) * rect.width;
+                this.lastDragY += (actualDy / 100) * rect.height;
             }
         };
 
         this.boundMouseUp = () => {
-            if (this.draggingPoint !== null) {
+            if (this.draggingPoint !== null && this.draggingPoint >= 0) {
+                this.draggingPoint = null;
+                if (this.onPointsChange) this.onPointsChange(this.points);
+            } else if (this.isMultiDragging) {
+                this.isMultiDragging = false;
                 this.draggingPoint = null;
                 if (this.onPointsChange) this.onPointsChange(this.points);
             }
@@ -56,6 +100,14 @@ export class PerspectiveTransformer {
                 const py = (p.y / 100) * rect.height;
                 return Math.hypot(px - x, py - y) < 20;
             });
+
+            if (this.draggingPoint === -1) {
+                this.isMultiDragging = true;
+                this.lastDragX = e.clientX;
+                this.lastDragY = e.clientY;
+            } else {
+                this.isMultiDragging = false;
+            }
         };
 
         this.initEvents();
@@ -73,6 +125,44 @@ export class PerspectiveTransformer {
         this.showHandles = visible;
         this.updateTransform();
         this.draw();
+
+        // Custom event or callback could be triggered here to toggle rotation buttons visibility.
+        if (this.canvas) {
+            const slotEl = this.canvas.closest('.camera-slot');
+            if (slotEl) {
+                const rotLeft = slotEl.querySelector('.rot-left-btn');
+                const rotRight = slotEl.querySelector('.rot-right-btn');
+                if (rotLeft && rotRight) {
+                    if (visible) {
+                        rotLeft.classList.remove('hidden');
+                        rotRight.classList.remove('hidden');
+                    } else {
+                        rotLeft.classList.add('hidden');
+                        rotRight.classList.add('hidden');
+                    }
+                }
+            }
+        }
+    }
+
+    rotatePoints(direction) {
+        if (!Array.isArray(this.points) || this.points.length !== 4) {
+            return;
+        }
+        // direction is 'left' or 'right'
+        // Rotate points rotation states (which shifts how targets/corners map)
+        if (direction === 'right') {
+            const last = this.points.pop();
+            this.points.unshift(last);
+        } else if (direction === 'left') {
+            const first = this.points.shift();
+            this.points.push(first);
+        } else {
+            return;
+        }
+        this.updateTransform();
+        this.draw();
+        if (this.onPointsChange) this.onPointsChange(this.points);
     }
 
     resetPoints() {
@@ -171,7 +261,7 @@ export class PerspectiveTransformer {
         this.ctx.closePath();
         this.ctx.stroke();
 
-        if (this.draggingPoint === null) {
+        if (this.draggingPoint === null && !this.isMultiDragging) {
             this.drawLandmarkF();
         }
 

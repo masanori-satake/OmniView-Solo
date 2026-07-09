@@ -201,6 +201,21 @@
   "vResetBtnTitle": {
     "message": "Reset Vertical Scale"
   },
+  "rotLeftBtnTitle": {
+    "message": "Rotate 90° Counter-Clockwise"
+  },
+  "rotRightBtnTitle": {
+    "message": "Rotate 90° Clockwise"
+  },
+  "vMaximizeBtnTitle": {
+    "message": "Maximize Height"
+  },
+  "logRotateLeft": {
+    "message": "Rotated camera $ID$ perspective 90 degrees counter-clockwise"
+  },
+  "logRotateRight": {
+    "message": "Rotated camera $ID$ perspective 90 degrees clockwise"
+  },
   "infoDeviceId": { "message": "Device ID" },
   "infoResolution": { "message": "Resolution" },
   "infoFrameRate": { "message": "Frame Rate" },
@@ -384,6 +399,12 @@
     "placeholders": {
         "id": { "content": "$1" },
         "scale": { "content": "$2" }
+    }
+  },
+  "logVScaleChangedMax": {
+    "message": "Vertical scale for camera $ID$ changed to maximum value (3.16)",
+    "placeholders": {
+        "id": { "content": "$1" }
     }
   },
   "logResetPerspective": {

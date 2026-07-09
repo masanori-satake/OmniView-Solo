@@ -367,6 +367,7 @@ video, .processed-canvas {
 
 .video-overlay-top-left,
 .video-overlay-top-right,
+.video-overlay-top-right-rot,
 .video-overlay-bottom-left,
 .video-overlay-bottom-right {
     position: absolute;
@@ -380,12 +381,81 @@ video, .processed-canvas {
 .video-overlay-top-left {
     top: 8px;
     left: 8px;
+    pointer-events: auto;
+}
+
+.video-overlay-top-right-rot {
+    top: 8px;
+    right: 8px;
+    pointer-events: auto;
 }
 
 .video-overlay-top-right {
     top: 8px;
     right: 8px;
     pointer-events: auto; /* Allow clicking delete button */
+}
+
+/* We want rot-right-btn to be placed more to the left of the delete block to avoid overlapping */
+.rot-right-btn {
+    right: 8px;
+    top: 8px;
+    margin-right: 80px; /* shift left so it's to the left of pause/delete */
+}
+
+.rot-left-btn {
+    left: 8px;
+    top: 8px;
+    margin-left: 150px; /* shift right so it's to the right of vscale overlay (restart_alt, compress, expand, crop_portrait = approx 144px width) */
+}
+
+.rot-left-btn, .rot-right-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rot-left-btn:hover, .rot-right-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.rot-left-btn .material-symbols-outlined,
+.rot-right-btn .material-symbols-outlined {
+    font-size: 24px;
+    color: white;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  0px 4px rgba(0,0,0,0.5);
+}
+
+.flex-row-overlay {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.video-overlay-top-left-vscale {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    gap: 4px;
 }
 
 .video-overlay-bottom-left {
