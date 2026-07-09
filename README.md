@@ -1,6 +1,6 @@
 # OmniView-Solo
 
-[![Version](https://img.shields.io/badge/version-0.9.4-blue)](https://github.com/masanori-satake/OmniView-Solo)
+[![Version](https://img.shields.io/badge/version-0.9.5-blue)](https://github.com/masanori-satake/OmniView-Solo)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-brightgreen)](SECURITY.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
