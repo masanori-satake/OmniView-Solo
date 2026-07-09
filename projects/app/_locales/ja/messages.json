@@ -201,6 +201,21 @@
   "vResetBtnTitle": {
     "message": "縦方向のリセット"
   },
+  "rotLeftBtnTitle": {
+    "message": "左に90°回転"
+  },
+  "rotRightBtnTitle": {
+    "message": "右に90°回転"
+  },
+  "vMaximizeBtnTitle": {
+    "message": "最大まで縦長にする"
+  },
+  "logRotateLeft": {
+    "message": "カメラ $ID$ のパースペクティブを左に90°回転しました"
+  },
+  "logRotateRight": {
+    "message": "カメラ $ID$ のパースペクティブを右に90°回転しました"
+  },
   "infoDeviceId": { "message": "デバイスID" },
   "infoResolution": { "message": "解像度" },
   "infoFrameRate": { "message": "フレームレート" },
@@ -384,6 +399,12 @@
     "placeholders": {
         "id": { "content": "$1" },
         "scale": { "content": "$2" }
+    }
+  },
+  "logVScaleChangedMax": {
+    "message": "カメラ $ID$ の垂直スケールを最大値 (3.16) に設定しました",
+    "placeholders": {
+        "id": { "content": "$1" }
     }
   },
   "logResetPerspective": {

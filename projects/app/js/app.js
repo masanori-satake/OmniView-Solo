@@ -1139,21 +1139,37 @@ class App {
         <canvas class="processed-canvas whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}"></canvas>
         <canvas class="freeze-canvas"></canvas>
         <canvas class="overlay-canvas"></canvas>
-        <div class="video-overlay-top-left pause-indicator">
-            <span class="material-symbols-outlined">pause_circle</span>
-        </div>
-        <button class="video-overlay-top-right delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
-            <span class="material-symbols-outlined">close</span>
+
+        <!-- Rotation overlays -->
+        <button class="video-overlay-top-left rot-left-btn hidden" title="${chrome.i18n.getMessage('rotLeftBtnTitle')}">
+            <span class="material-symbols-outlined">rotate_left</span>
         </button>
-        <div class="video-overlay-bottom-left vscale-overlay whiteboard-only ${vScaleHiddenClass}">
-            <button class="vscale-btn-overlay vscale-expand-btn" title="${chrome.i18n.getMessage('vExpandBtnTitle')}">
-                <span class="material-symbols-outlined">expand</span>
+        <button class="video-overlay-top-right-rot rot-right-btn hidden" title="${chrome.i18n.getMessage('rotRightBtnTitle')}">
+            <span class="material-symbols-outlined">rotate_right</span>
+        </button>
+
+        <!-- Right Side Control Overlays -->
+        <div class="video-overlay-top-right flex-row-overlay">
+            <div class="pause-indicator">
+                <span class="material-symbols-outlined">pause_circle</span>
+            </div>
+            <button class="delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="video-overlay-top-left-vscale vscale-overlay whiteboard-only ${vScaleHiddenClass}">
+            <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}">
+                <span class="material-symbols-outlined">restart_alt</span>
             </button>
             <button class="vscale-btn-overlay vscale-compress-btn" title="${chrome.i18n.getMessage('vCompressBtnTitle')}">
                 <span class="material-symbols-outlined">compress</span>
             </button>
-            <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}">
-                <span class="material-symbols-outlined">restart_alt</span>
+            <button class="vscale-btn-overlay vscale-expand-btn" title="${chrome.i18n.getMessage('vExpandBtnTitle')}">
+                <span class="material-symbols-outlined">expand</span>
+            </button>
+            <button class="vscale-btn-overlay vscale-max-btn" title="${chrome.i18n.getMessage('vMaximizeBtnTitle')}">
+                <span class="material-symbols-outlined">crop_portrait</span>
             </button>
         </div>
         <div class="video-overlay-bottom-right">
@@ -1228,10 +1244,12 @@ class App {
 
     const zoomInBtn = element.querySelector('.zoom-in-btn');
     const zoomOutBtn = element.querySelector('.zoom-out-btn');
+    const deleteBtn = element.querySelector('.delete-btn-overlay');
 
     const vExpandBtn = element.querySelector('.vscale-expand-btn');
     const vCompressBtn = element.querySelector('.vscale-compress-btn');
     const vResetBtn = element.querySelector('.vscale-reset-btn');
+    const vMaxBtn = element.querySelector('.vscale-max-btn');
     const videoWrapper = element.querySelector('.video-wrapper');
 
     const updateZoomUI = (zoom) => {
@@ -1281,6 +1299,7 @@ class App {
         // Lower limit: 16:9 (scale = 1.0)
         vExpandBtn.disabled = (scale >= 3.1);
         vCompressBtn.disabled = (scale <= 1.05); // Use slightly more than 1.0 to handle floating point
+        vMaxBtn.disabled = (scale >= 3.16);
     };
 
     updateVScaleUI(setting.vScale);
@@ -1308,6 +1327,14 @@ class App {
         updateVScaleUI(1.0);
         saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
         this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), '1.00']));
+    };
+
+    vMaxBtn.onclick = (e) => {
+        e.stopPropagation();
+        const nextScale = 3.1605;
+        updateVScaleUI(nextScale);
+        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.addLog(chrome.i18n.getMessage('logVScaleChangedMax', [deviceId.slice(0, 8)]));
     };
 
     element.querySelector('.video-wrapper').onclick = (e) => {
@@ -1589,7 +1616,6 @@ class App {
         }
     });
 
-    const deleteBtn = element.querySelector('.delete-btn-overlay');
     deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const slot = this.slots.get(deviceId);
@@ -1678,6 +1704,22 @@ class App {
           if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
           this.settings[deviceId].modes.whiteboard.points = newPts;
       }, labels);
+
+      // Bind rotation buttons
+      const rotLeftBtn = slot.element.querySelector('.rot-left-btn');
+      const rotRightBtn = slot.element.querySelector('.rot-right-btn');
+      if (rotLeftBtn && rotRightBtn) {
+          rotLeftBtn.onclick = (e) => {
+              e.stopPropagation();
+              processor.transformer.rotatePoints('left');
+              this.addLog(chrome.i18n.getMessage('logRotateLeft', [deviceId.slice(0, 8)]));
+          };
+          rotRightBtn.onclick = (e) => {
+              e.stopPropagation();
+              processor.transformer.rotatePoints('right');
+              this.addLog(chrome.i18n.getMessage('logRotateRight', [deviceId.slice(0, 8)]));
+          };
+      }
 
       processor.setOcclusionRemoval(!!wbSettings.occlusionRemoval);
       processor.transformer.showGuidelines = showGuidelines;
