@@ -364,6 +364,7 @@ export class PerspectiveTransformer {
         for (let y = 0; y < outH; y++) {
             for (let x = 0; x < outW; x++) {
                 const den = H[6] * x + H[7] * y + H[8];
+                if (Math.abs(den) < 1e-9) continue;
                 const sx = (H[0] * x + H[1] * y + H[2]) / den;
                 const sy = (H[3] * x + H[4] * y + H[5]) / den;
                 if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
