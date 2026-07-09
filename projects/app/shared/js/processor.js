@@ -4,15 +4,13 @@ import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
  * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
-    constructor(video, canvas, points, onPointsChange, labels = [], rotation = 0, onRotationChange = null) {
+    constructor(video, canvas, points, onPointsChange, labels = []) {
         this.video = video;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.points = points;
         this.onPointsChange = onPointsChange;
         this.labels = labels;
-        this.rotation = rotation;
-        this.onRotationChange = onRotationChange;
         this.draggingPoint = null;
         this.isMultiDragging = false;
         this.lastDragX = 0;
@@ -31,7 +29,7 @@ export class PerspectiveTransformer {
         this.resizeObserver.observe(this.canvas);
 
         this.boundMouseMove = (e) => {
-            if (this.draggingPoint !== null && this.draggingPoint !== -1) {
+            if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 const rect = this.canvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -81,7 +79,7 @@ export class PerspectiveTransformer {
         };
 
         this.boundMouseUp = () => {
-            if (this.draggingPoint !== null && this.draggingPoint !== -1) {
+            if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 this.draggingPoint = null;
                 if (this.onPointsChange) this.onPointsChange(this.points);
             } else if (this.isMultiDragging) {
@@ -148,6 +146,9 @@ export class PerspectiveTransformer {
     }
 
     rotatePoints(direction) {
+        if (!Array.isArray(this.points) || this.points.length !== 4) {
+            return;
+        }
         // direction is 'left' or 'right'
         // Rotate points rotation states (which shifts how targets/corners map)
         if (direction === 'right') {
@@ -156,6 +157,8 @@ export class PerspectiveTransformer {
         } else if (direction === 'left') {
             const first = this.points.shift();
             this.points.push(first);
+        } else {
+            return;
         }
         this.updateTransform();
         this.draw();

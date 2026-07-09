@@ -400,19 +400,12 @@ video, .processed-canvas {
 .rot-right-btn {
     right: 8px;
     top: 8px;
+    margin-right: 80px; /* shift left so it's to the left of pause/delete */
 }
 
 .rot-left-btn {
     left: 8px;
     top: 8px;
-}
-
-/* Avoid overlapping rotation buttons and right overlays when handles are shown */
-.rot-right-btn {
-    margin-right: 80px; /* shift left so it's to the left of pause/delete */
-}
-
-.rot-left-btn {
     margin-left: 150px; /* shift right so it's to the right of vscale overlay (restart_alt, compress, expand, crop_portrait = approx 144px width) */
 }
 
