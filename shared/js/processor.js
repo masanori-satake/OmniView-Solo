@@ -329,30 +329,45 @@ export class PerspectiveTransformer {
     async getWarpedFrame(imageData) {
         const w = imageData.width;
         const h = imageData.height;
-        const out = new ImageData(w, h);
-        const cw = this.canvas.clientWidth || 100;
-        const ch = this.canvas.clientHeight || 100;
+
+        const slotEl = this.canvas.closest('.camera-slot');
+        const vScale = slotEl ? parseFloat(slotEl.dataset.vScale || '1.0') : 1.0;
+
+        const outW = w;
+        const outH = Math.round(h * vScale);
+        const out = new ImageData(outW, outH);
+
+        // Map handle points as percentages of a 16:9 canvas to find their coordinates in the source frame.
+        // During handle adjustment, the canvas is forced to 16:9.
+        const cw169 = 1600;
+        const ch169 = 900;
         const vRatio = w / h;
-        const cRatio = cw / ch;
-        let rW = cw, rH = ch, xO = 0, yO = 0;
-        if (vRatio > cRatio) { rH = cw / vRatio; yO = (ch - rH) / 2; }
-        else { rW = ch * vRatio; xO = (cw - rW) / 2; }
+        const cRatio = cw169 / ch169; // 16/9
+        let rW = cw169, rH = ch169, xO = 0, yO = 0;
+        if (vRatio > cRatio) {
+            rH = cw169 / vRatio;
+            yO = (ch169 - rH) / 2;
+        } else {
+            rW = ch169 * vRatio;
+            xO = (cw169 - rW) / 2;
+        }
 
         const target = this.points.map(p => ({
-            x: (((p.x / 100) * cw - xO) / rW) * w,
-            y: (((p.y / 100) * ch - yO) / rH) * h
+            x: (((p.x / 100) * cw169 - xO) / rW) * w,
+            y: (((p.y / 100) * ch169 - yO) / rH) * h
         }));
-        const corners = [{x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}];
+
+        const corners = [{x: 0, y: 0}, {x: outW, y: 0}, {x: outW, y: outH}, {x: 0, y: outH}];
         const H = getHomography(corners, target);
 
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
+        for (let y = 0; y < outH; y++) {
+            for (let x = 0; x < outW; x++) {
                 const den = H[6] * x + H[7] * y + H[8];
                 const sx = (H[0] * x + H[1] * y + H[2]) / den;
                 const sy = (H[3] * x + H[4] * y + H[5]) / den;
                 if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
                     const ix = Math.floor(sx), iy = Math.floor(sy);
-                    const idx = (iy * w + ix) * 4, oidx = (y * w + x) * 4;
+                    const idx = (iy * w + ix) * 4, oidx = (y * outW + x) * 4;
                     const dx = sx - ix, dy = sy - iy;
                     for (let c = 0; c < 4; c++) {
                         const p00 = imageData.data[idx + c], p10 = imageData.data[idx + 4 + c];
