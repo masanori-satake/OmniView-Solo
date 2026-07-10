@@ -405,9 +405,11 @@ class App {
             targetId = allowedIds[0];
         }
 
-        // Deactivate slots that are NOT the targetId
+        // Deactivate slots that are NOT the targetId AND are NOT whiteboard mode when excludeWhiteboard is ON
         for (const [deviceId, slot] of this.slots.entries()) {
-            if (deviceId !== targetId && slot.stream) {
+            const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
+            const keepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
+            if (deviceId !== targetId && !keepActive && slot.stream) {
                 await this.deactivateSlot(slot);
             }
         }
@@ -417,6 +419,15 @@ class App {
             const slot = this.slots.get(targetId);
             if (slot && !slot.stream) {
                 await this.activateSlot(slot, targetId);
+            }
+        }
+
+        // Additionally, if excludeWhiteboard is ON, activate all whiteboard mode slots that are not currently running
+        if (this.globalSettings.excludeWhiteboard) {
+            for (const [deviceId, slot] of this.slots.entries()) {
+                if (this.getSlotRole(deviceId) === 'whiteboard' && !slot.stream) {
+                    await this.activateSlot(slot, deviceId);
+                }
             }
         }
 
@@ -982,11 +993,13 @@ class App {
   async nextCamera() {
     if (!this.shouldCycle()) return;
 
-    // 1. Capture and stop current active slot
+    // 1. Capture and stop current active slot (only if it is not whiteboard mode with excludeWhiteboard enabled)
     if (this.activeSlotIndex !== -1) {
         const currentDeviceId = this.slotOrder[this.activeSlotIndex];
         const slot = this.slots.get(currentDeviceId);
-        if (slot) {
+        const isWhiteboard = this.getSlotRole(currentDeviceId) === 'whiteboard';
+        const keepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
+        if (slot && !keepActive) {
             await this.deactivateSlot(slot);
         }
     }
@@ -1045,9 +1058,11 @@ class App {
     try {
         for (let i = 0; i < maxRetries; i++) {
             // Check if camera is still needed
-            const isStillNeeded = this.shouldCycle()
+            const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
+            const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
+            const isStillNeeded = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
                 ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                : this.slotOrder.includes(deviceId);
+                : true));
             if (!isStillNeeded) {
                 this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
@@ -1060,9 +1075,9 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = this.shouldCycle()
+                const isStillNeededPost = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
                     ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                    : this.slotOrder.includes(deviceId);
+                    : true));
                 if (!isStillNeededPost) {
                     this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
