@@ -152,11 +152,11 @@ export class PerspectiveTransformer {
         // direction is 'left' or 'right'
         // Rotate points rotation states (which shifts how targets/corners map)
         if (direction === 'right') {
-            const last = this.points.pop();
-            this.points.unshift(last);
-        } else if (direction === 'left') {
             const first = this.points.shift();
             this.points.push(first);
+        } else if (direction === 'left') {
+            const last = this.points.pop();
+            this.points.unshift(last);
         } else {
             return;
         }
@@ -221,6 +221,9 @@ export class PerspectiveTransformer {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;
         }
+        if (!this.canvas) {
+            return;
+        }
         this.canvas.removeEventListener('mousedown', this.boundMouseDown);
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
@@ -231,6 +234,15 @@ export class PerspectiveTransformer {
             this.processedCanvas.style.transform = '';
             this.processedCanvas.style.display = 'none';
         }
+
+        const slotEl = this.canvas.closest('.camera-slot');
+        if (slotEl) {
+            const rotLeft = slotEl.querySelector('.rot-left-btn');
+            const rotRight = slotEl.querySelector('.rot-right-btn');
+            if (rotLeft) rotLeft.classList.add('hidden');
+            if (rotRight) rotRight.classList.add('hidden');
+        }
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
