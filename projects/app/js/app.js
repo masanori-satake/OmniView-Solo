@@ -390,7 +390,9 @@ class App {
   }
 
   async updateCyclingAndActivationState() {
-    if (this.shouldCycle()) {
+    this.cameraOperationsQueue = this.cameraOperationsQueue || Promise.resolve();
+    await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
+      if (this.shouldCycle()) {
         const allowedIds = this.getCyclingTargetDeviceIds();
         let targetId = null;
         if (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) {
@@ -419,7 +421,7 @@ class App {
         }
 
         this.startCycling();
-    } else {
+      } else {
         this.cycleCount++; // Invalidate pending nextCamera callbacks
         if (this.cycleTimeoutId) {
             clearTimeout(this.cycleTimeoutId);
@@ -432,7 +434,8 @@ class App {
         } else {
             await this.activateAllCameras();
         }
-    }
+      }
+    }).catch(err => console.error("Error in camera operations queue:", err)));
   }
 
   updateResolutionFpsDisplay(slot) {
@@ -642,10 +645,9 @@ class App {
 
             if (this.shouldCycle()) {
                 const lastCamera = camerasToAdd[camerasToAdd.length - 1];
-                await this.switchActiveCamera(lastCamera.deviceId);
-            } else {
-                await this.updateCyclingAndActivationState();
+                this.activeSlotIndex = this.slotOrder.indexOf(lastCamera.deviceId);
             }
+            await this.updateCyclingAndActivationState();
             saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
         closeDialog();
@@ -963,7 +965,10 @@ class App {
         this.reorganizeForWide();
     }
 
-    await this.switchActiveCamera(camera.deviceId);
+    if (this.shouldCycle()) {
+        this.activeSlotIndex = this.slotOrder.indexOf(camera.deviceId);
+    }
+    await this.updateCyclingAndActivationState();
     saveSessionState(this.slotOrder, this.activeSlotIndex);
   }
 
