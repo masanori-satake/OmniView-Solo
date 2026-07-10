@@ -962,7 +962,7 @@ class App {
                     if (slot.processor) {
                         slot.processor.stop();
                     }
-                    slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
+                    slot.processor = this.initProcessor(slot, deviceId);
                 }
                 const track = stream.getVideoTracks()[0];
                 const settings = track ? track.getSettings() : {};
@@ -1442,7 +1442,7 @@ class App {
                       slot.processor.stop();
                   }
                   // Restore points will happen inside initProcessor
-                  slot.processor = this.initProcessor(slot.video, slot.canvas, slot.processedCanvas, deviceId);
+                  slot.processor = this.initProcessor(slot, deviceId);
 
                   // Auto-enter perspective adjustment if points are default
                   const pts = this.settings[deviceId]?.modes?.whiteboard?.points;
@@ -1678,7 +1678,8 @@ class App {
     return { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null };
   }
 
-  initProcessor(video, canvas, processedCanvas, deviceId) {
+  initProcessor(slot, deviceId) {
+      const { video, canvas, processedCanvas } = slot;
       const wbSettings = this.settings[deviceId]?.modes?.whiteboard || {};
       const pts = wbSettings.points || [
           {x: 20, y: 20}, {x: 80, y: 20}, {x: 80, y: 80}, {x: 20, y: 80}
