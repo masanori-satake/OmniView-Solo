@@ -211,10 +211,16 @@
     "message": "Maximize Height"
   },
   "logRotateLeft": {
-    "message": "Rotated camera $ID$ perspective 90 degrees counter-clockwise"
+    "message": "Rotated camera $ID$ perspective 90 degrees counter-clockwise",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
   },
   "logRotateRight": {
-    "message": "Rotated camera $ID$ perspective 90 degrees clockwise"
+    "message": "Rotated camera $ID$ perspective 90 degrees clockwise",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
   },
   "infoDeviceId": { "message": "Device ID" },
   "infoResolution": { "message": "Resolution" },

@@ -1,11 +1,11 @@
 {
   "name": "omniview-solo",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "\u30cf\u30a4\u30d6\u30ea\u30c3\u30c9\u4f1a\u8b70\u306e\u8996\u8a8d\u6027\u3092\u5411\u4e0a\u3055\u305b\u308b\u30ed\u30fc\u30ab\u30eb\u5b8c\u7d50\u578bChrome\u62e1\u5f35\u6a5f\u80fd",
   "type": "module",
   "scripts": {
-    "test": "python3 scripts/check_version.py && node scripts/verify_build.js",
-    "build": "python3 scripts/check_version.py && python3 scripts/create_package.py",
+    "test": "python3 scripts/check_version.py && python3 scripts/check_messages.py && node scripts/verify_build.js",
+    "build": "python3 scripts/check_version.py && python3 scripts/check_messages.py && python3 scripts/create_package.py",
     "version:bump": "python3 scripts/bump_version.py",
     "icons": "python3 scripts/generate_png_icons.py"
   },

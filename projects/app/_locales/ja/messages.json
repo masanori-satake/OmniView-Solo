@@ -211,10 +211,16 @@
     "message": "最大まで縦長にする"
   },
   "logRotateLeft": {
-    "message": "カメラ $ID$ のパースペクティブを左に90°回転しました"
+    "message": "カメラ $ID$ のパースペクティブを左に90°回転しました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
   },
   "logRotateRight": {
-    "message": "カメラ $ID$ のパースペクティブを右に90°回転しました"
+    "message": "カメラ $ID$ のパースペクティブを右に90°回転しました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
   },
   "infoDeviceId": { "message": "デバイスID" },
   "infoResolution": { "message": "解像度" },
