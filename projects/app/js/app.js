@@ -7,7 +7,7 @@ class App {
     this.container = document.getElementById('camera-container');
     this.cameras = [];
     this.settings = {};
-    this.globalSettings = { interval: 5, cyclingEnabled: false };
+    this.globalSettings = { interval: 5, cyclingEnabled: false, excludeWhiteboard: false, cameraResolutionFpsDisplay: false };
     this.slots = new Map();
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
@@ -92,12 +92,8 @@ class App {
                 ? session.activeSlotIndex
                 : 0;
 
-            if (this.globalSettings.cyclingEnabled) {
-                await this.switchActiveCamera(this.slotOrder[activeIndex]);
-            } else {
-                this.activeSlotIndex = activeIndex;
-                await this.activateAllCameras();
-            }
+            this.activeSlotIndex = activeIndex;
+            await this.updateCyclingAndActivationState();
         } else {
             // No connected cameras found in session
             document.getElementById('initial-overlay').classList.add('hidden');
@@ -135,6 +131,9 @@ class App {
     const intervalDown = document.getElementById('interval-down');
     const cyclingSwitch = document.getElementById('cycling-switch');
     const intervalLabel = document.getElementById('interval-label');
+    const excludeWhiteboardSwitch = document.getElementById('exclude-whiteboard-switch');
+    const excludeWhiteboardLabel = document.getElementById('exclude-whiteboard-label');
+    const cameraResolutionFpsDisplaySwitch = document.getElementById('camera-resolution-fps-display-switch');
     const copyLogsBtn = document.getElementById('copy-logs-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
     const exportBtn = document.getElementById('export-btn');
@@ -152,6 +151,14 @@ class App {
         } else {
             intervalLabel.classList.add('disabled');
         }
+
+        const cyclingEnabled = this.globalSettings.cyclingEnabled;
+        excludeWhiteboardSwitch.disabled = !cyclingEnabled;
+        if (cyclingEnabled) {
+            excludeWhiteboardLabel.classList.remove('disabled');
+        } else {
+            excludeWhiteboardLabel.classList.add('disabled');
+        }
     };
 
     settingsBtn.addEventListener('click', () => {
@@ -159,6 +166,10 @@ class App {
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
         cyclingSwitch.disabled = this.slotOrder.length < 2;
+
+        excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
+        cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
+
         updateIntervalUI();
         this.updateCameraInfoTab();
         this.renderLogs();
@@ -215,20 +226,21 @@ class App {
         this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
         await saveGlobalSettings(this.globalSettings);
         updateIntervalUI();
-        if (this.globalSettings.cyclingEnabled) {
-            this.startCycling();
-        } else {
-            this.cycleCount++; // Invalidate pending nextCamera callbacks
-            if (this.cycleTimeoutId) {
-                clearTimeout(this.cycleTimeoutId);
-                this.cycleTimeoutId = null;
-            }
-            if (this.slotOrder.length > 1) {
-                await this.activateMultipleCameras();
-            } else {
-                await this.activateAllCameras();
-            }
-        }
+        await this.updateCyclingAndActivationState();
+    });
+
+    excludeWhiteboardSwitch.addEventListener('change', async (e) => {
+        this.globalSettings.excludeWhiteboard = e.target.checked;
+        this.addLog(chrome.i18n.getMessage('logExcludeWhiteboard', [String(this.globalSettings.excludeWhiteboard)]));
+        await saveGlobalSettings(this.globalSettings);
+        await this.updateCyclingAndActivationState();
+    });
+
+    cameraResolutionFpsDisplaySwitch.addEventListener('change', async (e) => {
+        this.globalSettings.cameraResolutionFpsDisplay = e.target.checked;
+        this.addLog(chrome.i18n.getMessage('logCameraResolutionFpsDisplay', [String(this.globalSettings.cameraResolutionFpsDisplay)]));
+        await saveGlobalSettings(this.globalSettings);
+        this.updateAllResolutionFpsDisplays();
     });
 
     exportBtn.addEventListener('click', async () => {
@@ -278,12 +290,13 @@ class App {
                     await saveGlobalSettings(this.globalSettings);
                     intervalInput.value = this.globalSettings.interval;
 
-                    if (cyclingSwitch.checked !== this.globalSettings.cyclingEnabled) {
-                        cyclingSwitch.checked = this.globalSettings.cyclingEnabled;
-                        cyclingSwitch.dispatchEvent(new Event('change'));
-                    } else if (this.globalSettings.cyclingEnabled) {
-                        this.startCycling();
-                    }
+                    cyclingSwitch.checked = !!this.globalSettings.cyclingEnabled;
+                    excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
+                    cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
+
+                    updateIntervalUI();
+                    await this.updateCyclingAndActivationState();
+                    this.updateAllResolutionFpsDisplays();
                 }
 
                 if (data.camera_settings) {
@@ -343,6 +356,122 @@ class App {
         };
         reader.readAsText(file);
     });
+  }
+
+  getSlotRole(deviceId) {
+    const slot = this.slots.get(deviceId);
+    if (slot) {
+        const roleSwitch = slot.element.querySelector('.role-switch');
+        if (roleSwitch) {
+            return roleSwitch.checked ? 'whiteboard' : 'person';
+        }
+    }
+    const savedSetting = this.settings[deviceId] || {};
+    return savedSetting.defaultRole || 'person';
+  }
+
+  shouldCycle() {
+    if (!this.globalSettings.cyclingEnabled) return false;
+    if (this.slotOrder.length < 2) return false;
+
+    if (this.globalSettings.excludeWhiteboard) {
+        const personCount = this.slotOrder.filter(id => this.getSlotRole(id) === 'person').length;
+        return personCount >= 2;
+    }
+
+    return true;
+  }
+
+  getCyclingTargetDeviceIds() {
+    if (this.globalSettings.excludeWhiteboard) {
+        return this.slotOrder.filter(id => this.getSlotRole(id) === 'person');
+    }
+    return this.slotOrder;
+  }
+
+  async updateCyclingAndActivationState() {
+    this.cameraOperationsQueue = this.cameraOperationsQueue || Promise.resolve();
+    await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
+      if (this.shouldCycle()) {
+        const allowedIds = this.getCyclingTargetDeviceIds();
+        let targetId = null;
+        if (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) {
+            const currentId = this.slotOrder[this.activeSlotIndex];
+            if (allowedIds.includes(currentId)) {
+                targetId = currentId;
+            }
+        }
+        if (!targetId && allowedIds.length > 0) {
+            targetId = allowedIds[0];
+        }
+
+        // Deactivate slots that are NOT the targetId
+        for (const [deviceId, slot] of this.slots.entries()) {
+            if (deviceId !== targetId && slot.stream) {
+                await this.deactivateSlot(slot);
+            }
+        }
+
+        if (targetId) {
+            this.activeSlotIndex = this.slotOrder.indexOf(targetId);
+            const slot = this.slots.get(targetId);
+            if (slot && !slot.stream) {
+                await this.activateSlot(slot, targetId);
+            }
+        }
+
+        this.startCycling();
+      } else {
+        this.cycleCount++; // Invalidate pending nextCamera callbacks
+        if (this.cycleTimeoutId) {
+            clearTimeout(this.cycleTimeoutId);
+            this.cycleTimeoutId = null;
+        }
+
+        // When cycling is OFF, multiple/all cameras should be active
+        if (this.slotOrder.length > 1) {
+            await this.activateMultipleCameras();
+        } else {
+            await this.activateAllCameras();
+        }
+      }
+    }).catch(err => console.error("Error in camera operations queue:", err)));
+  }
+
+  updateResolutionFpsDisplay(slot) {
+    const overlay = slot.element.querySelector('.camera-resolution-fps-overlay');
+    if (!overlay) return;
+
+    if (!this.globalSettings.cameraResolutionFpsDisplay || !slot.stream) {
+        overlay.classList.add('hidden');
+        overlay.textContent = '';
+        return;
+    }
+
+    const track = slot.stream.getVideoTracks()[0];
+    if (track) {
+        const settings = track.getSettings ? track.getSettings() : {};
+        const width = settings.width;
+        const height = settings.height;
+        const fps = settings.frameRate;
+        if (width && height && fps) {
+            overlay.textContent = `${width}x${height} @ ${Math.round(fps)}fps`;
+            overlay.classList.remove('hidden');
+        } else if (width && height) {
+            overlay.textContent = `${width}x${height}`;
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+        }
+    } else {
+        overlay.classList.add('hidden');
+    }
+  }
+
+  updateAllResolutionFpsDisplays() {
+    for (const slot of this.slots.values()) {
+        this.updateResolutionFpsDisplay(slot);
+    }
   }
 
   setupResizeObserver() {
@@ -514,12 +643,11 @@ class App {
                 this.reorganizeForNarrow();
             }
 
-            if (this.globalSettings.cyclingEnabled) {
+            if (this.shouldCycle()) {
                 const lastCamera = camerasToAdd[camerasToAdd.length - 1];
-                await this.switchActiveCamera(lastCamera.deviceId);
-            } else {
-                await this.activateAllCameras();
+                this.activeSlotIndex = this.slotOrder.indexOf(lastCamera.deviceId);
             }
+            await this.updateCyclingAndActivationState();
             saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
         closeDialog();
@@ -670,7 +798,7 @@ class App {
     const index = this.slotOrder.indexOf(deviceId);
     if (index === -1) return;
 
-    if (this.globalSettings.cyclingEnabled) {
+    if (this.shouldCycle()) {
         if (this.activeSlotIndex !== -1 && this.activeSlotIndex !== index) {
             const currentDeviceId = this.slotOrder[this.activeSlotIndex];
             const currentSlot = this.slots.get(currentDeviceId);
@@ -702,7 +830,7 @@ class App {
 
     if (this.switchRequestCount !== currentRequest) return;
 
-    if (this.globalSettings.cyclingEnabled) {
+    if (this.shouldCycle()) {
         this.startCycling();
     }
 
@@ -710,14 +838,14 @@ class App {
   }
 
   async activateAllCameras() {
-    if (this.globalSettings.cyclingEnabled) return;
+    if (this.shouldCycle()) return;
 
     if (this.slotOrder.length > 1) {
         await this.activateMultipleCameras();
         return;
     }
 
-    this.addLog(chrome.i18n.getMessage('logActivatingAll', [String(this.globalSettings.cyclingEnabled)]));
+    this.addLog(chrome.i18n.getMessage('logActivatingAll', [String(this.shouldCycle())]));
     for (const deviceId of this.slotOrder) {
         const slot = this.slots.get(deviceId);
         if (slot && !slot.stream) {
@@ -733,7 +861,7 @@ class App {
     this.addLog(chrome.i18n.getMessage('logMultiActivationStart', [String(initialOrder.length)]));
 
     const isStateChanged = () => {
-        return this.globalSettings.cyclingEnabled ||
+        return this.shouldCycle() ||
             this.slotOrder.length !== initialOrder.length ||
             !this.slotOrder.every((id, idx) => id === initialOrder[idx]);
     };
@@ -837,22 +965,22 @@ class App {
         this.reorganizeForWide();
     }
 
-    await this.switchActiveCamera(camera.deviceId);
+    if (this.shouldCycle()) {
+        this.activeSlotIndex = this.slotOrder.indexOf(camera.deviceId);
+    }
+    await this.updateCyclingAndActivationState();
     saveSessionState(this.slotOrder, this.activeSlotIndex);
   }
 
   async startCycling() {
     if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
-    if (this.slotOrder.length < 2) return;
+    if (!this.shouldCycle()) return;
     const interval = this.globalSettings.interval || 5;
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), interval * 1000);
   }
 
   async nextCamera() {
-    if (this.slotOrder.length < 2) return;
-    if (!this.globalSettings.cyclingEnabled && this.activeSlotIndex !== -1) {
-        return;
-    }
+    if (!this.shouldCycle()) return;
 
     // 1. Capture and stop current active slot
     if (this.activeSlotIndex !== -1) {
@@ -864,7 +992,22 @@ class App {
     }
 
     // 2. Advance index
-    this.activeSlotIndex = (this.activeSlotIndex + 1) % this.slotOrder.length;
+    const allowedIds = this.getCyclingTargetDeviceIds();
+    let nextDeviceId = null;
+    if (allowedIds.length > 0) {
+        const currentActiveId = this.activeSlotIndex !== -1 ? this.slotOrder[this.activeSlotIndex] : null;
+        let allowedIdx = allowedIds.indexOf(currentActiveId);
+        if (allowedIdx === -1) {
+            nextDeviceId = allowedIds[0];
+        } else {
+            allowedIdx = (allowedIdx + 1) % allowedIds.length;
+            nextDeviceId = allowedIds[allowedIdx];
+        }
+    }
+
+    if (!nextDeviceId) return;
+
+    this.activeSlotIndex = this.slotOrder.indexOf(nextDeviceId);
     this.cycleCount++;
     const currentCycle = this.cycleCount;
 
@@ -879,7 +1022,6 @@ class App {
     }
 
     // 4. Start next slot
-    const nextDeviceId = this.slotOrder[this.activeSlotIndex];
     const nextSlot = this.slots.get(nextDeviceId);
     if (nextSlot) {
         await this.activateSlot(nextSlot, nextDeviceId);
@@ -903,7 +1045,7 @@ class App {
     try {
         for (let i = 0; i < maxRetries; i++) {
             // Check if camera is still needed
-            const isStillNeeded = this.globalSettings.cyclingEnabled
+            const isStillNeeded = this.shouldCycle()
                 ? (this.slotOrder[this.activeSlotIndex] === deviceId)
                 : this.slotOrder.includes(deviceId);
             if (!isStillNeeded) {
@@ -918,7 +1060,7 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = this.globalSettings.cyclingEnabled
+                const isStillNeededPost = this.shouldCycle()
                     ? (this.slotOrder[this.activeSlotIndex] === deviceId)
                     : this.slotOrder.includes(deviceId);
                 if (!isStillNeededPost) {
@@ -970,6 +1112,8 @@ class App {
 
                 // Update cache
                 this.displayCameraInfo(deviceId);
+
+                this.updateResolutionFpsDisplay(slot);
 
                 // Restore lock state if saved
                 if (setting.mediaSettingsFixed) {
@@ -1081,6 +1225,8 @@ class App {
     }
     video.srcObject = null;
     slot.element.classList.remove('active');
+
+    this.updateResolutionFpsDisplay(slot);
   }
 
   async moveCamera(deviceId, direction) {
@@ -1157,6 +1303,9 @@ class App {
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
+
+        <!-- Resolution & FPS Display Overlay -->
+        <div class="camera-resolution-fps-overlay hidden"></div>
 
         <div class="video-overlay-top-left-vscale vscale-overlay whiteboard-only ${vScaleHiddenClass}">
             <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}">
@@ -1474,6 +1623,7 @@ class App {
               }
           }
       }
+      await this.updateCyclingAndActivationState();
     });
 
     const occlusionBtn = element.querySelector('.occlusion-btn');
@@ -1642,21 +1792,12 @@ class App {
                 } else {
                     this.reorganizeForNarrow();
                 }
-                if (wasActive) {
-                    this.activeSlotIndex = index % this.slotOrder.length;
-                    const nextDeviceId = this.slotOrder[this.activeSlotIndex];
-                    const nextSlot = this.slots.get(nextDeviceId);
-                    if (nextSlot) {
-                        await this.activateSlot(nextSlot, nextDeviceId);
-                    }
-                    if (this.globalSettings.cyclingEnabled) {
-                        this.startCycling();
-                    }
-                } else {
-                    if (index < this.activeSlotIndex) {
-                        this.activeSlotIndex--;
-                    }
+                if (index < this.activeSlotIndex) {
+                    this.activeSlotIndex--;
                 }
+                this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
+
+                await this.updateCyclingAndActivationState();
             }
             const cyclingSwitch = document.getElementById('cycling-switch');
             if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;

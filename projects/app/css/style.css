@@ -513,6 +513,28 @@ video, .processed-canvas {
     cursor: default;
 }
 
+.camera-resolution-fps-overlay {
+    position: absolute;
+    top: 44px; /* below the delete / close button (top: 8px, height: 32px) */
+    right: 8px;
+    z-index: 10;
+    pointer-events: none;
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: right;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  0px 4px rgba(0,0,0,0.8);
+}
+
+.camera-resolution-fps-overlay.hidden {
+    display: none !important;
+}
+
 .pause-indicator {
     display: none; /* Only show when inactive */
 }

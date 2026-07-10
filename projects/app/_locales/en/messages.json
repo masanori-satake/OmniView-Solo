@@ -26,8 +26,14 @@
   "cyclingSwitch": {
     "message": "Auto Switching"
   },
+  "excludeWhiteboard": {
+    "message": "Exclude Whiteboard Mode"
+  },
   "intervalLabel": {
     "message": "Display Interval (sec)"
+  },
+  "cameraResolutionFpsDisplay": {
+    "message": "Resolution/FPS Display"
   },
   "exportBtn": {
     "message": "Export"
@@ -280,6 +286,18 @@
   },
   "logCyclingEnabled": {
     "message": "Cycling enabled: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logExcludeWhiteboard": {
+    "message": "Exclude Whiteboard Mode: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logCameraResolutionFpsDisplay": {
+    "message": "Resolution/FPS Display: $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }
