@@ -50,6 +50,16 @@
                         </label>
                     </div>
                     <div class="settings-row">
+                        <label for="exclude-whiteboard-switch" id="exclude-whiteboard-label" data-i18n="excludeWhiteboard">ホワイトボードモードを除外</label>
+                        <label class="m3-switch" id="exclude-whiteboard-switch-container">
+                            <input type="checkbox" id="exclude-whiteboard-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
                         <label for="interval-input" id="interval-label" data-i18n="intervalLabel">表示間隔 (秒)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="interval-input" value="5" min="1" step="1">
@@ -62,6 +72,16 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                    <div class="settings-row">
+                        <label for="camera-resolution-fps-display-switch" id="camera-resolution-fps-display-label" data-i18n="cameraResolutionFpsDisplay">解像度/fps表示</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="camera-resolution-fps-display-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
                     </div>
                     <hr class="m3-divider">
                     <div class="settings-row-vertical">
@@ -113,8 +133,8 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.9.8</p>
-                        <!-- <p>Version: 0.9.8</p> -->
+                        <p data-i18n="aboutVersion">Version: 0.10.0</p>
+                        <!-- <p>Version: 0.10.0</p> -->
                         <p data-i18n="aboutDesc">ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>

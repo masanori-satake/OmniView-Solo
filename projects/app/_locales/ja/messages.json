@@ -26,8 +26,14 @@
   "cyclingSwitch": {
     "message": "自動切り替え"
   },
+  "excludeWhiteboard": {
+    "message": "ホワイトボードモードを除外"
+  },
   "intervalLabel": {
     "message": "表示間隔 (秒)"
+  },
+  "cameraResolutionFpsDisplay": {
+    "message": "解像度/fps表示"
   },
   "exportBtn": {
     "message": "エクスポート"
@@ -280,6 +286,18 @@
   },
   "logCyclingEnabled": {
     "message": "自動切り替え: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logExcludeWhiteboard": {
+    "message": "ホワイトボードモードを除外: $ENABLED$",
+    "placeholders": {
+        "enabled": { "content": "$1" }
+    }
+  },
+  "logCameraResolutionFpsDisplay": {
+    "message": "解像度/fps表示: $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }
