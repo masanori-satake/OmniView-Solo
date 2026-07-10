@@ -34,11 +34,27 @@ def check_messages():
             message = val.get("message", "")
             placeholders = val.get("placeholders", {})
 
-            # Find all variables enclosed by $ signs, e.g. $ID$ or $ERROR$
-            # Note: chrome.i18n reserves $$ for a literal dollar sign, but we are looking for actual variable names.
-            # Variables are represented as $[A-Za-z0-9_]+$.
-            # Standard placeholders defined in messages.json are case-insensitive.
-            vars_found = set(re.findall(r'\$([A-Za-z0-9_]+)\$', message))
+            # Simulating chrome.i18n placeholder parsing to correctly handle $$ escape and adjacent placeholders
+            vars_found = set()
+            idx = 0
+            msg_len = len(message)
+            while idx < msg_len:
+                if message[idx] == '$':
+                    if idx + 1 < msg_len and message[idx+1] == '$':
+                        idx += 2
+                    else:
+                        j = idx + 1
+                        while j < msg_len and message[j] != '$':
+                            j += 1
+                        if j < msg_len:
+                            var_name = message[idx+1:j]
+                            if var_name and all(c.isalnum() or c == '_' for c in var_name):
+                                vars_found.add(var_name)
+                            idx = j + 1
+                        else:
+                            idx += 1
+                else:
+                    idx += 1
 
             placeholder_keys = {pk.lower() for pk in placeholders.keys()} if isinstance(placeholders, dict) else set()
 
