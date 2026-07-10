@@ -1060,9 +1060,9 @@ class App {
             // Check if camera is still needed
             const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
             const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-            const isStillNeeded = alwaysKeepActive || (this.shouldCycle()
+            const isStillNeeded = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
                 ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                : this.slotOrder.includes(deviceId));
+                : true));
             if (!isStillNeeded) {
                 this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
@@ -1075,9 +1075,9 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = alwaysKeepActive || (this.shouldCycle()
+                const isStillNeededPost = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
                     ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                    : this.slotOrder.includes(deviceId));
+                    : true));
                 if (!isStillNeededPost) {
                     this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
