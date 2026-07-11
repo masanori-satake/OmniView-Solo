@@ -132,6 +132,34 @@
                     </div>
                     <hr class="m3-divider">
                     <div class="settings-row-vertical">
+                        <label style="font-weight: bold;" data-i18n="pinReleaseTitle">自動ピン留め解除機能</label>
+                    </div>
+                    <div class="settings-row">
+                        <label for="pin-release-switch" id="pin-release-label" data-i18n="pinReleaseLabel">自動ピン留め解除</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="pin-release-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <label for="pin-release-time-input" id="pin-release-time-label" data-i18n="pinReleaseTimeLabel">ピン留め解除時間 (分)</label>
+                        <div class="m3-spinbox">
+                            <input type="number" id="pin-release-time-input" value="3" min="1" max="15" step="1">
+                            <div class="spinbox-controls">
+                                <button type="button" id="pin-release-time-up" class="spin-btn">
+                                    <span class="material-symbols-outlined">arrow_drop_up</span>
+                                </button>
+                                <button type="button" id="pin-release-time-down" class="spin-btn">
+                                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="m3-divider">
+                    <div class="settings-row-vertical">
                         <label data-i18n="settingsDataTitle">設定の入出力</label>
                         <div class="settings-action-group">
                             <button id="export-btn" class="m3-button">
@@ -180,8 +208,8 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.12.0</p>
-                        <!-- <p>Version: 0.12.0</p> -->
+                        <p data-i18n="aboutVersion">Version: 0.12.1</p>
+                        <!-- <p>Version: 0.12.1</p> -->
                         <p data-i18n="aboutDesc">ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>

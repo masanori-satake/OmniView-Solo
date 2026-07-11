@@ -14,11 +14,15 @@ class App {
       cameraResolutionFpsDisplay: false,
       wbAutoFocusEnabled: false,
       wbAutoFocusPrevWbSize: 'zoom4',
-      wbAutoFocusNewWbSize: 'zoom1'
+      wbAutoFocusNewWbSize: 'zoom1',
+      pinReleaseEnabled: true,
+      pinReleaseTime: 3
     };
     this.slots = new Map();
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
+    this.pinnedDeviceId = null; // Currently pinned camera's deviceId, or null
+    this.pinTimerId = null; // Timer for auto-release
     this.cycleTimeoutId = null;
     this.cycleCount = 0;
     this.currentLayout = null;
@@ -155,6 +159,40 @@ class App {
     const wbAutoFocusPrevWbSizeSelect = document.getElementById('wb-autofocus-prev-wb-size-select');
     const wbAutoFocusNewWbSizeSelect = document.getElementById('wb-autofocus-new-wb-size-select');
 
+    const pinReleaseSwitch = document.getElementById('pin-release-switch');
+    const pinReleaseTimeInput = document.getElementById('pin-release-time-input');
+    const pinReleaseTimeUp = document.getElementById('pin-release-time-up');
+    const pinReleaseTimeDown = document.getElementById('pin-release-time-down');
+    const pinReleaseLabel = document.getElementById('pin-release-time-label');
+
+    if (pinReleaseSwitch) {
+        pinReleaseSwitch.addEventListener('change', async (e) => {
+            this.globalSettings.pinReleaseEnabled = e.target.checked;
+            this.addLog(chrome.i18n.getMessage('pinReleaseLabel') + ': ' + String(e.target.checked));
+            await saveGlobalSettings(this.globalSettings);
+            updateIntervalUI();
+            this.updatePinTimer();
+        });
+    }
+
+    const updatePinTime = async (val) => {
+        this.globalSettings.pinReleaseTime = Math.max(1, Math.min(15, parseInt(val) || 3));
+        if (pinReleaseTimeInput) pinReleaseTimeInput.value = this.globalSettings.pinReleaseTime;
+        this.addLog(chrome.i18n.getMessage('logPinReleaseConfigChanged', [String(this.globalSettings.pinReleaseEnabled), String(this.globalSettings.pinReleaseTime)]));
+        await saveGlobalSettings(this.globalSettings);
+        this.updatePinTimer();
+    };
+
+    if (pinReleaseTimeInput) {
+        pinReleaseTimeInput.addEventListener('change', (e) => updatePinTime(e.target.value));
+    }
+    if (pinReleaseTimeUp) {
+        pinReleaseTimeUp.addEventListener('click', () => updatePinTime((this.globalSettings.pinReleaseTime || 3) + 1));
+    }
+    if (pinReleaseTimeDown) {
+        pinReleaseTimeDown.addEventListener('click', () => updatePinTime((this.globalSettings.pinReleaseTime || 3) - 1));
+    }
+
     if (wbAutoFocusSwitch) {
         wbAutoFocusSwitch.addEventListener('change', async (e) => {
             this.globalSettings.wbAutoFocusEnabled = e.target.checked;
@@ -230,6 +268,22 @@ class App {
         } else {
             excludeWhiteboardLabel.classList.add('disabled');
         }
+
+        const pinReleaseEnabled = !!this.globalSettings.pinReleaseEnabled;
+        if (pinReleaseSwitch) pinReleaseSwitch.checked = pinReleaseEnabled;
+        if (pinReleaseTimeInput) {
+            pinReleaseTimeInput.disabled = !pinReleaseEnabled;
+            pinReleaseTimeInput.value = this.globalSettings.pinReleaseTime || 3;
+        }
+        if (pinReleaseTimeUp) pinReleaseTimeUp.disabled = !pinReleaseEnabled;
+        if (pinReleaseTimeDown) pinReleaseTimeDown.disabled = !pinReleaseEnabled;
+        if (pinReleaseLabel) {
+            if (pinReleaseEnabled) {
+                pinReleaseLabel.classList.remove('disabled');
+            } else {
+                pinReleaseLabel.classList.add('disabled');
+            }
+        }
     };
 
     settingsBtn.addEventListener('click', async () => {
@@ -243,6 +297,13 @@ class App {
 
         if (wbAutoFocusSwitch) {
             wbAutoFocusSwitch.checked = !!this.globalSettings.wbAutoFocusEnabled;
+        }
+
+        if (pinReleaseSwitch) {
+            pinReleaseSwitch.checked = this.globalSettings.pinReleaseEnabled !== false;
+        }
+        if (pinReleaseTimeInput) {
+            pinReleaseTimeInput.value = this.globalSettings.pinReleaseTime || 3;
         }
         if (wbAutoFocusPrevWbSizeSelect) {
             wbAutoFocusPrevWbSizeSelect.value = this.globalSettings.wbAutoFocusPrevWbSize || 'zoom4';
@@ -308,6 +369,10 @@ class App {
         this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
         await saveGlobalSettings(this.globalSettings);
         updateIntervalUI();
+        if (!e.target.checked) {
+            // Force release pin if cycling is turned off
+            this.releasePin(false);
+        }
         await this.updateCyclingAndActivationState();
     });
 
@@ -315,6 +380,12 @@ class App {
         this.globalSettings.excludeWhiteboard = e.target.checked;
         this.addLog(chrome.i18n.getMessage('logExcludeWhiteboard', [String(this.globalSettings.excludeWhiteboard)]));
         await saveGlobalSettings(this.globalSettings);
+        if (e.target.checked) {
+            // If the currently pinned device is a whiteboard, unpin it since whiteboard pins are disabled
+            if (this.pinnedDeviceId && this.getSlotRole(this.pinnedDeviceId) === 'whiteboard') {
+                this.releasePin(false);
+            }
+        }
         await this.updateCyclingAndActivationState();
     });
 
@@ -386,7 +457,15 @@ class App {
                         wbAutoFocusNewWbSizeSelect.value = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
                     }
 
+                    if (this.globalSettings.pinReleaseEnabled === undefined) {
+                        this.globalSettings.pinReleaseEnabled = true;
+                    }
+                    if (this.globalSettings.pinReleaseTime === undefined) {
+                        this.globalSettings.pinReleaseTime = 3;
+                    }
+
                     updateIntervalUI();
+                    this.updatePinTimer();
                     await this.updateResolutionSelects();
                     await this.updateCyclingAndActivationState();
                     this.updateAllResolutionFpsDisplays();
@@ -771,17 +850,24 @@ class App {
   async updateCyclingAndActivationState() {
     this.cameraOperationsQueue = this.cameraOperationsQueue || Promise.resolve();
     await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
+      this.updateAllPinButtonsVisibility();
+
       if (this.shouldCycle()) {
         const allowedIds = this.getCyclingTargetDeviceIds();
         let targetId = null;
-        if (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) {
-            const currentId = this.slotOrder[this.activeSlotIndex];
-            if (allowedIds.includes(currentId)) {
-                targetId = currentId;
-            }
-        }
-        if (!targetId && allowedIds.length > 0) {
-            targetId = allowedIds[0];
+
+        if (this.pinnedDeviceId && allowedIds.includes(this.pinnedDeviceId)) {
+          targetId = this.pinnedDeviceId;
+        } else {
+          if (this.activeSlotIndex >= 0 && this.activeSlotIndex < this.slotOrder.length) {
+              const currentId = this.slotOrder[this.activeSlotIndex];
+              if (allowedIds.includes(currentId)) {
+                  targetId = currentId;
+              }
+          }
+          if (!targetId && allowedIds.length > 0) {
+              targetId = allowedIds[0];
+          }
         }
 
         // Deactivate slots that are NOT the targetId AND are NOT whiteboard mode when excludeWhiteboard is ON
@@ -810,7 +896,14 @@ class App {
             }
         }
 
-        this.startCycling();
+        if (!this.pinnedDeviceId) {
+          this.startCycling();
+        } else {
+          if (this.cycleTimeoutId) {
+            clearTimeout(this.cycleTimeoutId);
+            this.cycleTimeoutId = null;
+          }
+        }
       } else {
         this.cycleCount++; // Invalidate pending nextCamera callbacks
         if (this.cycleTimeoutId) {
@@ -1192,6 +1285,10 @@ class App {
         if (this.activeSlotIndex !== -1 && this.activeSlotIndex !== index) {
             const currentDeviceId = this.slotOrder[this.activeSlotIndex];
             const currentSlot = this.slots.get(currentDeviceId);
+            // If we are currently pinning a camera, switching to another slot will release the pin
+            if (this.pinnedDeviceId) {
+                this.releasePin(true);
+            }
             if (currentSlot) {
                 await this.deactivateSlot(currentSlot);
                 // Hardware release delay
@@ -1220,7 +1317,7 @@ class App {
 
     if (this.switchRequestCount !== currentRequest) return;
 
-    if (this.shouldCycle()) {
+    if (this.shouldCycle() && !this.pinnedDeviceId) {
         this.startCycling();
     }
 
@@ -1693,6 +1790,13 @@ class App {
             <span class="material-symbols-outlined">rotate_right</span>
         </button>
 
+        <!-- Left Side Pin Button Overlay -->
+        <div class="video-overlay-bottom-left pin-overlay hidden">
+            <button class="pin-btn-overlay" title="${chrome.i18n.getMessage('pinBtnTitle')}">
+                <span class="material-symbols-outlined">push_pin</span>
+            </button>
+        </div>
+
         <!-- Right Side Control Overlays -->
         <div class="video-overlay-top-right flex-row-overlay">
             <div class="pause-indicator">
@@ -1793,6 +1897,14 @@ class App {
     const zoomInBtn = element.querySelector('.zoom-in-btn');
     const zoomOutBtn = element.querySelector('.zoom-out-btn');
     const deleteBtn = element.querySelector('.delete-btn-overlay');
+    const pinBtn = element.querySelector('.pin-btn-overlay');
+
+    if (pinBtn) {
+        pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.togglePin(deviceId);
+        });
+    }
 
     const vExpandBtn = element.querySelector('.vscale-expand-btn');
     const vCompressBtn = element.querySelector('.vscale-compress-btn');
@@ -1941,6 +2053,11 @@ class App {
     roleSwitch.addEventListener('change', async (e) => {
       const role = e.target.checked ? 'whiteboard' : 'person';
       this.addLog(chrome.i18n.getMessage('logModeChanged', [deviceId.slice(0, 8), role]));
+
+      // If switching to whiteboard mode and excludeWhiteboard is ON, we must release the pin if this camera is pinned
+      if (role === 'whiteboard' && this.globalSettings.excludeWhiteboard && this.pinnedDeviceId === deviceId) {
+          this.releasePin(false);
+      }
 
       // Update aspect ratio based on mode
       const currentVScale = parseFloat(element.dataset.vScale || '1.0');
@@ -2194,6 +2311,10 @@ class App {
             const index = this.slotOrder.indexOf(deviceId);
             const wasActive = index === this.activeSlotIndex;
 
+            if (this.pinnedDeviceId === deviceId) {
+                this.releasePin(false);
+            }
+
             await this.deactivateSlot(slot);
             slot.element.remove();
             this.slots.delete(deviceId);
@@ -2428,6 +2549,124 @@ class App {
           }
       }
       return true;
+  }
+
+  updatePinTimer() {
+      if (this.pinTimerId) {
+          clearTimeout(this.pinTimerId);
+          this.pinTimerId = null;
+      }
+
+      if (this.pinnedDeviceId && this.globalSettings.pinReleaseEnabled) {
+          const minutes = Math.max(1, Math.min(15, parseInt(this.globalSettings.pinReleaseTime) || 3));
+          this.pinTimerId = setTimeout(() => {
+              this.addLog(`Auto-releasing pin for camera ${this.pinnedDeviceId.slice(0, 8)} after ${minutes} minutes...`);
+              this.showSnackbar(chrome.i18n.getMessage('snackbarPinReleased', [String(minutes)]));
+              this.releasePin(true);
+          }, minutes * 60 * 1000);
+      }
+  }
+
+  togglePin(deviceId) {
+      if (this.pinnedDeviceId === deviceId) {
+          // Unpin
+          this.releasePin(true);
+      } else {
+          // Pin this camera
+          this.pinCamera(deviceId);
+      }
+  }
+
+  async pinCamera(deviceId) {
+      const prevPinnedId = this.pinnedDeviceId;
+      this.pinnedDeviceId = deviceId;
+      this.addLog(chrome.i18n.getMessage('logPinEnabled', [deviceId.slice(0, 8)]));
+
+      // Stop cycling if it's running
+      if (this.cycleTimeoutId) {
+          clearTimeout(this.cycleTimeoutId);
+          this.cycleTimeoutId = null;
+      }
+
+      this.updatePinTimer();
+
+      // Update UI for the previous pinned camera
+      if (prevPinnedId && prevPinnedId !== deviceId) {
+          const prevSlot = this.slots.get(prevPinnedId);
+          if (prevSlot) {
+              const pinBtnEl = prevSlot.element.querySelector('.pin-btn-overlay');
+              if (pinBtnEl) {
+                  pinBtnEl.classList.remove('pinned');
+                  pinBtnEl.title = chrome.i18n.getMessage('pinBtnTitle');
+              }
+          }
+      }
+
+      // Update UI for the newly pinned camera
+      const slot = this.slots.get(deviceId);
+      if (slot) {
+          const pinBtnEl = slot.element.querySelector('.pin-btn-overlay');
+          if (pinBtnEl) {
+              pinBtnEl.classList.add('pinned');
+              pinBtnEl.title = chrome.i18n.getMessage('unpinBtnTitle');
+          }
+      }
+
+      // Delegate activation and deactivation to the serialized queue
+      await this.updateCyclingAndActivationState();
+  }
+
+  async releasePin(shouldRestartCycling = true) {
+      if (!this.pinnedDeviceId) return;
+
+      const prevPinnedId = this.pinnedDeviceId;
+      this.pinnedDeviceId = null;
+      this.addLog(chrome.i18n.getMessage('logPinDisabled', [prevPinnedId.slice(0, 8)]));
+
+      if (this.pinTimerId) {
+          clearTimeout(this.pinTimerId);
+          this.pinTimerId = null;
+      }
+
+      const slot = this.slots.get(prevPinnedId);
+      if (slot) {
+          const pinBtnEl = slot.element.querySelector('.pin-btn-overlay');
+          if (pinBtnEl) {
+              pinBtnEl.classList.remove('pinned');
+              pinBtnEl.title = chrome.i18n.getMessage('pinBtnTitle');
+          }
+      }
+
+      if (shouldRestartCycling) {
+          await this.updateCyclingAndActivationState();
+      }
+  }
+
+  updateAllPinButtonsVisibility() {
+      // Pin buttons should only be shown if:
+      // - cycling is enabled
+      // - there are at least 2 cameras in total
+      const totalCameras = this.slotOrder.length;
+      const canShowPin = this.globalSettings.cyclingEnabled && totalCameras >= 2;
+
+      for (const [deviceId, slot] of this.slots.entries()) {
+          const pinOverlay = slot.element.querySelector('.pin-overlay');
+          if (!pinOverlay) continue;
+
+          // If excludeWhiteboard is ON, whiteboard cameras do not show pin button
+          const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
+          const isExcluded = this.globalSettings.excludeWhiteboard && isWhiteboard;
+
+          if (canShowPin && !isExcluded) {
+              pinOverlay.classList.remove('hidden');
+          } else {
+              pinOverlay.classList.add('hidden');
+              // If it was pinned, release it
+              if (this.pinnedDeviceId === deviceId) {
+                  this.releasePin(false);
+              }
+          }
+      }
   }
 
   async saveCameraSetting(deviceId, settings) {

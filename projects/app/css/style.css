@@ -405,6 +405,12 @@ video, .processed-canvas {
     pointer-events: auto;
 }
 
+.video-overlay-bottom-left {
+    bottom: 8px;
+    left: 8px;
+    pointer-events: auto;
+}
+
 .video-overlay-top-right-rot {
     top: 8px;
     right: 8px;
@@ -449,6 +455,17 @@ video, .processed-canvas {
 
 .rot-left-btn .material-symbols-outlined,
 .rot-right-btn .material-symbols-outlined {
+    font-size: 24px;
+    color: white;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  0px 4px rgba(0,0,0,0.5);
+}
+
+.video-overlay-bottom-left .material-symbols-outlined {
     font-size: 24px;
     color: white;
     text-shadow:
@@ -510,7 +527,8 @@ video, .processed-canvas {
 
 .delete-btn-overlay,
 .zoom-btn-overlay,
-.vscale-btn-overlay {
+.vscale-btn-overlay,
+.pin-btn-overlay {
     background: none;
     border: none;
     padding: 0;
@@ -525,8 +543,29 @@ video, .processed-canvas {
 
 .delete-btn-overlay:hover,
 .zoom-btn-overlay:hover,
-.vscale-btn-overlay:hover {
+.vscale-btn-overlay:hover,
+.pin-btn-overlay:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+.pin-btn-overlay.pinned {
+    animation: pin-pulse 2s infinite ease-in-out;
+}
+
+.pin-btn-overlay.pinned .material-symbols-outlined {
+    color: #FF9800 !important; /* Material Orange */
+}
+
+@keyframes pin-pulse {
+    0% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1.0;
+    }
+    100% {
+        opacity: 0.4;
+    }
 }
 
 .zoom-btn-overlay:disabled,

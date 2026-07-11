@@ -92,6 +92,46 @@
   "wbSizeKeep": {
     "message": "Keep original size"
   },
+  "pinReleaseTitle": {
+    "message": "Auto Pin Release"
+  },
+  "pinReleaseLabel": {
+    "message": "Auto Pin Release"
+  },
+  "pinReleaseTimeLabel": {
+    "message": "Pin Release Time (min)"
+  },
+  "pinBtnTitle": {
+    "message": "Pin this camera"
+  },
+  "unpinBtnTitle": {
+    "message": "Unpin this camera"
+  },
+  "snackbarPinReleased": {
+    "message": "$TIME$ minutes have passed, so the camera pin has been automatically released",
+    "placeholders": {
+      "time": { "content": "$1" }
+    }
+  },
+  "logPinEnabled": {
+    "message": "Pinned camera $ID$",
+    "placeholders": {
+      "id": { "content": "$1" }
+    }
+  },
+  "logPinDisabled": {
+    "message": "Unpinned camera $ID$",
+    "placeholders": {
+      "id": { "content": "$1" }
+    }
+  },
+  "logPinReleaseConfigChanged": {
+    "message": "Auto Pin Release: $ENABLED$, Release Time: $TIME$ min",
+    "placeholders": {
+      "enabled": { "content": "$1" },
+      "time": { "content": "$2" }
+    }
+  },
   "aboutDataTitle": {
     "message": "Data Storage and Risks"
   },
