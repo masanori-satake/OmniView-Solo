@@ -6,7 +6,7 @@ def generate_icons(output_dir=None):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
     svg_path = os.path.join(root_dir, "projects/app/assets/icon.svg")
-    output_dir = os.path.abspath(output_dir) if output_dir else os.path.join(root_dir, "projects/app/shared/assets")
+    output_dir = os.path.abspath(output_dir) if output_dir else os.path.join(root_dir, "projects/app/assets")
 
     if not os.path.exists(svg_path):
         print(f"Error: {svg_path} not found.")

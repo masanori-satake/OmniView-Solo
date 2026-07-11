@@ -1,5 +1,5 @@
 import { getCameras, loadCameraSettings, saveCameraSetting as saveCameraSettingToStorage, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
-import { WhiteboardProcessor } from '../shared/js/processor.js';
+import { WhiteboardProcessor } from './processor.js';
 
 
 class App {
