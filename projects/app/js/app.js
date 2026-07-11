@@ -2293,10 +2293,26 @@ class App {
         if (slot && slot.processor) {
             this.addLog(chrome.i18n.getMessage('logResetPerspective', [deviceId.slice(0, 8)]));
             slot.processor.transformer.resetPoints();
+
+            // Also reset vertical scale
+            if (slot.updateVScaleUI) {
+                slot.updateVScaleUI(1.0);
+                await this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
+                this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), '1.00']));
+            }
+
             this.showSnackbar(chrome.i18n.getMessage('snackbarResetDone'));
         } else if (slot) {
             this.addLog(chrome.i18n.getMessage('logResetTransform', [deviceId.slice(0, 8)]));
             slot.video.style.transform = '';
+
+            // Also reset vertical scale for non-processor slot if applicable
+            if (slot.updateVScaleUI) {
+                slot.updateVScaleUI(1.0);
+                await this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
+                this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), '1.00']));
+            }
+
             this.showSnackbar(chrome.i18n.getMessage('snackbarResetDone'));
         }
     });
