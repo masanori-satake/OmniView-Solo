@@ -66,10 +66,31 @@ export async function loadSessionState() {
   });
 }
 
+export const RESOLUTION_PRESETS_2K = [
+  { label: '2K WQHD (16:9)',   width: 2560, height: 1440 },
+  { label: '2K QHD (16:9)',    width: 2048, height: 1152 },
+  { label: '1080p FHD (16:9)', width: 1920, height: 1080 },
+  { label: 'UXGA (4:3)',       width: 1600, height: 1200 },
+  { label: '720p HD (16:9)',   width: 1280, height: 720  },
+  { label: 'XGA (4:3)',        width: 1024, height: 768  },
+  { label: '480p WVGA (16:9)', width: 854,  height: 480  },
+  { label: 'VGA (4:3)',        width: 640,  height: 480  }, // 最終セーフティライン（人物・ボード共用）
+  { label: '360p nHD (16:9)',  width: 640,  height: 360  },
+  { label: 'QVGA (4:3)',       width: 320,  height: 240  }  // 極限のフォールバック用（人物の最低限の表示用）
+];
+
 export async function loadGlobalSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['global_settings'], (result) => {
-      const defaults = { interval: 5, cyclingEnabled: false, excludeWhiteboard: false, cameraResolutionFpsDisplay: false };
+      const defaults = {
+        interval: 5,
+        cyclingEnabled: false,
+        excludeWhiteboard: false,
+        cameraResolutionFpsDisplay: false,
+        resolutionZoom1: '720p HD (16:9)',
+        resolutionZoom2: '480p WVGA (16:9)',
+        resolutionZoom4: '360p nHD (16:9)'
+      };
       resolve({ ...defaults, ...(result?.global_settings || {}) });
     });
   });
@@ -121,14 +142,16 @@ export const RESOLUTION_LEVELS = [
 ];
 
 export async function startCamera(deviceId, resolution = null) {
-  const res = resolution || RESOLUTION_LEVELS[0];
+  const width = resolution ? resolution.width : 1280;
+  const height = resolution ? resolution.height : 720;
+  const frameRate = resolution ? (resolution.frameRate || 15) : 15;
   const constraints = {
     video: {
       deviceId: deviceId ? { exact: deviceId } : undefined,
-      aspectRatio: { ideal: 1.7777777778 },
-      width: { ideal: res.width },
-      height: { ideal: res.height },
-      frameRate: { ideal: res.frameRate }
+      aspectRatio: { ideal: width / height },
+      width: { ideal: width },
+      height: { ideal: height },
+      frameRate: { ideal: frameRate }
     },
     audio: false
   };

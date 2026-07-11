@@ -35,6 +35,18 @@
   "cameraResolutionFpsDisplay": {
     "message": "Resolution/FPS Display"
   },
+  "initialResolutionTitle": {
+    "message": "Initial Resolution Settings"
+  },
+  "resolutionZoom1Label": {
+    "message": "Full Panel Width (Zoom 100%)"
+  },
+  "resolutionZoom2Label": {
+    "message": "Approx. 1/2 Width (Zoom 50%)"
+  },
+  "resolutionZoom4Label": {
+    "message": "Approx. 1/4 Width (Zoom 25%)"
+  },
   "exportBtn": {
     "message": "Export"
   },

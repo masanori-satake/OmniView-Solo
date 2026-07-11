@@ -1,4 +1,4 @@
-import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS } from './camera.js';
+import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
 import { WhiteboardProcessor } from '../shared/js/processor.js';
 
 
@@ -140,6 +140,30 @@ class App {
     const importBtnTrigger = document.getElementById('import-btn-trigger');
     const importInput = document.getElementById('import-input');
     const importModeSelect = document.getElementById('import-mode-select');
+    const resolutionZoom1Select = document.getElementById('resolution-zoom1-select');
+    const resolutionZoom2Select = document.getElementById('resolution-zoom2-select');
+    const resolutionZoom4Select = document.getElementById('resolution-zoom4-select');
+
+    resolutionZoom1Select.addEventListener('change', async (e) => {
+        this.globalSettings.resolutionZoom1 = e.target.value;
+        await saveGlobalSettings(this.globalSettings);
+        await this.updateResolutionSelects();
+        await this.reconnectActiveCameras();
+    });
+
+    resolutionZoom2Select.addEventListener('change', async (e) => {
+        this.globalSettings.resolutionZoom2 = e.target.value;
+        await saveGlobalSettings(this.globalSettings);
+        await this.updateResolutionSelects();
+        await this.reconnectActiveCameras();
+    });
+
+    resolutionZoom4Select.addEventListener('change', async (e) => {
+        this.globalSettings.resolutionZoom4 = e.target.value;
+        await saveGlobalSettings(this.globalSettings);
+        await this.updateResolutionSelects();
+        await this.reconnectActiveCameras();
+    });
 
     const updateIntervalUI = () => {
         const enabled = this.globalSettings.cyclingEnabled && this.slotOrder.length >= 2;
@@ -161,7 +185,7 @@ class App {
         }
     };
 
-    settingsBtn.addEventListener('click', () => {
+    settingsBtn.addEventListener('click', async () => {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
         cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
@@ -171,6 +195,7 @@ class App {
         cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
 
         updateIntervalUI();
+        await this.updateResolutionSelects();
         this.updateCameraInfoTab();
         this.renderLogs();
     });
@@ -295,6 +320,7 @@ class App {
                     cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
 
                     updateIntervalUI();
+                    await this.updateResolutionSelects();
                     await this.updateCyclingAndActivationState();
                     this.updateAllResolutionFpsDisplays();
                 }
@@ -346,6 +372,7 @@ class App {
                     }
                 }
 
+                await this.reconnectActiveCameras();
                 this.showSnackbar(chrome.i18n.getMessage('snackbarImportSuccess'));
                 this.addLog(chrome.i18n.getMessage('logImportSuccess'));
             } catch (err) {
@@ -356,6 +383,115 @@ class App {
         };
         reader.readAsText(file);
     });
+  }
+
+  getInitialResolutionForSlot(slot) {
+    const zoom = parseInt(slot.element.dataset.zoom || '1');
+    let label = '720p HD (16:9)'; // Default fallback
+    if (zoom === 1) {
+        label = this.globalSettings.resolutionZoom1 || '720p HD (16:9)';
+    } else if (zoom === 2) {
+        label = this.globalSettings.resolutionZoom2 || '480p WVGA (16:9)';
+    } else if (zoom === 4) {
+        label = this.globalSettings.resolutionZoom4 || '360p nHD (16:9)';
+    }
+
+    const preset = RESOLUTION_PRESETS_2K.find(p => p.label === label);
+    return preset || { label: '720p HD (16:9)', width: 1280, height: 720 };
+  }
+
+  getSteppedDownResolution(slot, step) {
+    const initialPreset = this.getInitialResolutionForSlot(slot);
+    const startIdx = RESOLUTION_PRESETS_2K.findIndex(p => p.label === initialPreset.label);
+    const targetIdx = Math.min(RESOLUTION_PRESETS_2K.length - 1, startIdx + step);
+    return RESOLUTION_PRESETS_2K[targetIdx];
+  }
+
+  async updateResolutionSelects() {
+    const select1 = document.getElementById('resolution-zoom1-select');
+    const select2 = document.getElementById('resolution-zoom2-select');
+    const select4 = document.getElementById('resolution-zoom4-select');
+    if (!select1 || !select2 || !select4) return;
+
+    const val1 = this.globalSettings.resolutionZoom1 || '720p HD (16:9)';
+    const val2 = this.globalSettings.resolutionZoom2 || '480p WVGA (16:9)';
+    const val4 = this.globalSettings.resolutionZoom4 || '360p nHD (16:9)';
+
+    let changed = false;
+
+    // 1. Populate Zoom 1 select (all options)
+    select1.innerHTML = '';
+    RESOLUTION_PRESETS_2K.forEach(preset => {
+        const opt = document.createElement('option');
+        opt.value = preset.label;
+        opt.textContent = preset.label;
+        select1.appendChild(opt);
+    });
+    select1.value = val1;
+    let idx1 = RESOLUTION_PRESETS_2K.findIndex(p => p.label === val1);
+    if (idx1 === -1) idx1 = 4; // fallback 720p
+
+    // 2. Populate Zoom 2 select (only index >= idx1, as descending order)
+    select2.innerHTML = '';
+    for (let i = idx1; i < RESOLUTION_PRESETS_2K.length; i++) {
+        const preset = RESOLUTION_PRESETS_2K[i];
+        const opt = document.createElement('option');
+        opt.value = preset.label;
+        opt.textContent = preset.label;
+        select2.appendChild(opt);
+    }
+    // Check constraint for Zoom 2
+    let idx2 = RESOLUTION_PRESETS_2K.findIndex(p => p.label === val2);
+    if (idx2 === -1 || idx2 < idx1) {
+        this.globalSettings.resolutionZoom2 = RESOLUTION_PRESETS_2K[idx1].label;
+        select2.value = RESOLUTION_PRESETS_2K[idx1].label;
+        idx2 = idx1;
+        changed = true;
+    } else {
+        select2.value = val2;
+    }
+
+    // 3. Populate Zoom 4 select (only index >= idx2, as descending order)
+    select4.innerHTML = '';
+    for (let i = idx2; i < RESOLUTION_PRESETS_2K.length; i++) {
+        const preset = RESOLUTION_PRESETS_2K[i];
+        const opt = document.createElement('option');
+        opt.value = preset.label;
+        opt.textContent = preset.label;
+        select4.appendChild(opt);
+    }
+    // Check constraint for Zoom 4
+    let idx4 = RESOLUTION_PRESETS_2K.findIndex(p => p.label === val4);
+    if (idx4 === -1 || idx4 < idx2) {
+        this.globalSettings.resolutionZoom4 = RESOLUTION_PRESETS_2K[idx2].label;
+        select4.value = RESOLUTION_PRESETS_2K[idx2].label;
+        changed = true;
+    } else {
+        select4.value = val4;
+    }
+
+    if (changed) {
+        await saveGlobalSettings(this.globalSettings);
+    }
+  }
+
+  async reconnectActiveCameras() {
+    this.addLog("Reconnecting active cameras to apply updated resolution settings...");
+    const activeDeviceIds = [];
+    for (const [deviceId, slot] of this.slots.entries()) {
+        if (slot.stream) {
+            activeDeviceIds.push(deviceId);
+        }
+    }
+
+    for (const deviceId of activeDeviceIds) {
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+            await this.deactivateSlot(slot);
+            await new Promise(r => setTimeout(r, 750));
+            await this.activateSlot(slot, deviceId);
+        }
+    }
   }
 
   getSlotRole(deviceId) {
@@ -877,14 +1013,14 @@ class App {
             !this.slotOrder.every((id, idx) => id === initialOrder[idx]);
     };
 
-    for (let levelIdx = 0; levelIdx < RESOLUTION_LEVELS.length; levelIdx++) {
+    // We search up to 4 fallback step-down levels
+    for (let levelIdx = 0; levelIdx < 4; levelIdx++) {
         if (isStateChanged()) {
             this.addLog(chrome.i18n.getMessage('logMultiActivationAborted'));
             return false;
         }
 
-        const resolution = RESOLUTION_LEVELS[levelIdx];
-        this.addLog(chrome.i18n.getMessage('logAttemptActivation', [resolution.label]));
+        this.addLog(`Attempting multi-camera activation at step-down level ${levelIdx}...`);
 
         // 1. Stop all current streams to release bandwidth
         for (const deviceId of initialOrder) {
@@ -910,6 +1046,7 @@ class App {
 
             const slot = this.slots.get(deviceId);
             if (slot) {
+                const resolution = this.getSteppedDownResolution(slot, levelIdx);
                 const success = await this.activateSlot(slot, deviceId, resolution);
                 if (success) {
                     activatedSlots.push(slot);
@@ -932,9 +1069,13 @@ class App {
         }
 
         if (allSuccessful) {
-            this.addLog(chrome.i18n.getMessage('logActivationAllSuccess', [resolution.label]));
+            const resLabels = activatedSlots.map(s => {
+                const res = this.getSteppedDownResolution(s, levelIdx);
+                return res.label.split(' ')[0];
+            }).join(', ');
+            this.addLog(`Successfully activated all cameras at step-down level ${levelIdx}: ${resLabels}`);
             if (levelIdx > 0) {
-                this.showSnackbar(chrome.i18n.getMessage('snackbarResolutionReduced', [resolution.label]));
+                this.showSnackbar(chrome.i18n.getMessage('snackbarResolutionReduced', [resLabels]));
             }
             return true;
         }
@@ -1068,7 +1209,7 @@ class App {
                 return false;
             }
 
-            const targetRes = resolution || (i === maxRetries - 1 ? RESOLUTION_LEVELS[RESOLUTION_LEVELS.length - 1] : RESOLUTION_LEVELS[0]);
+            const targetRes = resolution || this.getSteppedDownResolution(slot, i);
             this.addLog(chrome.i18n.getMessage('logActivatingAttempt', [deviceId.slice(0, 8), String(i + 1), String(maxRetries), targetRes.label]));
 
             try {
@@ -1426,27 +1567,45 @@ class App {
 
     updateZoomUI(setting.zoom);
 
-    zoomInBtn.onclick = (e) => {
+    zoomInBtn.onclick = async (e) => {
         e.stopPropagation();
         const currentZoom = parseInt(element.dataset.zoom || '1');
+        let nextZoom = currentZoom;
         if (currentZoom === 2) {
-            updateZoomUI(1);
-            saveCameraSetting(deviceId, { zoom: 1 });
+            nextZoom = 1;
         } else if (currentZoom === 4) {
-            updateZoomUI(2);
-            saveCameraSetting(deviceId, { zoom: 2 });
+            nextZoom = 2;
+        }
+        if (nextZoom !== currentZoom) {
+            updateZoomUI(nextZoom);
+            await saveCameraSetting(deviceId, { zoom: nextZoom });
+            const slot = this.slots.get(deviceId);
+            if (slot) {
+                await this.deactivateSlot(slot);
+                await new Promise(r => setTimeout(r, 750));
+                await this.activateSlot(slot, deviceId);
+            }
         }
     };
 
-    zoomOutBtn.onclick = (e) => {
+    zoomOutBtn.onclick = async (e) => {
         e.stopPropagation();
         const currentZoom = parseInt(element.dataset.zoom || '1');
+        let nextZoom = currentZoom;
         if (currentZoom === 1) {
-            updateZoomUI(2);
-            saveCameraSetting(deviceId, { zoom: 2 });
+            nextZoom = 2;
         } else if (currentZoom === 2) {
-            updateZoomUI(4);
-            saveCameraSetting(deviceId, { zoom: 4 });
+            nextZoom = 4;
+        }
+        if (nextZoom !== currentZoom) {
+            updateZoomUI(nextZoom);
+            await saveCameraSetting(deviceId, { zoom: nextZoom });
+            const slot = this.slots.get(deviceId);
+            if (slot) {
+                await this.deactivateSlot(slot);
+                await new Promise(r => setTimeout(r, 750));
+                await this.activateSlot(slot, deviceId);
+            }
         }
     };
 
