@@ -13,6 +13,7 @@ export class PerspectiveTransformer {
         this.labels = labels;
         this.draggingPoint = null;
         this.isMultiDragging = false;
+        this.isSimpleDragging = false;
         this.lastDragX = 0;
         this.lastDragY = 0;
         this.showHandles = false;
@@ -75,6 +76,70 @@ export class PerspectiveTransformer {
 
                 this.lastDragX += (actualDx / 100) * rect.width;
                 this.lastDragY += (actualDy / 100) * rect.height;
+            } else if (this.isSimpleDragging) {
+                const rect = this.canvas.getBoundingClientRect();
+                const cw = rect.width;
+                const ch = rect.height;
+                if (cw > 0 && ch > 0) {
+                    const corners = [{x: 0, y: 0}, {x: cw, y: 0}, {x: cw, y: ch}, {x: 0, y: ch}];
+                    const target = this.points.map(p => ({
+                        x: (p.x / 100) * cw,
+                        y: (p.y / 100) * ch
+                    }));
+                    const H = getHomography(corners, target);
+
+                    const transformPoint = (H_mat, x, y) => {
+                        const den = H_mat[6] * x + H_mat[7] * y + H_mat[8];
+                        if (Math.abs(den) < 1e-9) return { x: 0, y: 0 };
+                        return {
+                            x: (H_mat[0] * x + H_mat[1] * y + H_mat[2]) / den,
+                            y: (H_mat[3] * x + H_mat[4] * y + H_mat[5]) / den
+                        };
+                    };
+
+                    const prevX = this.lastDragX - rect.left;
+                    const prevY = this.lastDragY - rect.top;
+                    const currX = e.clientX - rect.left;
+                    const currY = e.clientY - rect.top;
+
+                    const p1 = transformPoint(H, prevX, prevY);
+                    const p2 = transformPoint(H, currX, currY);
+
+                    const dxPct = ((p2.x - p1.x) / cw) * 100;
+                    const dyPct = ((p2.y - p1.y) / ch) * 100;
+
+                    let minDx = -Infinity;
+                    let maxDx = Infinity;
+                    let minDy = -Infinity;
+                    let maxDy = Infinity;
+
+                    this.points.forEach(p => {
+                        const minAllowedX = -p.x;
+                        const maxAllowedX = 100 - p.x;
+                        if (minAllowedX > minDx) minDx = minAllowedX;
+                        if (maxAllowedX < maxDx) maxDx = maxAllowedX;
+
+                        const minAllowedY = -p.y;
+                        const maxAllowedY = 100 - p.y;
+                        if (minAllowedY > minDy) minDy = minAllowedY;
+                        if (maxAllowedY < maxDy) maxDy = maxAllowedY;
+                    });
+
+                    const actualDx = Math.max(minDx, Math.min(maxDx, dxPct));
+                    const actualDy = Math.max(minDy, Math.min(maxDy, dyPct));
+
+                    if (actualDx !== 0 || actualDy !== 0) {
+                        this.points.forEach(p => {
+                            p.x += actualDx;
+                            p.y += actualDy;
+                            p.x = Math.max(0, Math.min(100, p.x));
+                            p.y = Math.max(0, Math.min(100, p.y));
+                        });
+                        this.updateTransform();
+                    }
+                }
+                this.lastDragX = e.clientX;
+                this.lastDragY = e.clientY;
             }
         };
 
@@ -86,11 +151,22 @@ export class PerspectiveTransformer {
                 this.isMultiDragging = false;
                 this.draggingPoint = null;
                 if (this.onPointsChange) this.onPointsChange(this.points);
+            } else if (this.isSimpleDragging) {
+                this.isSimpleDragging = false;
+                this.updateCursor();
+                if (this.onPointsChange) this.onPointsChange(this.points);
             }
         };
 
         this.boundMouseDown = (e) => {
-            if (!this.showHandles) return;
+            if (!this.showHandles) {
+                if (e.button !== 0) return;
+                this.isSimpleDragging = true;
+                this.lastDragX = e.clientX;
+                this.lastDragY = e.clientY;
+                this.updateCursor();
+                return;
+            }
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -112,6 +188,7 @@ export class PerspectiveTransformer {
 
         this.initEvents();
         this.updateTransform();
+        this.updateCursor();
     }
 
     initEvents() {
@@ -120,11 +197,25 @@ export class PerspectiveTransformer {
         window.addEventListener('mouseup', this.boundMouseUp);
     }
 
+    updateCursor() {
+        if (!this.canvas) return;
+        if (this.showHandles) {
+            this.canvas.style.cursor = 'crosshair';
+        } else {
+            if (this.isSimpleDragging) {
+                this.canvas.style.cursor = 'grabbing';
+            } else {
+                this.canvas.style.cursor = 'grab';
+            }
+        }
+    }
+
     setShowingHandles(visible) {
         if (this.showHandles === visible) return;
         this.showHandles = visible;
         this.updateTransform();
         this.draw();
+        this.updateCursor();
 
         // Custom event or callback could be triggered here to toggle rotation buttons visibility.
         if (this.canvas) {
