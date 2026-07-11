@@ -371,7 +371,7 @@ class App {
         updateIntervalUI();
         if (!e.target.checked) {
             // Force release pin if cycling is turned off
-            this.releasePin(true);
+            this.releasePin(false);
         }
         await this.updateCyclingAndActivationState();
     });
@@ -383,7 +383,7 @@ class App {
         if (e.target.checked) {
             // If the currently pinned device is a whiteboard, unpin it since whiteboard pins are disabled
             if (this.pinnedDeviceId && this.getSlotRole(this.pinnedDeviceId) === 'whiteboard') {
-                this.releasePin(true);
+                this.releasePin(false);
             }
         }
         await this.updateCyclingAndActivationState();
@@ -2558,7 +2558,7 @@ class App {
       }
 
       if (this.pinnedDeviceId && this.globalSettings.pinReleaseEnabled) {
-          const minutes = this.globalSettings.pinReleaseTime || 3;
+          const minutes = Math.max(1, Math.min(15, parseInt(this.globalSettings.pinReleaseTime) || 3));
           this.pinTimerId = setTimeout(() => {
               this.addLog(`Auto-releasing pin for camera ${this.pinnedDeviceId.slice(0, 8)} after ${minutes} minutes...`);
               this.showSnackbar(chrome.i18n.getMessage('snackbarPinReleased', [String(minutes)]));
@@ -2590,7 +2590,7 @@ class App {
 
       this.updatePinTimer();
 
-      // Deactivate the old pinned camera slot so it freezes and becomes static image, if it exists
+      // Update UI for the previous pinned camera
       if (prevPinnedId && prevPinnedId !== deviceId) {
           const prevSlot = this.slots.get(prevPinnedId);
           if (prevSlot) {
@@ -2599,15 +2599,10 @@ class App {
                   pinBtnEl.classList.remove('pinned');
                   pinBtnEl.title = chrome.i18n.getMessage('pinBtnTitle');
               }
-              const isWhiteboard = this.getSlotRole(prevPinnedId) === 'whiteboard';
-              const keepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-              if (!keepActive) {
-                  await this.deactivateSlot(prevSlot);
-              }
           }
       }
 
-      // Make sure the newly pinned camera becomes active (video display)
+      // Update UI for the newly pinned camera
       const slot = this.slots.get(deviceId);
       if (slot) {
           const pinBtnEl = slot.element.querySelector('.pin-btn-overlay');
@@ -2615,12 +2610,9 @@ class App {
               pinBtnEl.classList.add('pinned');
               pinBtnEl.title = chrome.i18n.getMessage('unpinBtnTitle');
           }
-          this.activeSlotIndex = this.slotOrder.indexOf(deviceId);
-          if (!slot.stream) {
-              await this.activateSlot(slot, deviceId);
-          }
       }
 
+      // Delegate activation and deactivation to the serialized queue
       await this.updateCyclingAndActivationState();
   }
 
