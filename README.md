@@ -1,10 +1,14 @@
+<p align="center">
+  <img src="projects/app/assets/icon128.png" width="128" height="128" alt="OmniView-Solo Logo">
+</p>
+
 # OmniView-Solo
 
 [![Version](https://img.shields.io/badge/version-0.13.0-blue)](https://github.com/masanori-satake/OmniView-Solo)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-brightgreen)](SECURITY.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-pending-lightgrey)](#)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-published-blue)](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam)
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
 [![Web Deploy](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml)
 
@@ -18,6 +22,12 @@
 - **M3準拠のUI/UX**: Google Material Design 3に完全準拠し、他の-Soloシリーズと統一感のあるデザインを提供します。
 
 ## インストール方法
+
+### Chrome ウェブストアからインストール（推奨）
+
+[Chrome ウェブストア](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam) からインストールしてください。
+
+### ソースコードからインストール
 
 1. リリースページから最新の `OmniView-Solo-vX.X.X.zip` をダウンロードします。
 2. `chrome://extensions` を開き、デベロッパーモードをオンにします。
