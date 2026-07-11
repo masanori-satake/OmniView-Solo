@@ -2139,7 +2139,6 @@ class App {
   }
 
   async saveCameraSetting(deviceId, settings) {
-      await saveCameraSettingToStorage(deviceId, settings);
       const existing = this.settings[deviceId] || {};
       const existingModes = existing.modes || { person: {}, whiteboard: {} };
       const updated = {
@@ -2154,6 +2153,7 @@ class App {
           }
       };
       this.settings[deviceId] = updated;
+      await saveCameraSettingToStorage(deviceId, settings);
   }
 
   showSnackbar(message, actionLabel = null, actionCallback = null) {
