@@ -142,8 +142,16 @@
     margin-left: 12px;
 }
 
+.settings-row.nested-1 label {
+    font-size: 13px;
+}
+
 .settings-row.nested-2 {
     margin-left: 24px;
+}
+
+.settings-row.nested-2 label {
+    font-size: 12px;
 }
 
 .settings-row-vertical {
