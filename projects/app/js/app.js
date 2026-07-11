@@ -635,24 +635,54 @@ class App {
         targetWb = wbSlots[0];
       }
 
-      // 2. Turn all OTHER whiteboard slots to Person mode, and set their size as configured.
+      // 2. Move the target whiteboard slot to the front of slotOrder
+      const idx = this.slotOrder.indexOf(targetWb.deviceId);
+      if (idx > 0) {
+        this.slotOrder.splice(idx, 1);
+        this.slotOrder.unshift(targetWb.deviceId);
+      }
+
+      // 3. Set the target whiteboard slot size as configured
+      const newSizeConfig = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
+      let targetZoomLevel = 1;
+      if (newSizeConfig === 'zoom1') targetZoomLevel = 1;
+      else if (newSizeConfig === 'zoom2') targetZoomLevel = 2;
+      else if (newSizeConfig === 'zoom4') targetZoomLevel = 4;
+      else if (newSizeConfig === 'keep') {
+        targetZoomLevel = parseInt(targetWb.slot.element.dataset.zoom || '1');
+      }
+
+      const targetZoomChanged = parseInt(targetWb.slot.element.dataset.zoom || '1') !== targetZoomLevel;
+
+      targetWb.slot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
+      targetWb.slot.element.classList.add(`zoom-${targetZoomLevel}`);
+      targetWb.slot.element.dataset.zoom = targetZoomLevel;
+      const targetZoomInBtn = targetWb.slot.element.querySelector('.zoom-in-btn');
+      const targetZoomOutBtn = targetWb.slot.element.querySelector('.zoom-out-btn');
+      if (targetZoomInBtn) targetZoomInBtn.disabled = (targetZoomLevel === 1);
+      if (targetZoomOutBtn) targetZoomOutBtn.disabled = (targetZoomLevel === 4);
+
+      await this.saveCameraSetting(targetWb.deviceId, { zoom: targetZoomLevel, defaultRole: 'whiteboard' });
+
+      if (targetZoomChanged && targetWb.slot.stream) {
+        await this.deactivateSlot(targetWb.slot);
+      }
+
+      // 4. Turn all OTHER whiteboard slots to Person mode, and set their size as configured.
       const prevSizeConfig = this.globalSettings.wbAutoFocusPrevWbSize || 'zoom4';
       for (const item of wbSlots) {
         if (item.deviceId !== targetWb.deviceId) {
           const otherSlot = item.slot;
-          const roleSwitch = otherSlot.element.querySelector('.role-switch');
-          if (roleSwitch) {
-            roleSwitch.checked = false;
-            roleSwitch.dispatchEvent(new Event('change'));
-          }
 
           // Apply display size
-          let zoomLevel = 4; // default zoom4
+          let zoomLevel = 4;
           if (prevSizeConfig === 'zoom2') zoomLevel = 2;
           else if (prevSizeConfig === 'zoom4') zoomLevel = 4;
           else if (prevSizeConfig === 'keep') {
             zoomLevel = parseInt(otherSlot.element.dataset.zoom || '1');
           }
+
+          const otherZoomChanged = parseInt(otherSlot.element.dataset.zoom || '1') !== zoomLevel;
 
           otherSlot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
           otherSlot.element.classList.add(`zoom-${zoomLevel}`);
@@ -663,35 +693,18 @@ class App {
           if (zoomOutBtn) zoomOutBtn.disabled = (zoomLevel === 4);
 
           await this.saveCameraSetting(item.deviceId, { zoom: zoomLevel, defaultRole: 'person' });
+
+          if (otherZoomChanged && otherSlot.stream) {
+            await this.deactivateSlot(otherSlot);
+          }
+
+          const roleSwitch = otherSlot.element.querySelector('.role-switch');
+          if (roleSwitch) {
+            roleSwitch.checked = false;
+            roleSwitch.dispatchEvent(new Event('change'));
+          }
         }
       }
-
-      // 3. Move the target whiteboard slot to the front of slotOrder
-      const idx = this.slotOrder.indexOf(targetWb.deviceId);
-      if (idx > 0) {
-        this.slotOrder.splice(idx, 1);
-        this.slotOrder.unshift(targetWb.deviceId);
-      }
-
-      // 4. Set the target whiteboard slot size as configured
-      const newSizeConfig = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
-      let zoomLevel = 1; // default zoom1
-      if (newSizeConfig === 'zoom1') zoomLevel = 1;
-      else if (newSizeConfig === 'zoom2') zoomLevel = 2;
-      else if (newSizeConfig === 'zoom4') zoomLevel = 4;
-      else if (newSizeConfig === 'keep') {
-        zoomLevel = parseInt(targetWb.slot.element.dataset.zoom || '1');
-      }
-
-      targetWb.slot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
-      targetWb.slot.element.classList.add(`zoom-${zoomLevel}`);
-      targetWb.slot.element.dataset.zoom = zoomLevel;
-      const zoomInBtn = targetWb.slot.element.querySelector('.zoom-in-btn');
-      const zoomOutBtn = targetWb.slot.element.querySelector('.zoom-out-btn');
-      if (zoomInBtn) zoomInBtn.disabled = (zoomLevel === 1);
-      if (zoomOutBtn) zoomOutBtn.disabled = (zoomLevel === 4);
-
-      await this.saveCameraSetting(targetWb.deviceId, { zoom: zoomLevel, defaultRole: 'whiteboard' });
 
       // Save session state with new slotOrder & index
       this.activeSlotIndex = 0;
