@@ -105,8 +105,8 @@ export class PerspectiveTransformer {
                     const p1 = transformPoint(H, prevX, prevY);
                     const p2 = transformPoint(H, currX, currY);
 
-                    const dxPct = ((p2.x - p1.x) / cw) * 100;
-                    const dyPct = ((p2.y - p1.y) / ch) * 100;
+                    const dxPct = -(((p2.x - p1.x) / cw) * 100);
+                    const dyPct = -(((p2.y - p1.y) / ch) * 100);
 
                     let minDx = -Infinity;
                     let maxDx = Infinity;
