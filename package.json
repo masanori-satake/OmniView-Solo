@@ -1,6 +1,6 @@
 {
   "name": "omniview-solo",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "ハイブリッド会議の視認性を向上させるローカル完結型Chrome拡張機能",
   "type": "module",
   "scripts": {

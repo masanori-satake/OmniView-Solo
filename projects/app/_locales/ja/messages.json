@@ -23,23 +23,26 @@
   "tabAbout": {
     "message": "About"
   },
+  "cameraConnectionTitle": {
+    "message": "カメラ接続"
+  },
   "cyclingSwitch": {
     "message": "自動切り替え"
   },
   "excludeWhiteboard": {
-    "message": "ホワイトボードモードを除外"
+    "message": "ホワイトボードモードをスキップ"
   },
   "intervalLabel": {
-    "message": "表示間隔 (秒)"
+    "message": "切り替え間隔 (秒)"
   },
   "cameraResolutionFpsDisplay": {
-    "message": "解像度/fps表示"
+    "message": "カメラ画像情報表示(解像度/FPS)"
   },
   "initialResolutionTitle": {
-    "message": "初期解像度設定"
+    "message": "表示サイズ別解像度上限"
   },
   "resolutionZoom1Label": {
-    "message": "サイドパネル幅一杯 (拡大 100%)"
+    "message": "サイドパネル幅一杯 (100%)"
   },
   "resolutionZoom2Label": {
     "message": "サイドパネル幅の約1/2 (50%)"
@@ -78,10 +81,10 @@
     "message": "設定データ"
   },
   "wbAutoFocusTitle": {
-    "message": "ホワイトボード自動フォーカス機能"
+    "message": "ホワイトボードモード優先機能"
   },
   "wbAutoFocusLabel": {
-    "message": "ホワイトボード自動フォーカス"
+    "message": "ホワイトボードモード優先"
   },
   "wbAutoFocusPrevWbSizeLabel": {
     "message": "既存ホワイトボードの退避サイズ"
@@ -93,13 +96,13 @@
     "message": "そのままのサイズ"
   },
   "pinReleaseTitle": {
-    "message": "自動ピン留め解除機能"
+    "message": "自動ピン留め解除"
   },
   "pinReleaseLabel": {
     "message": "自動ピン留め解除"
   },
   "pinReleaseTimeLabel": {
-    "message": "ピン留め解除時間 (分)"
+    "message": "ピン留め保持期間(分)"
   },
   "pinBtnTitle": {
     "message": "このカメラをピン留めする"
@@ -126,7 +129,7 @@
     }
   },
   "logPinReleaseConfigChanged": {
-    "message": "自動ピン留め解除: $ENABLED$, 解除時間: $TIME$分",
+    "message": "自動ピン留め解除: $ENABLED$, 保持期間: $TIME$分",
     "placeholders": {
       "enabled": { "content": "$1" },
       "time": { "content": "$2" }
@@ -349,7 +352,7 @@
     }
   },
   "logIntervalChanged": {
-    "message": "表示間隔が $INTERVAL$秒に変更されました",
+    "message": "切り替え間隔が $INTERVAL$秒に変更されました",
     "placeholders": {
         "interval": { "content": "$1" }
     }
@@ -361,13 +364,13 @@
     }
   },
   "logExcludeWhiteboard": {
-    "message": "ホワイトボードモードを除外: $ENABLED$",
+    "message": "ホワイトボードモードをスキップ: $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }
   },
   "logCameraResolutionFpsDisplay": {
-    "message": "解像度/fps表示: $ENABLED$",
+    "message": "カメラ画像情報表示(解像度/FPS): $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }

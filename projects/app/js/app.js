@@ -9,10 +9,10 @@ class App {
     this.settings = {};
     this.globalSettings = {
       interval: 5,
-      cyclingEnabled: false,
-      excludeWhiteboard: false,
+      cyclingEnabled: true,
+      excludeWhiteboard: true,
       cameraResolutionFpsDisplay: false,
-      wbAutoFocusEnabled: false,
+      wbAutoFocusEnabled: true,
       wbAutoFocusPrevWbSize: 'zoom4',
       wbAutoFocusNewWbSize: 'zoom1',
       pinReleaseEnabled: true,
@@ -198,6 +198,7 @@ class App {
             this.globalSettings.wbAutoFocusEnabled = e.target.checked;
             this.addLog(chrome.i18n.getMessage('wbAutoFocusLabel') + ': ' + String(e.target.checked));
             await saveGlobalSettings(this.globalSettings);
+            updateIntervalUI();
             // If turning ON, let's enforce autofocus if there are multiple cameras
             if (e.target.checked && this.slotOrder.length >= 2) {
                 await this.enforceWhiteboardAutoFocus();
@@ -282,6 +283,29 @@ class App {
                 pinReleaseLabel.classList.remove('disabled');
             } else {
                 pinReleaseLabel.classList.add('disabled');
+            }
+        }
+
+        const wbAutoFocusEnabled = !!this.globalSettings.wbAutoFocusEnabled;
+        const wbAutoFocusLabel = document.getElementById('wb-autofocus-label');
+        if (wbAutoFocusSwitch) wbAutoFocusSwitch.checked = wbAutoFocusEnabled;
+        if (wbAutoFocusPrevWbSizeSelect) wbAutoFocusPrevWbSizeSelect.disabled = !wbAutoFocusEnabled;
+        if (wbAutoFocusNewWbSizeSelect) wbAutoFocusNewWbSizeSelect.disabled = !wbAutoFocusEnabled;
+
+        const wbPrevWbSizeLabel = document.getElementById('wb-autofocus-prev-wb-size-label');
+        const wbNewWbSizeLabel = document.getElementById('wb-autofocus-new-wb-size-label');
+        if (wbPrevWbSizeLabel) {
+            if (wbAutoFocusEnabled) {
+                wbPrevWbSizeLabel.classList.remove('disabled');
+            } else {
+                wbPrevWbSizeLabel.classList.add('disabled');
+            }
+        }
+        if (wbNewWbSizeLabel) {
+            if (wbAutoFocusEnabled) {
+                wbNewWbSizeLabel.classList.remove('disabled');
+            } else {
+                wbNewWbSizeLabel.classList.add('disabled');
             }
         }
     };
