@@ -698,11 +698,56 @@ class App {
             await this.deactivateSlot(otherSlot);
           }
 
+          // Update UI and state directly instead of dispatching a DOM event to avoid race conditions
           const roleSwitch = otherSlot.element.querySelector('.role-switch');
           if (roleSwitch) {
             roleSwitch.checked = false;
-            roleSwitch.dispatchEvent(new Event('change'));
           }
+
+          this.addLog(chrome.i18n.getMessage('logModeChanged', [item.deviceId.slice(0, 8), 'person']));
+
+          const videoWrapper = otherSlot.element.querySelector('.video-wrapper');
+          if (videoWrapper) {
+            videoWrapper.style.aspectRatio = '16 / 9';
+          }
+
+          const wbControls = otherSlot.element.querySelectorAll('.whiteboard-only');
+          wbControls.forEach(ctrl => ctrl.classList.add('hidden'));
+
+          if (otherSlot.adjustingTimeoutId) {
+            clearTimeout(otherSlot.adjustingTimeoutId);
+            otherSlot.adjustingTimeoutId = null;
+            const adjOverlay = otherSlot.element.querySelector('.adjusting-overlay');
+            if (adjOverlay) adjOverlay.classList.add('hidden');
+          }
+
+          const lockBtn = otherSlot.element.querySelector('.lock-btn');
+          if (lockBtn && lockBtn.classList.contains('locked')) {
+            lockBtn.classList.remove('locked');
+            const icon = lockBtn.querySelector('.material-symbols-outlined');
+            if (icon) icon.textContent = 'lock_open';
+            await this.saveCameraSetting(item.deviceId, { mediaSettingsFixed: false });
+            if (otherSlot.stream) {
+              const track = otherSlot.stream.getVideoTracks()[0];
+              if (track) {
+                await this.applyMediaLock(track, false);
+              }
+            }
+          }
+
+          if (otherSlot.processor) {
+            otherSlot.processor.stop();
+            otherSlot.processor = null;
+          } else {
+            otherSlot.video.style.transform = '';
+            otherSlot.video.style.objectFit = 'contain';
+            if (otherSlot.processedCanvas) {
+              otherSlot.processedCanvas.style.transform = '';
+              otherSlot.processedCanvas.style.display = 'none';
+            }
+          }
+          const ctx = otherSlot.canvas.getContext('2d');
+          ctx.clearRect(0, 0, otherSlot.canvas.width, otherSlot.canvas.height);
         }
       }
 
