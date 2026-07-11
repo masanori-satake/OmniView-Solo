@@ -1,4 +1,4 @@
-import { getCameras, loadCameraSettings, saveCameraSetting, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
+import { getCameras, loadCameraSettings, saveCameraSetting as saveCameraSettingToStorage, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
 import { WhiteboardProcessor } from '../shared/js/processor.js';
 
 
@@ -1593,7 +1593,7 @@ class App {
             zoomInBtn.disabled = true;
             zoomOutBtn.disabled = true;
             updateZoomUI(nextZoom);
-            await saveCameraSetting(deviceId, { zoom: nextZoom });
+            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
             const slot = this.slots.get(deviceId);
             if (slot) {
                 await this.deactivateSlot(slot);
@@ -1617,7 +1617,7 @@ class App {
             zoomInBtn.disabled = true;
             zoomOutBtn.disabled = true;
             updateZoomUI(nextZoom);
-            await saveCameraSetting(deviceId, { zoom: nextZoom });
+            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
             const slot = this.slots.get(deviceId);
             if (slot) {
                 await this.deactivateSlot(slot);
@@ -1651,7 +1651,7 @@ class App {
         const currentScale = parseFloat(element.dataset.vScale || '1.0');
         const nextScale = Math.min(3.1605, currentScale + 0.1);
         updateVScaleUI(nextScale);
-        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
         this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), nextScale.toFixed(2)]));
     };
 
@@ -1660,14 +1660,14 @@ class App {
         const currentScale = parseFloat(element.dataset.vScale || '1.0');
         const nextScale = Math.max(1.0, currentScale - 0.1);
         updateVScaleUI(nextScale);
-        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
         this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), nextScale.toFixed(2)]));
     };
 
     vResetBtn.onclick = (e) => {
         e.stopPropagation();
         updateVScaleUI(1.0);
-        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
+        this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: 1.0 } } });
         this.addLog(chrome.i18n.getMessage('logVScaleChanged', [deviceId.slice(0, 8), '1.00']));
     };
 
@@ -1675,7 +1675,7 @@ class App {
         e.stopPropagation();
         const nextScale = 3.1605;
         updateVScaleUI(nextScale);
-        saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+        this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
         this.addLog(chrome.i18n.getMessage('logVScaleChangedMax', [deviceId.slice(0, 8)]));
     };
 
@@ -1699,7 +1699,7 @@ class App {
         if (success || !nextLocked) {
             lockBtn.classList.toggle('locked', nextLocked);
             lockBtn.querySelector('.material-symbols-outlined').textContent = nextLocked ? 'lock' : 'lock_open';
-            saveCameraSetting(deviceId, { mediaSettingsFixed: nextLocked });
+            await this.saveCameraSetting(deviceId, { mediaSettingsFixed: nextLocked });
             const status = chrome.i18n.getMessage(nextLocked ? 'lockStatusLocked' : 'lockStatusUnlocked');
             this.addLog(chrome.i18n.getMessage('logLockSettingsChanged', [deviceId.slice(0, 8), status]));
         } else {
@@ -1741,7 +1741,7 @@ class App {
                   if (icon) icon.textContent = 'lock_open';
               }
 
-              saveCameraSetting(deviceId, { mediaSettingsFixed: false });
+              await this.saveCameraSetting(deviceId, { mediaSettingsFixed: false });
               this.addLog(chrome.i18n.getMessage('logLockSettingsChanged', [deviceId.slice(0, 8), chrome.i18n.getMessage('lockStatusUnlocked')]));
 
               if (slot && slot.stream) {
@@ -1759,8 +1759,7 @@ class App {
       }
 
       // Persist the current mode as defaultRole so it's restored on next load/export
-      await saveCameraSetting(deviceId, { defaultRole: role });
-      this.settings[deviceId].defaultRole = role;
+      await this.saveCameraSetting(deviceId, { defaultRole: role });
 
       const wbControls = element.querySelectorAll('.whiteboard-only');
       const vScaleOverlay = element.querySelector('.vscale-overlay');
@@ -1797,7 +1796,7 @@ class App {
                   if (isDefault) {
                       slot.processor.transformer.setShowingHandles(true);
                   }
-                  updateAdjustingUI(slot, slot.processor.transformer.showHandles);
+                  await updateAdjustingUI(slot, slot.processor.transformer.showHandles);
               } else {
                   if (slot.processor) {
                       slot.processor.stop();
@@ -1836,11 +1835,7 @@ class App {
             const current = !!(this.settings[deviceId]?.modes?.whiteboard?.occlusionRemoval);
             const newValue = !current;
             slot.processor.setOcclusionRemoval(newValue);
-            if (!this.settings[deviceId]) this.settings[deviceId] = {};
-            if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
-            if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
-            this.settings[deviceId].modes.whiteboard.occlusionRemoval = newValue;
-            saveCameraSetting(deviceId, { modes: { whiteboard: { occlusionRemoval: newValue } } });
+            await this.saveCameraSetting(deviceId, { modes: { whiteboard: { occlusionRemoval: newValue } } });
             updateWhiteboardUI();
         }
     });
@@ -1852,18 +1847,14 @@ class App {
             const current = !!(this.settings[deviceId]?.modes?.whiteboard?.guidelines);
             const newValue = !current;
             slot.processor.transformer.showGuidelines = newValue;
-            if (!this.settings[deviceId]) this.settings[deviceId] = {};
-            if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
-            if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
-            this.settings[deviceId].modes.whiteboard.guidelines = newValue;
-            saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: newValue } } });
+            await this.saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: newValue } } });
             updateWhiteboardUI();
             const status = chrome.i18n.getMessage(newValue ? 'guidelineStatusOn' : 'guidelineStatusOff');
             this.addLog(chrome.i18n.getMessage('logGuidelineChanged', [deviceId.slice(0, 8), status]));
         }
     });
 
-    const updateAdjustingUI = (slot, isAdjusting) => {
+    const updateAdjustingUI = async (slot, isAdjusting) => {
         const sBtn = slot.element.querySelector('.set-btn');
         const gBtn = slot.element.querySelector('.guideline-btn');
         const vOverlay = slot.element.querySelector('.vscale-overlay');
@@ -1881,8 +1872,7 @@ class App {
             if (slot.processor && slot.processor.transformer.showGuidelines) {
                 slot.processor.transformer.showGuidelines = false;
                 if (this.settings[deviceId]?.modes?.whiteboard) {
-                    this.settings[deviceId].modes.whiteboard.guidelines = false;
-                    saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: false } } });
+                    await this.saveCameraSetting(deviceId, { modes: { whiteboard: { guidelines: false } } });
                 }
                 if (gBtn) gBtn.classList.remove('active');
             }
@@ -1901,7 +1891,7 @@ class App {
         if (slot && slot.processor) {
             const nextAdjusting = !slot.processor.transformer.showHandles;
             slot.processor.transformer.setShowingHandles(nextAdjusting);
-            updateAdjustingUI(slot, nextAdjusting);
+            await updateAdjustingUI(slot, nextAdjusting);
         }
     });
 
@@ -2005,8 +1995,7 @@ class App {
         customLabel = defaultLabel;
         e.target.value = customLabel;
       }
-      await saveCameraSetting(deviceId, { customLabel });
-      this.settings[deviceId] = { ...this.settings[deviceId], customLabel };
+      await this.saveCameraSetting(deviceId, { customLabel });
     });
 
     return { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null };
@@ -2031,13 +2020,7 @@ class App {
       const processor = new WhiteboardProcessor(video, canvas, processedCanvas, pts, (newPts) => {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(chrome.i18n.getMessage('logPerspectiveAdjusted', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
-          saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
-          if (!this.settings[deviceId]) {
-              this.settings[deviceId] = { modes: { person: {}, whiteboard: {} } };
-          }
-          if (!this.settings[deviceId].modes) this.settings[deviceId].modes = { person: {}, whiteboard: {} };
-          if (!this.settings[deviceId].modes.whiteboard) this.settings[deviceId].modes.whiteboard = {};
-          this.settings[deviceId].modes.whiteboard.points = newPts;
+          this.saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
       }, labels);
 
       // Bind rotation buttons
@@ -2153,6 +2136,24 @@ class App {
           }
       }
       return true;
+  }
+
+  async saveCameraSetting(deviceId, settings) {
+      await saveCameraSettingToStorage(deviceId, settings);
+      const existing = this.settings[deviceId] || {};
+      const existingModes = existing.modes || { person: {}, whiteboard: {} };
+      const updated = {
+          customLabel: '',
+          defaultRole: 'person',
+          mediaSettingsFixed: false,
+          ...existing,
+          ...settings,
+          modes: {
+              person: { ...(existingModes.person || {}), ...(settings.modes?.person || {}) },
+              whiteboard: { ...(existingModes.whiteboard || {}), ...(settings.modes?.whiteboard || {}) }
+          }
+      };
+      this.settings[deviceId] = updated;
   }
 
   showSnackbar(message, actionLabel = null, actionCallback = null) {
