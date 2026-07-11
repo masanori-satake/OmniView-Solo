@@ -1,5 +1,5 @@
 import { getCameras, loadCameraSettings, saveCameraSetting as saveCameraSettingToStorage, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
-import { WhiteboardProcessor } from '../shared/js/processor.js';
+import { WhiteboardProcessor } from './processor.js';
 
 
 class App {
@@ -1998,7 +1998,54 @@ class App {
       await this.saveCameraSetting(deviceId, { customLabel });
     });
 
-    return { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null };
+    const slotObj = { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null, updateVScaleUI };
+    return slotObj;
+  }
+
+  handlePerspectiveAdjustmentComplete(deviceId, slot) {
+      if (!slot || !slot.processor) return;
+      const processor = slot.processor;
+      if (!processor.transformer.rotatedDuringAdjustment) {
+          // Fの向き（回転操作）を変えていない場合は何もしない
+          return;
+      }
+
+      const points = processor.transformer.points;
+      if (!Array.isArray(points) || points.length !== 4 || points.some(p => !p || typeof p.x !== 'number' || typeof p.y !== 'number')) return;
+
+      // 16:9 のパーセンテージ空間の歪みを補正するためのアスペクト比
+      const aspect = 16 / 9;
+
+      // 頂点 0:左上, 1:右上, 2:右下, 3:左下 の距離（辺の長さ）をアスペクト比補正した上で算出
+      const dTop = Math.hypot((points[0].x - points[1].x) * aspect, points[0].y - points[1].y);
+      const dBottom = Math.hypot((points[3].x - points[2].x) * aspect, points[3].y - points[2].y);
+      const dLeft = Math.hypot((points[0].x - points[3].x) * aspect, points[0].y - points[3].y);
+      const dRight = Math.hypot((points[1].x - points[2].x) * aspect, points[1].y - points[2].y);
+
+      const horizontalSum = dTop + dBottom;
+      const verticalSum = dLeft + dRight;
+
+      if (horizontalSum < verticalSum) {
+          // 縦長対象（9:16表示）
+          const nextScale = 3.1605;
+          if (slot.updateVScaleUI) slot.updateVScaleUI(nextScale);
+          this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+
+          const label = slot.element.querySelector('.label-input')?.value || deviceId.slice(0, 8);
+          this.addLog(chrome.i18n.getMessage('logVScaleAutoChanged', [label, '9:16']));
+          this.showSnackbar(chrome.i18n.getMessage('snackbarVScaleAutoToVertical', [label]));
+      } else {
+          // 横長対象（16:9表示）
+          const nextScale = 1.0;
+          if (slot.updateVScaleUI) slot.updateVScaleUI(nextScale);
+          this.saveCameraSetting(deviceId, { modes: { whiteboard: { vScale: nextScale } } });
+
+          const label = slot.element.querySelector('.label-input')?.value || deviceId.slice(0, 8);
+          this.addLog(chrome.i18n.getMessage('logVScaleAutoChanged', [label, '16:9']));
+      }
+
+      // 補正中の回転検知フラグをリセット
+      processor.transformer.rotatedDuringAdjustment = false;
   }
 
   initProcessor(slot, deviceId) {
@@ -2021,7 +2068,15 @@ class App {
           const ptsStr = newPts.map(p => `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(', ');
           this.addLog(chrome.i18n.getMessage('logPerspectiveAdjusted', [deviceId.slice(0, 8)]) + ': [' + ptsStr + ']');
           this.saveCameraSetting(deviceId, { modes: { whiteboard: { points: newPts } } });
-      }, labels);
+      }, labels, (handlesVisible) => {
+          if (!handlesVisible) {
+              // updateAdjustingUI が実行されて .adjusting-perspective クラスが削除された後に
+              // アスペクト比の自動調整を適用するため、setTimeout で実行を遅延させます。
+              setTimeout(() => {
+                  this.handlePerspectiveAdjustmentComplete(deviceId, slot);
+              }, 0);
+          }
+      });
 
       // Bind rotation buttons
       const rotLeftBtn = slot.element.querySelector('.rot-left-btn');

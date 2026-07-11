@@ -443,6 +443,19 @@
         "id": { "content": "$1" }
     }
   },
+  "logVScaleAutoChanged": {
+    "message": "カメラ $ID$ のアスペクト比を $RATIO$ に自動選択しました",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "ratio": { "content": "$2" }
+    }
+  },
+  "snackbarVScaleAutoToVertical": {
+    "message": "カメラ $ID$ の対象が縦長であるため、アスペクト比を自動調整しました",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
   "logResetPerspective": {
     "message": "カメラ $ID$ のパースペクティブをリセットしました",
     "placeholders": {

@@ -67,7 +67,7 @@ def check_version_bump():
         ).decode('utf-8').splitlines()
 
         source_changed = any(
-            f.startswith('projects/app/') or f.startswith('shared/')
+            f.startswith('projects/app/')
             for f in changed_files
         )
 
@@ -87,7 +87,7 @@ def check_version_bump():
 
         current_version = get_current_version()
         if current_version == old_version:
-            print(f"Error: Source files in 'projects/app/' or 'shared/' were modified, but version remains at {current_version}.")
+            print(f"Error: Source files in 'projects/app/' were modified, but version remains at {current_version}.")
             print("Please run 'npm run version:bump' to increment the version.")
             return False
 

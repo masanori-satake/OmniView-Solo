@@ -7,7 +7,7 @@ repos:
     entry: python3 scripts/check_version.py
     language: system
     # Always run version check when source files change
-    files: ^(package\.json|projects/app/.*|shared/.*|README\.md)$
+    files: ^(package\.json|projects/app/.*|README\.md)$
   - id: create-package
     name: create-package
     entry: python3 scripts/create_package.py

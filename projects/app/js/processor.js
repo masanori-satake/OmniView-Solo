@@ -1,16 +1,17 @@
-import { getHomography, toMatrix3d } from '../../js/matrix3d-calc.js';
+import { getHomography, toMatrix3d } from './matrix3d-calc.js';
 
 /**
  * Perspective transformation logic.
  */
 export class PerspectiveTransformer {
-    constructor(video, canvas, points, onPointsChange, labels = []) {
+    constructor(video, canvas, points, onPointsChange, labels = [], onShowingHandlesChange = null) {
         this.video = video;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.points = points;
         this.onPointsChange = onPointsChange;
         this.labels = labels;
+        this.onShowingHandlesChange = onShowingHandlesChange;
         this.draggingPoint = null;
         this.isMultiDragging = false;
         this.isSimpleDragging = false;
@@ -22,6 +23,7 @@ export class PerspectiveTransformer {
         this.lastTransform = '';
         this.lastObjectFit = '';
         this.lastElementCount = 0;
+        this.rotatedDuringAdjustment = false;
 
         this.resizeObserver = new ResizeObserver(() => {
             this.updateTransform();
@@ -213,6 +215,9 @@ export class PerspectiveTransformer {
     setShowingHandles(visible) {
         if (this.showHandles === visible) return;
         this.showHandles = visible;
+        if (visible) {
+            this.rotatedDuringAdjustment = false;
+        }
         this.updateTransform();
         this.draw();
         this.updateCursor();
@@ -234,6 +239,10 @@ export class PerspectiveTransformer {
                 }
             }
         }
+
+        if (this.onShowingHandlesChange) {
+            this.onShowingHandlesChange(visible);
+        }
     }
 
     rotatePoints(direction) {
@@ -245,9 +254,11 @@ export class PerspectiveTransformer {
         if (direction === 'right') {
             const first = this.points.shift();
             this.points.push(first);
+            this.rotatedDuringAdjustment = true;
         } else if (direction === 'left') {
             const last = this.points.pop();
             this.points.unshift(last);
+            this.rotatedDuringAdjustment = true;
         } else {
             return;
         }
@@ -677,12 +688,12 @@ export class MedianStacker {
  * Orchestrates whiteboard features.
  */
 export class WhiteboardProcessor {
-    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange, labels = []) {
+    constructor(video, overlayCanvas, processedCanvas, points, onPointsChange, labels = [], onShowingHandlesChange = null) {
         this.video = video;
         this.overlayCanvas = overlayCanvas;
         this.processedCanvas = processedCanvas;
         this.ctx = processedCanvas.getContext('2d', { willReadFrequently: true });
-        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange, labels);
+        this.transformer = new PerspectiveTransformer(video, overlayCanvas, points, onPointsChange, labels, onShowingHandlesChange);
         this.transformer.processedCanvas = processedCanvas;
         this.stacker = new MedianStacker(video);
         this.occlusionRemoval = false;
