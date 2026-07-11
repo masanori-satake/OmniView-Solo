@@ -74,6 +74,24 @@
   "aboutDesc": {
     "message": "ハイブリッド会議の視認性を向上させるローカル完結型ツール"
   },
+  "settingsDataTitle": {
+    "message": "設定データ"
+  },
+  "wbAutoFocusTitle": {
+    "message": "ホワイトボード自動フォーカス機能"
+  },
+  "wbAutoFocusLabel": {
+    "message": "ホワイトボード自動フォーカス"
+  },
+  "wbAutoFocusPrevWbSizeLabel": {
+    "message": "既存ホワイトボードの退避サイズ"
+  },
+  "wbAutoFocusNewWbSizeLabel": {
+    "message": "新規ホワイトボードの表示サイズ"
+  },
+  "wbSizeKeep": {
+    "message": "そのままのサイズ"
+  },
   "aboutDataTitle": {
     "message": "データの保存場所とリスク"
   },

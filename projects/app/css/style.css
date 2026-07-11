@@ -277,6 +277,27 @@
 .m3-switch input:checked + .slider .icon-left { opacity: 0; }
 .m3-switch input:checked + .slider .icon-right { opacity: 1; }
 
+/* Disabled styling for M3 switches */
+.m3-switch input:disabled + .slider {
+    background-color: var(--md-sys-color-surface-variant);
+    border-color: var(--md-sys-color-outline-variant);
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.m3-switch input:disabled + .slider:before {
+    background-color: var(--md-sys-color-outline-variant);
+}
+
+.m3-switch input:checked:disabled + .slider {
+    background-color: var(--md-sys-color-outline-variant);
+    border-color: var(--md-sys-color-outline-variant);
+}
+
+.m3-switch input:disabled + .slider .slider-icon {
+    color: var(--md-sys-color-outline-variant) !important;
+}
+
 .role-switch-wrapper {
     display: flex;
     align-items: center;
@@ -475,7 +496,8 @@ video, .processed-canvas {
 .video-overlay-top-left .material-symbols-outlined,
 .video-overlay-top-right .material-symbols-outlined,
 .video-overlay-bottom-left .material-symbols-outlined,
-.video-overlay-bottom-right .material-symbols-outlined {
+.video-overlay-bottom-right .material-symbols-outlined,
+.video-overlay-top-left-vscale .material-symbols-outlined {
     font-size: 24px;
     color: white;
     text-shadow:

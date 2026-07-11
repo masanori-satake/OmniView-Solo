@@ -101,7 +101,38 @@
                     </div>
                     <hr class="m3-divider">
                     <div class="settings-row-vertical">
-                        <label data-i18n="aboutDataTitle">設定の入出力</label>
+                        <label style="font-weight: bold;" data-i18n="wbAutoFocusTitle">ホワイトボード自動フォーカス機能</label>
+                    </div>
+                    <div class="settings-row">
+                        <label for="wb-autofocus-switch" data-i18n="wbAutoFocusLabel">ホワイトボード自動フォーカス</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="wb-autofocus-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <label for="wb-autofocus-prev-wb-size-select" data-i18n="wbAutoFocusPrevWbSizeLabel">既存ホワイトボードの退避サイズ</label>
+                        <select id="wb-autofocus-prev-wb-size-select" class="m3-select">
+                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                        </select>
+                    </div>
+                    <div class="settings-row">
+                        <label for="wb-autofocus-new-wb-size-select" data-i18n="wbAutoFocusNewWbSizeLabel">新規ホワイトボードの表示サイズ</label>
+                        <select id="wb-autofocus-new-wb-size-select" class="m3-select">
+                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
+                            <option value="zoom1" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                        </select>
+                    </div>
+                    <hr class="m3-divider">
+                    <div class="settings-row-vertical">
+                        <label data-i18n="settingsDataTitle">設定の入出力</label>
                         <div class="settings-action-group">
                             <button id="export-btn" class="m3-button">
                                 <span class="material-symbols-outlined">download</span>
@@ -149,8 +180,8 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.11.3</p>
-                        <!-- <p>Version: 0.11.3</p> -->
+                        <p data-i18n="aboutVersion">Version: 0.12.0</p>
+                        <!-- <p>Version: 0.12.0</p> -->
                         <p data-i18n="aboutDesc">ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>

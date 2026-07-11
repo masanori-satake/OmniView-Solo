@@ -89,7 +89,10 @@ export async function loadGlobalSettings() {
         cameraResolutionFpsDisplay: false,
         resolutionZoom1: '720p HD (16:9)',
         resolutionZoom2: '480p WVGA (16:9)',
-        resolutionZoom4: '360p nHD (16:9)'
+        resolutionZoom4: '360p nHD (16:9)',
+        wbAutoFocusEnabled: false,
+        wbAutoFocusPrevWbSize: 'zoom4',
+        wbAutoFocusNewWbSize: 'zoom1'
       };
       resolve({ ...defaults, ...(result?.global_settings || {}) });
     });
