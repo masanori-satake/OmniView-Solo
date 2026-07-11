@@ -135,7 +135,23 @@
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+}
+
+.settings-row.nested-1 {
+    margin-left: 12px;
+}
+
+.settings-row.nested-1 label {
+    font-size: 13px;
+}
+
+.settings-row.nested-2 {
+    margin-left: 24px;
+}
+
+.settings-row.nested-2 label {
+    font-size: 12px;
 }
 
 .settings-row-vertical {
@@ -725,6 +741,14 @@ video, .processed-canvas {
     background: var(--md-sys-color-surface);
     color: var(--md-sys-color-on-surface);
     font-size: 13px;
+}
+
+.m3-select:disabled, .m3-textfield:disabled {
+    background-color: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface-variant);
+    border-color: var(--md-sys-color-outline-variant);
+    opacity: 0.38;
+    cursor: not-allowed;
 }
 
 .m3-textfield {

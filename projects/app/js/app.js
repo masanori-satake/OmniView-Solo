@@ -9,10 +9,10 @@ class App {
     this.settings = {};
     this.globalSettings = {
       interval: 5,
-      cyclingEnabled: false,
-      excludeWhiteboard: false,
+      cyclingEnabled: true,
+      excludeWhiteboard: true,
       cameraResolutionFpsDisplay: false,
-      wbAutoFocusEnabled: false,
+      wbAutoFocusEnabled: true,
       wbAutoFocusPrevWbSize: 'zoom4',
       wbAutoFocusNewWbSize: 'zoom1',
       pinReleaseEnabled: true,
@@ -198,6 +198,7 @@ class App {
             this.globalSettings.wbAutoFocusEnabled = e.target.checked;
             this.addLog(chrome.i18n.getMessage('wbAutoFocusLabel') + ': ' + String(e.target.checked));
             await saveGlobalSettings(this.globalSettings);
+            updateIntervalUI();
             // If turning ON, let's enforce autofocus if there are multiple cameras
             if (e.target.checked && this.slotOrder.length >= 2) {
                 await this.enforceWhiteboardAutoFocus();
@@ -283,6 +284,20 @@ class App {
             } else {
                 pinReleaseLabel.classList.add('disabled');
             }
+        }
+
+        const wbAutoFocusEnabled = !!this.globalSettings.wbAutoFocusEnabled;
+        if (wbAutoFocusSwitch) wbAutoFocusSwitch.checked = wbAutoFocusEnabled;
+        if (wbAutoFocusPrevWbSizeSelect) wbAutoFocusPrevWbSizeSelect.disabled = !wbAutoFocusEnabled;
+        if (wbAutoFocusNewWbSizeSelect) wbAutoFocusNewWbSizeSelect.disabled = !wbAutoFocusEnabled;
+
+        const wbPrevWbSizeLabel = document.getElementById('wb-autofocus-prev-wb-size-label');
+        const wbNewWbSizeLabel = document.getElementById('wb-autofocus-new-wb-size-label');
+        if (wbPrevWbSizeLabel) {
+            wbPrevWbSizeLabel.classList.toggle('disabled', !wbAutoFocusEnabled);
+        }
+        if (wbNewWbSizeLabel) {
+            wbNewWbSizeLabel.classList.toggle('disabled', !wbAutoFocusEnabled);
         }
     };
 

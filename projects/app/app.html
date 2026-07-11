@@ -39,7 +39,11 @@
                     </button>
                 </nav>
                 <div class="tab-content" id="tab-general">
-                    <div class="settings-row">
+                    <!-- Category 1: Camera Connection -->
+                    <div class="settings-row-vertical">
+                        <label style="font-weight: bold;" data-i18n="cameraConnectionTitle">カメラ接続</label>
+                    </div>
+                    <div class="settings-row nested-1">
                         <label for="cycling-switch" data-i18n="cyclingSwitch">自動切り替え</label>
                         <label class="m3-switch">
                             <input type="checkbox" id="cycling-switch">
@@ -49,17 +53,7 @@
                             </span>
                         </label>
                     </div>
-                    <div class="settings-row">
-                        <label for="exclude-whiteboard-switch" id="exclude-whiteboard-label" data-i18n="excludeWhiteboard">ホワイトボードモードを除外</label>
-                        <label class="m3-switch" id="exclude-whiteboard-switch-container">
-                            <input type="checkbox" id="exclude-whiteboard-switch">
-                            <span class="slider">
-                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
-                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
-                            </span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
+                    <div class="settings-row nested-2">
                         <label for="interval-input" id="interval-label" data-i18n="intervalLabel">表示間隔 (秒)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="interval-input" value="5" min="1" step="1">
@@ -73,68 +67,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="settings-row">
-                        <label for="camera-resolution-fps-display-switch" id="camera-resolution-fps-display-label" data-i18n="cameraResolutionFpsDisplay">解像度/fps表示</label>
-                        <label class="m3-switch">
-                            <input type="checkbox" id="camera-resolution-fps-display-switch">
+                    <div class="settings-row nested-2">
+                        <label for="exclude-whiteboard-switch" id="exclude-whiteboard-label" data-i18n="excludeWhiteboard">ホワイトボードモードをスキップ</label>
+                        <label class="m3-switch" id="exclude-whiteboard-switch-container">
+                            <input type="checkbox" id="exclude-whiteboard-switch">
                             <span class="slider">
                                 <span class="material-symbols-outlined slider-icon icon-left">close</span>
                                 <span class="material-symbols-outlined slider-icon icon-right">check</span>
                             </span>
                         </label>
                     </div>
-                    <hr class="m3-divider">
-                    <div class="settings-row-vertical">
-                        <label style="font-weight: bold;" data-i18n="initialResolutionTitle">初期解像度設定</label>
-                    </div>
-                    <div class="settings-row">
-                        <label for="resolution-zoom1-select" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</label>
-                        <select id="resolution-zoom1-select" class="m3-select"></select>
-                    </div>
-                    <div class="settings-row">
-                        <label for="resolution-zoom2-select" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</label>
-                        <select id="resolution-zoom2-select" class="m3-select"></select>
-                    </div>
-                    <div class="settings-row">
-                        <label for="resolution-zoom4-select" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</label>
-                        <select id="resolution-zoom4-select" class="m3-select"></select>
-                    </div>
-                    <hr class="m3-divider">
-                    <div class="settings-row-vertical">
-                        <label style="font-weight: bold;" data-i18n="wbAutoFocusTitle">ホワイトボード自動フォーカス機能</label>
-                    </div>
-                    <div class="settings-row">
-                        <label for="wb-autofocus-switch" data-i18n="wbAutoFocusLabel">ホワイトボード自動フォーカス</label>
-                        <label class="m3-switch">
-                            <input type="checkbox" id="wb-autofocus-switch">
-                            <span class="slider">
-                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
-                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
-                            </span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <label for="wb-autofocus-prev-wb-size-select" data-i18n="wbAutoFocusPrevWbSizeLabel">既存ホワイトボードの退避サイズ</label>
-                        <select id="wb-autofocus-prev-wb-size-select" class="m3-select">
-                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
-                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
-                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label for="wb-autofocus-new-wb-size-select" data-i18n="wbAutoFocusNewWbSizeLabel">新規ホワイトボードの表示サイズ</label>
-                        <select id="wb-autofocus-new-wb-size-select" class="m3-select">
-                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
-                            <option value="zoom1" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</option>
-                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
-                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
-                        </select>
-                    </div>
-                    <hr class="m3-divider">
-                    <div class="settings-row-vertical">
-                        <label style="font-weight: bold;" data-i18n="pinReleaseTitle">自動ピン留め解除機能</label>
-                    </div>
-                    <div class="settings-row">
+                    <div class="settings-row nested-1">
                         <label for="pin-release-switch" id="pin-release-label" data-i18n="pinReleaseLabel">自動ピン留め解除</label>
                         <label class="m3-switch">
                             <input type="checkbox" id="pin-release-switch">
@@ -144,8 +87,8 @@
                             </span>
                         </label>
                     </div>
-                    <div class="settings-row">
-                        <label for="pin-release-time-input" id="pin-release-time-label" data-i18n="pinReleaseTimeLabel">ピン留め解除時間 (分)</label>
+                    <div class="settings-row nested-2">
+                        <label for="pin-release-time-input" id="pin-release-time-label" data-i18n="pinReleaseTimeLabel">ピン留め保持期間(分)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="pin-release-time-input" value="3" min="1" max="15" step="1">
                             <div class="spinbox-controls">
@@ -158,9 +101,75 @@
                             </div>
                         </div>
                     </div>
+                    <div class="settings-row nested-1">
+                        <label for="camera-resolution-fps-display-switch" id="camera-resolution-fps-display-label" data-i18n="cameraResolutionFpsDisplay">カメラ画像情報表示(解像度/FPS)</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="camera-resolution-fps-display-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+
                     <hr class="m3-divider">
+
+                    <!-- Category 2: Whiteboard Mode Priority Function -->
                     <div class="settings-row-vertical">
-                        <label data-i18n="settingsDataTitle">設定の入出力</label>
+                        <label style="font-weight: bold;" data-i18n="wbAutoFocusTitle">ホワイトボードモード優先機能</label>
+                    </div>
+                    <div class="settings-row nested-1">
+                        <label for="wb-autofocus-switch" id="wb-autofocus-label" data-i18n="wbAutoFocusLabel">ホワイトボードモード優先</label>
+                        <label class="m3-switch">
+                            <input type="checkbox" id="wb-autofocus-switch">
+                            <span class="slider">
+                                <span class="material-symbols-outlined slider-icon icon-left">close</span>
+                                <span class="material-symbols-outlined slider-icon icon-right">check</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="settings-row nested-2">
+                        <label for="wb-autofocus-prev-wb-size-select" id="wb-autofocus-prev-wb-size-label" data-i18n="wbAutoFocusPrevWbSizeLabel">既存ホワイトボードの退避サイズ</label>
+                        <select id="wb-autofocus-prev-wb-size-select" class="m3-select">
+                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                        </select>
+                    </div>
+                    <div class="settings-row nested-2">
+                        <label for="wb-autofocus-new-wb-size-select" id="wb-autofocus-new-wb-size-label" data-i18n="wbAutoFocusNewWbSizeLabel">新規ホワイトボードの表示サイズ</label>
+                        <select id="wb-autofocus-new-wb-size-select" class="m3-select">
+                            <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
+                            <option value="zoom1" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                        </select>
+                    </div>
+
+                    <hr class="m3-divider">
+
+                    <!-- Category 3: Resolution Limit by Display Size -->
+                    <div class="settings-row-vertical">
+                        <label style="font-weight: bold;" data-i18n="initialResolutionTitle">表示サイズ別解像度上限</label>
+                    </div>
+                    <div class="settings-row nested-1">
+                        <label for="resolution-zoom1-select" id="resolution-zoom1-label" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (100%)</label>
+                        <select id="resolution-zoom1-select" class="m3-select"></select>
+                    </div>
+                    <div class="settings-row nested-1">
+                        <label for="resolution-zoom2-select" id="resolution-zoom2-label" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</label>
+                        <select id="resolution-zoom2-select" class="m3-select"></select>
+                    </div>
+                    <div class="settings-row nested-1">
+                        <label for="resolution-zoom4-select" id="resolution-zoom4-label" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</label>
+                        <select id="resolution-zoom4-select" class="m3-select"></select>
+                    </div>
+
+                    <hr class="m3-divider">
+
+                    <!-- Category 4: Settings Data -->
+                    <div class="settings-row-vertical">
+                        <label style="font-weight: bold;" data-i18n="settingsDataTitle">設定の入出力</label>
                         <div class="settings-action-group">
                             <button id="export-btn" class="m3-button">
                                 <span class="material-symbols-outlined">download</span>
@@ -173,8 +182,8 @@
                             <input type="file" id="import-input" class="hidden" accept=".json">
                         </div>
                     </div>
-                    <div class="settings-row">
-                        <label for="import-mode-select" data-i18n="importModeLabel">インポート設定:</label>
+                    <div class="settings-row nested-1">
+                        <label for="import-mode-select" id="import-mode-label" data-i18n="importModeLabel">インポート設定:</label>
                         <select id="import-mode-select" class="m3-select">
                             <option value="add" data-i18n="importModeAdd">追記</option>
                             <option value="overwrite" data-i18n="importModeOverwrite">上書き</option>
@@ -208,9 +217,9 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.12.2</p>
-                        <!-- <p>Version: 0.12.2</p> -->
-                        <p data-i18n="aboutDesc">ハイブリッド会議の視認性を向上させるローカル完結型ツール</p>
+                        <p data-i18n="aboutVersion">Version: 0.13.0</p>
+                        <!-- <p>Version: 0.13.0</p> -->
+                        <p data-i18n="aboutDesc">ハイブリッド会議やリモート授業のUXを向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>
                         <p data-i18n="aboutDataText">記録されたデータ（カメラ設定等）はすべてブラウザ内の IndexedDB に保存されます。ブラウザのキャッシュクリア等によりデータが削除される可能性がありますのでご注意ください。</p>

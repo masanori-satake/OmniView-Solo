@@ -3,7 +3,7 @@
     "message": "OmniView-Solo"
   },
   "extensionDescription": {
-    "message": "Hybrid meeting assistant for whiteboard enhancement."
+    "message": "Whiteboard assistant to improve UX for hybrid meetings and remote classes."
   },
   "addCameraNavBtn": {
     "message": "Add Camera"
@@ -23,23 +23,26 @@
   "tabAbout": {
     "message": "About"
   },
+  "cameraConnectionTitle": {
+    "message": "Camera Connection"
+  },
   "cyclingSwitch": {
     "message": "Auto Switching"
   },
   "excludeWhiteboard": {
-    "message": "Exclude Whiteboard Mode"
+    "message": "Skip Whiteboard Mode"
   },
   "intervalLabel": {
-    "message": "Display Interval (sec)"
+    "message": "Switching Interval (sec)"
   },
   "cameraResolutionFpsDisplay": {
-    "message": "Resolution/FPS Display"
+    "message": "Camera Image Info Display (Resolution/FPS)"
   },
   "initialResolutionTitle": {
-    "message": "Initial Resolution Settings"
+    "message": "Resolution Limit by Display Size"
   },
   "resolutionZoom1Label": {
-    "message": "Full Panel Width (Zoom 100%)"
+    "message": "Full Panel Width (100%)"
   },
   "resolutionZoom2Label": {
     "message": "Approx. 1/2 Width (Zoom 50%)"
@@ -72,16 +75,16 @@
     "message": "Clear"
   },
   "aboutDesc": {
-    "message": "A local-first tool to enhance whiteboard visibility for hybrid meetings."
+    "message": "A local-first tool to improve UX for hybrid meetings and remote classes."
   },
   "settingsDataTitle": {
     "message": "Settings Data"
   },
   "wbAutoFocusTitle": {
-    "message": "Whiteboard Auto-Focus"
+    "message": "Whiteboard Mode Priority Function"
   },
   "wbAutoFocusLabel": {
-    "message": "Whiteboard Auto-Focus"
+    "message": "Whiteboard Mode Priority"
   },
   "wbAutoFocusPrevWbSizeLabel": {
     "message": "Previous Whiteboard Resize"
@@ -99,7 +102,7 @@
     "message": "Auto Pin Release"
   },
   "pinReleaseTimeLabel": {
-    "message": "Pin Release Time (min)"
+    "message": "Pin Retention Period (min)"
   },
   "pinBtnTitle": {
     "message": "Pin this camera"
@@ -126,7 +129,7 @@
     }
   },
   "logPinReleaseConfigChanged": {
-    "message": "Auto Pin Release: $ENABLED$, Release Time: $TIME$ min",
+    "message": "Auto Pin Release: $ENABLED$, Retention Period: $TIME$ min",
     "placeholders": {
       "enabled": { "content": "$1" },
       "time": { "content": "$2" }
@@ -349,7 +352,7 @@
     }
   },
   "logIntervalChanged": {
-    "message": "Interval changed to $INTERVAL$s",
+    "message": "Switching interval changed to $INTERVAL$s",
     "placeholders": {
         "interval": { "content": "$1" }
     }
@@ -361,13 +364,13 @@
     }
   },
   "logExcludeWhiteboard": {
-    "message": "Exclude Whiteboard Mode: $ENABLED$",
+    "message": "Skip Whiteboard Mode: $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }
   },
   "logCameraResolutionFpsDisplay": {
-    "message": "Resolution/FPS Display: $ENABLED$",
+    "message": "Camera Image Info Display (Resolution/FPS): $ENABLED$",
     "placeholders": {
         "enabled": { "content": "$1" }
     }

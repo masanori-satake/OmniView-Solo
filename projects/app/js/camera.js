@@ -84,13 +84,13 @@ export async function loadGlobalSettings() {
     chrome.storage.local.get(['global_settings'], (result) => {
       const defaults = {
         interval: 5,
-        cyclingEnabled: false,
-        excludeWhiteboard: false,
+        cyclingEnabled: true,
+        excludeWhiteboard: true,
         cameraResolutionFpsDisplay: false,
         resolutionZoom1: '720p HD (16:9)',
         resolutionZoom2: '480p WVGA (16:9)',
         resolutionZoom4: '360p nHD (16:9)',
-        wbAutoFocusEnabled: false,
+        wbAutoFocusEnabled: true,
         wbAutoFocusPrevWbSize: 'zoom4',
         wbAutoFocusNewWbSize: 'zoom1',
         pinReleaseEnabled: true,
