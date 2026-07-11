@@ -92,7 +92,9 @@ export async function loadGlobalSettings() {
         resolutionZoom4: '360p nHD (16:9)',
         wbAutoFocusEnabled: false,
         wbAutoFocusPrevWbSize: 'zoom4',
-        wbAutoFocusNewWbSize: 'zoom1'
+        wbAutoFocusNewWbSize: 'zoom1',
+        pinReleaseEnabled: true,
+        pinReleaseTime: 3
       };
       resolve({ ...defaults, ...(result?.global_settings || {}) });
     });

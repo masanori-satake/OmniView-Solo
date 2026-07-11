@@ -92,6 +92,46 @@
   "wbSizeKeep": {
     "message": "そのままのサイズ"
   },
+  "pinReleaseTitle": {
+    "message": "自動ピン留め解除機能"
+  },
+  "pinReleaseLabel": {
+    "message": "自動ピン留め解除"
+  },
+  "pinReleaseTimeLabel": {
+    "message": "ピン留め解除時間 (分)"
+  },
+  "pinBtnTitle": {
+    "message": "このカメラをピン留めする"
+  },
+  "unpinBtnTitle": {
+    "message": "ピン留めを解除する"
+  },
+  "snackbarPinReleased": {
+    "message": "ピン留め開始から $TIME$ 分が経過したため、ピン留めを自動解除しました",
+    "placeholders": {
+      "time": { "content": "$1" }
+    }
+  },
+  "logPinEnabled": {
+    "message": "カメラ $ID$ をピン留めしました",
+    "placeholders": {
+      "id": { "content": "$1" }
+    }
+  },
+  "logPinDisabled": {
+    "message": "カメラ $ID$ のピン留めを解除しました",
+    "placeholders": {
+      "id": { "content": "$1" }
+    }
+  },
+  "logPinReleaseConfigChanged": {
+    "message": "自動ピン留め解除: $ENABLED$, 解除時間: $TIME$分",
+    "placeholders": {
+      "enabled": { "content": "$1" },
+      "time": { "content": "$2" }
+    }
+  },
   "aboutDataTitle": {
     "message": "データの保存場所とリスク"
   },
