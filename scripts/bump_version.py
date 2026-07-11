@@ -3,7 +3,7 @@ import sys
 import re
 
 def bump_version(part='patch'):
-    with open('package.json', 'r') as f:
+    with open('package.json', 'r', encoding='utf-8') as f:
         pkg = json.load(f)
 
     version = pkg['version'].split('.')
@@ -22,31 +22,31 @@ def bump_version(part='patch'):
     import re
     # Update all files
     for filepath in ['package.json', 'package-lock.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         data['version'] = new_version
         if filepath == 'package-lock.json' and 'packages' in data and '' in data['packages']:
             data['packages']['']['version'] = new_version
 
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
             f.write('\n')
 
     # Update app.html
     app_html_path = 'projects/app/app.html'
-    with open(app_html_path, 'r') as f:
+    with open(app_html_path, 'r', encoding='utf-8') as f:
         content = f.read()
     # Match both active tag (with attributes) and comment tag
     new_content = re.sub(r'(<p[^>]*>Version: )\d+\.\d+\.\d+(</p>)', rf'\g<1>{new_version}\g<2>', content)
-    with open(app_html_path, 'w') as f:
+    with open(app_html_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
 
     # Update README.md badge
-    with open('README.md', 'r') as f:
+    with open('README.md', 'r', encoding='utf-8') as f:
         content = f.read()
     new_content = re.sub(r'version-\d+\.\d+\.\d+-blue', f'version-{new_version}-blue', content)
-    with open('README.md', 'w') as f:
+    with open('README.md', 'w', encoding='utf-8') as f:
         f.write(new_content)
 
     print(f"Bumped version to {new_version}")

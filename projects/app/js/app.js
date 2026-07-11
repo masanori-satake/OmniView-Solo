@@ -7,7 +7,15 @@ class App {
     this.container = document.getElementById('camera-container');
     this.cameras = [];
     this.settings = {};
-    this.globalSettings = { interval: 5, cyclingEnabled: false, excludeWhiteboard: false, cameraResolutionFpsDisplay: false };
+    this.globalSettings = {
+      interval: 5,
+      cyclingEnabled: false,
+      excludeWhiteboard: false,
+      cameraResolutionFpsDisplay: false,
+      wbAutoFocusEnabled: false,
+      wbAutoFocusPrevWbSize: 'zoom4',
+      wbAutoFocusNewWbSize: 'zoom1'
+    };
     this.slots = new Map();
     this.slotOrder = []; // Array of deviceIds
     this.activeSlotIndex = -1;
@@ -143,6 +151,36 @@ class App {
     const resolutionZoom1Select = document.getElementById('resolution-zoom1-select');
     const resolutionZoom2Select = document.getElementById('resolution-zoom2-select');
     const resolutionZoom4Select = document.getElementById('resolution-zoom4-select');
+    const wbAutoFocusSwitch = document.getElementById('wb-autofocus-switch');
+    const wbAutoFocusPrevWbSizeSelect = document.getElementById('wb-autofocus-prev-wb-size-select');
+    const wbAutoFocusNewWbSizeSelect = document.getElementById('wb-autofocus-new-wb-size-select');
+
+    if (wbAutoFocusSwitch) {
+        wbAutoFocusSwitch.addEventListener('change', async (e) => {
+            this.globalSettings.wbAutoFocusEnabled = e.target.checked;
+            this.addLog(chrome.i18n.getMessage('wbAutoFocusLabel') + ': ' + String(e.target.checked));
+            await saveGlobalSettings(this.globalSettings);
+            // If turning ON, let's enforce autofocus if there are multiple cameras
+            if (e.target.checked && this.slotOrder.length >= 2) {
+                await this.enforceWhiteboardAutoFocus();
+                await this.updateCyclingAndActivationState();
+            }
+        });
+    }
+
+    if (wbAutoFocusPrevWbSizeSelect) {
+        wbAutoFocusPrevWbSizeSelect.addEventListener('change', async (e) => {
+            this.globalSettings.wbAutoFocusPrevWbSize = e.target.value;
+            await saveGlobalSettings(this.globalSettings);
+        });
+    }
+
+    if (wbAutoFocusNewWbSizeSelect) {
+        wbAutoFocusNewWbSizeSelect.addEventListener('change', async (e) => {
+            this.globalSettings.wbAutoFocusNewWbSize = e.target.value;
+            await saveGlobalSettings(this.globalSettings);
+        });
+    }
 
     if (resolutionZoom1Select) {
         resolutionZoom1Select.addEventListener('change', async (e) => {
@@ -183,7 +221,10 @@ class App {
         }
 
         const cyclingEnabled = this.globalSettings.cyclingEnabled;
-        excludeWhiteboardSwitch.disabled = !cyclingEnabled;
+        const excludeWhiteboardSwitchInput = document.getElementById('exclude-whiteboard-switch');
+        if (excludeWhiteboardSwitchInput) {
+            excludeWhiteboardSwitchInput.disabled = !cyclingEnabled;
+        }
         if (cyclingEnabled) {
             excludeWhiteboardLabel.classList.remove('disabled');
         } else {
@@ -199,6 +240,16 @@ class App {
 
         excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
         cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
+
+        if (wbAutoFocusSwitch) {
+            wbAutoFocusSwitch.checked = !!this.globalSettings.wbAutoFocusEnabled;
+        }
+        if (wbAutoFocusPrevWbSizeSelect) {
+            wbAutoFocusPrevWbSizeSelect.value = this.globalSettings.wbAutoFocusPrevWbSize || 'zoom4';
+        }
+        if (wbAutoFocusNewWbSizeSelect) {
+            wbAutoFocusNewWbSizeSelect.value = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
+        }
 
         updateIntervalUI();
         await this.updateResolutionSelects();
@@ -324,6 +375,16 @@ class App {
                     cyclingSwitch.checked = !!this.globalSettings.cyclingEnabled;
                     excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
                     cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
+
+                    if (wbAutoFocusSwitch) {
+                        wbAutoFocusSwitch.checked = !!this.globalSettings.wbAutoFocusEnabled;
+                    }
+                    if (wbAutoFocusPrevWbSizeSelect) {
+                        wbAutoFocusPrevWbSizeSelect.value = this.globalSettings.wbAutoFocusPrevWbSize || 'zoom4';
+                    }
+                    if (wbAutoFocusNewWbSizeSelect) {
+                        wbAutoFocusNewWbSizeSelect.value = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
+                    }
 
                     updateIntervalUI();
                     await this.updateResolutionSelects();
@@ -536,6 +597,115 @@ class App {
         return this.slotOrder.filter(id => this.getSlotRole(id) === 'person');
     }
     return this.slotOrder;
+  }
+
+  async enforceWhiteboardAutoFocus(triggeredByDeviceId = null) {
+    if (this.isAutoFocusing) return;
+    this.isAutoFocusing = true;
+
+    try {
+      if (!this.globalSettings.wbAutoFocusEnabled || this.slotOrder.length < 2) {
+        return;
+      }
+
+      // 1. Identify existing whiteboard slots
+      const wbSlots = [];
+      for (const deviceId of this.slotOrder) {
+        const slot = this.slots.get(deviceId);
+        if (slot) {
+          const roleSwitch = slot.element.querySelector('.role-switch');
+          if (roleSwitch && roleSwitch.checked) {
+            wbSlots.push({ deviceId, slot });
+          }
+        }
+      }
+
+      if (wbSlots.length === 0) {
+        return;
+      }
+
+      // Determine the target whiteboard slot that should be focused.
+      // If triggeredByDeviceId is provided and is a whiteboard slot, use it.
+      // Otherwise, pick the first whiteboard slot in the current slotOrder.
+      let targetWb = null;
+      if (triggeredByDeviceId) {
+        targetWb = wbSlots.find(item => item.deviceId === triggeredByDeviceId);
+      }
+      if (!targetWb) {
+        targetWb = wbSlots[0];
+      }
+
+      // 2. Turn all OTHER whiteboard slots to Person mode, and set their size as configured.
+      const prevSizeConfig = this.globalSettings.wbAutoFocusPrevWbSize || 'zoom4';
+      for (const item of wbSlots) {
+        if (item.deviceId !== targetWb.deviceId) {
+          const otherSlot = item.slot;
+          const roleSwitch = otherSlot.element.querySelector('.role-switch');
+          if (roleSwitch) {
+            roleSwitch.checked = false;
+            roleSwitch.dispatchEvent(new Event('change'));
+          }
+
+          // Apply display size
+          let zoomLevel = 4; // default zoom4
+          if (prevSizeConfig === 'zoom2') zoomLevel = 2;
+          else if (prevSizeConfig === 'zoom4') zoomLevel = 4;
+          else if (prevSizeConfig === 'keep') {
+            zoomLevel = parseInt(otherSlot.element.dataset.zoom || '1');
+          }
+
+          otherSlot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
+          otherSlot.element.classList.add(`zoom-${zoomLevel}`);
+          otherSlot.element.dataset.zoom = zoomLevel;
+          const zoomInBtn = otherSlot.element.querySelector('.zoom-in-btn');
+          const zoomOutBtn = otherSlot.element.querySelector('.zoom-out-btn');
+          if (zoomInBtn) zoomInBtn.disabled = (zoomLevel === 1);
+          if (zoomOutBtn) zoomOutBtn.disabled = (zoomLevel === 4);
+
+          await this.saveCameraSetting(item.deviceId, { zoom: zoomLevel, defaultRole: 'person' });
+        }
+      }
+
+      // 3. Move the target whiteboard slot to the front of slotOrder
+      const idx = this.slotOrder.indexOf(targetWb.deviceId);
+      if (idx > 0) {
+        this.slotOrder.splice(idx, 1);
+        this.slotOrder.unshift(targetWb.deviceId);
+      }
+
+      // 4. Set the target whiteboard slot size as configured
+      const newSizeConfig = this.globalSettings.wbAutoFocusNewWbSize || 'zoom1';
+      let zoomLevel = 1; // default zoom1
+      if (newSizeConfig === 'zoom1') zoomLevel = 1;
+      else if (newSizeConfig === 'zoom2') zoomLevel = 2;
+      else if (newSizeConfig === 'zoom4') zoomLevel = 4;
+      else if (newSizeConfig === 'keep') {
+        zoomLevel = parseInt(targetWb.slot.element.dataset.zoom || '1');
+      }
+
+      targetWb.slot.element.classList.remove('zoom-1', 'zoom-2', 'zoom-4');
+      targetWb.slot.element.classList.add(`zoom-${zoomLevel}`);
+      targetWb.slot.element.dataset.zoom = zoomLevel;
+      const zoomInBtn = targetWb.slot.element.querySelector('.zoom-in-btn');
+      const zoomOutBtn = targetWb.slot.element.querySelector('.zoom-out-btn');
+      if (zoomInBtn) zoomInBtn.disabled = (zoomLevel === 1);
+      if (zoomOutBtn) zoomOutBtn.disabled = (zoomLevel === 4);
+
+      await this.saveCameraSetting(targetWb.deviceId, { zoom: zoomLevel, defaultRole: 'whiteboard' });
+
+      // Save session state with new slotOrder & index
+      this.activeSlotIndex = 0;
+      saveSessionState(this.slotOrder, this.activeSlotIndex);
+
+      // Reorganize DOM to reflect order change
+      if (this.currentLayout === 'wide') {
+        this.reorganizeForWide();
+      } else {
+        this.reorganizeForNarrow();
+      }
+    } finally {
+      this.isAutoFocusing = false;
+    }
   }
 
   async updateCyclingAndActivationState() {
@@ -1718,6 +1888,13 @@ class App {
           videoWrapper.style.aspectRatio = `16 / ${9 * currentVScale}`;
       } else {
           videoWrapper.style.aspectRatio = '16 / 9';
+      }
+
+      // If whiteboard auto-focus is enabled, and we switched to whiteboard mode,
+      // and there are multiple cameras, trigger autofocus!
+      if (role === 'whiteboard' && this.globalSettings.wbAutoFocusEnabled && this.slotOrder.length >= 2) {
+          // Trigger the whiteboard auto-focus before updateCyclingAndActivationState
+          await this.enforceWhiteboardAutoFocus(deviceId);
       }
 
       // If switching from whiteboard to person, unlock focus if it was locked

@@ -74,6 +74,24 @@
   "aboutDesc": {
     "message": "A local-first tool to enhance whiteboard visibility for hybrid meetings."
   },
+  "settingsDataTitle": {
+    "message": "Settings Data"
+  },
+  "wbAutoFocusTitle": {
+    "message": "Whiteboard Auto-Focus"
+  },
+  "wbAutoFocusLabel": {
+    "message": "Whiteboard Auto-Focus"
+  },
+  "wbAutoFocusPrevWbSizeLabel": {
+    "message": "Previous Whiteboard Resize"
+  },
+  "wbAutoFocusNewWbSizeLabel": {
+    "message": "New Whiteboard Size"
+  },
+  "wbSizeKeep": {
+    "message": "Keep original size"
+  },
   "aboutDataTitle": {
     "message": "Data Storage and Risks"
   },
