@@ -761,6 +761,8 @@ class App {
       } else {
         this.reorganizeForNarrow();
       }
+    } catch (error) {
+      this.addLog('Error during whiteboard auto-focus: ' + error.message, true);
     } finally {
       this.isAutoFocusing = false;
     }
