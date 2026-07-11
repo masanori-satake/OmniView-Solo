@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Privacy](https://img.shields.io/badge/Privacy-Local%20Only-brightgreen)](SECURITY.md)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-published-blue)](https://chrome.google.com/webstore/detail/jnkmbcicplfobgllfljekhlaofkdooam)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-published-blue)](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam)
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
 [![Web Deploy](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml)
 
@@ -25,7 +25,7 @@
 
 ### Chrome ウェブストアからインストール（推奨）
 
-[Chrome ウェブストア](https://chrome.google.com/webstore/detail/jnkmbcicplfobgllfljekhlaofkdooam) からインストールしてください。
+[Chrome ウェブストア](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam) からインストールしてください。
 
 ### ソースコードからインストール
 
