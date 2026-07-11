@@ -287,7 +287,6 @@ class App {
         }
 
         const wbAutoFocusEnabled = !!this.globalSettings.wbAutoFocusEnabled;
-        const wbAutoFocusLabel = document.getElementById('wb-autofocus-label');
         if (wbAutoFocusSwitch) wbAutoFocusSwitch.checked = wbAutoFocusEnabled;
         if (wbAutoFocusPrevWbSizeSelect) wbAutoFocusPrevWbSizeSelect.disabled = !wbAutoFocusEnabled;
         if (wbAutoFocusNewWbSizeSelect) wbAutoFocusNewWbSizeSelect.disabled = !wbAutoFocusEnabled;
@@ -295,18 +294,10 @@ class App {
         const wbPrevWbSizeLabel = document.getElementById('wb-autofocus-prev-wb-size-label');
         const wbNewWbSizeLabel = document.getElementById('wb-autofocus-new-wb-size-label');
         if (wbPrevWbSizeLabel) {
-            if (wbAutoFocusEnabled) {
-                wbPrevWbSizeLabel.classList.remove('disabled');
-            } else {
-                wbPrevWbSizeLabel.classList.add('disabled');
-            }
+            wbPrevWbSizeLabel.classList.toggle('disabled', !wbAutoFocusEnabled);
         }
         if (wbNewWbSizeLabel) {
-            if (wbAutoFocusEnabled) {
-                wbNewWbSizeLabel.classList.remove('disabled');
-            } else {
-                wbNewWbSizeLabel.classList.add('disabled');
-            }
+            wbNewWbSizeLabel.classList.toggle('disabled', !wbAutoFocusEnabled);
         }
     };
 

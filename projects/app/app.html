@@ -68,7 +68,7 @@
                         </div>
                     </div>
                     <div class="settings-row nested-2">
-                        <label for="exclude-whiteboard-switch" id="exclude-whiteboard-label" data-i18n="excludeWhiteboard">ホワイトボードモードを除外</label>
+                        <label for="exclude-whiteboard-switch" id="exclude-whiteboard-label" data-i18n="excludeWhiteboard">ホワイトボードモードをスキップ</label>
                         <label class="m3-switch" id="exclude-whiteboard-switch-container">
                             <input type="checkbox" id="exclude-whiteboard-switch">
                             <span class="slider">
@@ -88,7 +88,7 @@
                         </label>
                     </div>
                     <div class="settings-row nested-2">
-                        <label for="pin-release-time-input" id="pin-release-time-label" data-i18n="pinReleaseTimeLabel">ピン留め解除時間 (分)</label>
+                        <label for="pin-release-time-input" id="pin-release-time-label" data-i18n="pinReleaseTimeLabel">ピン留め保持期間(分)</label>
                         <div class="m3-spinbox">
                             <input type="number" id="pin-release-time-input" value="3" min="1" max="15" step="1">
                             <div class="spinbox-controls">
@@ -102,7 +102,7 @@
                         </div>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="camera-resolution-fps-display-switch" id="camera-resolution-fps-display-label" data-i18n="cameraResolutionFpsDisplay">解像度/fps表示</label>
+                        <label for="camera-resolution-fps-display-switch" id="camera-resolution-fps-display-label" data-i18n="cameraResolutionFpsDisplay">カメラ画像情報表示(解像度/FPS)</label>
                         <label class="m3-switch">
                             <input type="checkbox" id="camera-resolution-fps-display-switch">
                             <span class="slider">
@@ -116,10 +116,10 @@
 
                     <!-- Category 2: Whiteboard Mode Priority Function -->
                     <div class="settings-row-vertical">
-                        <label style="font-weight: bold;" data-i18n="wbAutoFocusTitle">ホワイトボード自動フォーカス機能</label>
+                        <label style="font-weight: bold;" data-i18n="wbAutoFocusTitle">ホワイトボードモード優先機能</label>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="wb-autofocus-switch" id="wb-autofocus-label" data-i18n="wbAutoFocusLabel">ホワイトボード自動フォーカス</label>
+                        <label for="wb-autofocus-switch" id="wb-autofocus-label" data-i18n="wbAutoFocusLabel">ホワイトボードモード優先</label>
                         <label class="m3-switch">
                             <input type="checkbox" id="wb-autofocus-switch">
                             <span class="slider">
@@ -150,10 +150,10 @@
 
                     <!-- Category 3: Resolution Limit by Display Size -->
                     <div class="settings-row-vertical">
-                        <label style="font-weight: bold;" data-i18n="initialResolutionTitle">初期解像度設定</label>
+                        <label style="font-weight: bold;" data-i18n="initialResolutionTitle">表示サイズ別解像度上限</label>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="resolution-zoom1-select" id="resolution-zoom1-label" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</label>
+                        <label for="resolution-zoom1-select" id="resolution-zoom1-label" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (100%)</label>
                         <select id="resolution-zoom1-select" class="m3-select"></select>
                     </div>
                     <div class="settings-row nested-1">
