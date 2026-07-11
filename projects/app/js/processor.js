@@ -160,8 +160,29 @@ export class PerspectiveTransformer {
             }
         };
 
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.hasDragged = false;
+
+        this.boundCanvasMouseDown = (e) => {
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+            this.hasDragged = false;
+        };
+
+        this.boundWindowMouseUpCapture = (e) => {
+            if (Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) > 5) {
+                this.hasDragged = true;
+            }
+        };
+
+        this.boundCanvasClick = (e) => {
+            if (this.showHandles || this.hasDragged) {
+                e.stopPropagation();
+            }
+        };
+
         this.boundMouseDown = (e) => {
-            e.stopPropagation();
             if (!this.showHandles) {
                 if (e.button !== 0) return;
                 this.isSimpleDragging = true;
@@ -195,10 +216,10 @@ export class PerspectiveTransformer {
     }
 
     initEvents() {
+        this.canvas.addEventListener('mousedown', this.boundCanvasMouseDown);
         this.canvas.addEventListener('mousedown', this.boundMouseDown);
-        this.canvas.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        this.canvas.addEventListener('click', this.boundCanvasClick);
+        window.addEventListener('mouseup', this.boundWindowMouseUpCapture, { capture: true });
         window.addEventListener('mousemove', this.boundMouseMove);
         window.addEventListener('mouseup', this.boundMouseUp);
     }
@@ -330,7 +351,10 @@ export class PerspectiveTransformer {
         if (!this.canvas) {
             return;
         }
+        this.canvas.removeEventListener('mousedown', this.boundCanvasMouseDown);
         this.canvas.removeEventListener('mousedown', this.boundMouseDown);
+        this.canvas.removeEventListener('click', this.boundCanvasClick);
+        window.removeEventListener('mouseup', this.boundWindowMouseUpCapture, { capture: true });
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
         this.video.style.transform = '';
