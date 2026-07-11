@@ -144,26 +144,32 @@ class App {
     const resolutionZoom2Select = document.getElementById('resolution-zoom2-select');
     const resolutionZoom4Select = document.getElementById('resolution-zoom4-select');
 
-    resolutionZoom1Select.addEventListener('change', async (e) => {
-        this.globalSettings.resolutionZoom1 = e.target.value;
-        await saveGlobalSettings(this.globalSettings);
-        await this.updateResolutionSelects();
-        await this.reconnectActiveCameras();
-    });
+    if (resolutionZoom1Select) {
+        resolutionZoom1Select.addEventListener('change', async (e) => {
+            this.globalSettings.resolutionZoom1 = e.target.value;
+            await saveGlobalSettings(this.globalSettings);
+            await this.updateResolutionSelects();
+            await this.reconnectActiveCameras();
+        });
+    }
 
-    resolutionZoom2Select.addEventListener('change', async (e) => {
-        this.globalSettings.resolutionZoom2 = e.target.value;
-        await saveGlobalSettings(this.globalSettings);
-        await this.updateResolutionSelects();
-        await this.reconnectActiveCameras();
-    });
+    if (resolutionZoom2Select) {
+        resolutionZoom2Select.addEventListener('change', async (e) => {
+            this.globalSettings.resolutionZoom2 = e.target.value;
+            await saveGlobalSettings(this.globalSettings);
+            await this.updateResolutionSelects();
+            await this.reconnectActiveCameras();
+        });
+    }
 
-    resolutionZoom4Select.addEventListener('change', async (e) => {
-        this.globalSettings.resolutionZoom4 = e.target.value;
-        await saveGlobalSettings(this.globalSettings);
-        await this.updateResolutionSelects();
-        await this.reconnectActiveCameras();
-    });
+    if (resolutionZoom4Select) {
+        resolutionZoom4Select.addEventListener('change', async (e) => {
+            this.globalSettings.resolutionZoom4 = e.target.value;
+            await saveGlobalSettings(this.globalSettings);
+            await this.updateResolutionSelects();
+            await this.reconnectActiveCameras();
+        });
+    }
 
     const updateIntervalUI = () => {
         const enabled = this.globalSettings.cyclingEnabled && this.slotOrder.length >= 2;
@@ -386,6 +392,9 @@ class App {
   }
 
   getInitialResolutionForSlot(slot) {
+    if (!slot || !slot.element) {
+        return { label: '720p HD (16:9)', width: 1280, height: 720 };
+    }
     const zoom = parseInt(slot.element.dataset.zoom || '1');
     let label = '720p HD (16:9)'; // Default fallback
     if (zoom === 1) {
@@ -402,8 +411,9 @@ class App {
 
   getSteppedDownResolution(slot, step) {
     const initialPreset = this.getInitialResolutionForSlot(slot);
-    const startIdx = RESOLUTION_PRESETS_2K.findIndex(p => p.label === initialPreset.label);
-    const targetIdx = Math.min(RESOLUTION_PRESETS_2K.length - 1, startIdx + step);
+    let startIdx = RESOLUTION_PRESETS_2K.findIndex(p => p.label === initialPreset.label);
+    if (startIdx === -1) startIdx = 4; // fallback to 720p HD (16:9)
+    const targetIdx = Math.max(0, Math.min(RESOLUTION_PRESETS_2K.length - 1, startIdx + step));
     return RESOLUTION_PRESETS_2K[targetIdx];
   }
 
@@ -476,22 +486,25 @@ class App {
   }
 
   async reconnectActiveCameras() {
-    this.addLog("Reconnecting active cameras to apply updated resolution settings...");
-    const activeDeviceIds = [];
-    for (const [deviceId, slot] of this.slots.entries()) {
-        if (slot.stream) {
-            activeDeviceIds.push(deviceId);
+    this.cameraOperationsQueue = this.cameraOperationsQueue || Promise.resolve();
+    await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
+        this.addLog("Reconnecting active cameras to apply updated resolution settings...");
+        const activeDeviceIds = [];
+        for (const [deviceId, slot] of this.slots.entries()) {
+            if (slot.stream) {
+                activeDeviceIds.push(deviceId);
+            }
         }
-    }
 
-    for (const deviceId of activeDeviceIds) {
-        const slot = this.slots.get(deviceId);
-        if (slot) {
-            await this.deactivateSlot(slot);
-            await new Promise(r => setTimeout(r, 750));
-            await this.activateSlot(slot, deviceId);
+        for (const deviceId of activeDeviceIds) {
+            const slot = this.slots.get(deviceId);
+            if (slot) {
+                await this.deactivateSlot(slot);
+                await new Promise(r => setTimeout(r, 750));
+                await this.activateSlot(slot, deviceId);
+            }
         }
-    }
+    }).catch(err => console.error("Error in reconnectActiveCameras queue:", err)));
   }
 
   getSlotRole(deviceId) {
@@ -1577,6 +1590,8 @@ class App {
             nextZoom = 2;
         }
         if (nextZoom !== currentZoom) {
+            zoomInBtn.disabled = true;
+            zoomOutBtn.disabled = true;
             updateZoomUI(nextZoom);
             await saveCameraSetting(deviceId, { zoom: nextZoom });
             const slot = this.slots.get(deviceId);
@@ -1585,6 +1600,7 @@ class App {
                 await new Promise(r => setTimeout(r, 750));
                 await this.activateSlot(slot, deviceId);
             }
+            updateZoomUI(nextZoom);
         }
     };
 
@@ -1598,6 +1614,8 @@ class App {
             nextZoom = 4;
         }
         if (nextZoom !== currentZoom) {
+            zoomInBtn.disabled = true;
+            zoomOutBtn.disabled = true;
             updateZoomUI(nextZoom);
             await saveCameraSetting(deviceId, { zoom: nextZoom });
             const slot = this.slots.get(deviceId);
@@ -1606,6 +1624,7 @@ class App {
                 await new Promise(r => setTimeout(r, 750));
                 await this.activateSlot(slot, deviceId);
             }
+            updateZoomUI(nextZoom);
         }
     };
 
