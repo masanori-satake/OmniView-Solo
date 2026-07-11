@@ -3,7 +3,7 @@
     "message": "OmniView-Solo"
   },
   "extensionDescription": {
-    "message": "Hybrid meeting assistant for whiteboard enhancement."
+    "message": "Whiteboard assistant to improve UX for hybrid meetings and remote classes."
   },
   "addCameraNavBtn": {
     "message": "Add Camera"
@@ -75,7 +75,7 @@
     "message": "Clear"
   },
   "aboutDesc": {
-    "message": "A local-first tool to enhance whiteboard visibility for hybrid meetings."
+    "message": "A local-first tool to improve UX for hybrid meetings and remote classes."
   },
   "settingsDataTitle": {
     "message": "Settings Data"

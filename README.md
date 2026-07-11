@@ -8,7 +8,7 @@
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
 [![Web Deploy](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml)
 
-『OmniView-Solo』は、ハイブリッド会議では伝わりにくい会議室の雰囲気と見やすいホワイトボードの映像をリモートワークメンバーと共有するためのChrome拡張機能（サイドパネル専用）です。
+『OmniView-Solo』は、ハイブリッド会議やリモート授業のUXを向上させるため、伝わりにくい会議室や教室の雰囲気と、補正された見やすいホワイトボードの映像をリモートメンバーや生徒と共有するためのChrome拡張機能（サイドパネル専用）です。
 
 ## 特徴
 

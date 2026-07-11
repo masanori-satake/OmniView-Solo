@@ -3,7 +3,7 @@
     "message": "OmniView-Solo"
   },
   "extensionDescription": {
-    "message": "ハイブリッド会議のホワイトボードを劇的に見やすくするアシスタント"
+    "message": "ハイブリッド会議やリモート授業のホワイトボードを劇的に見やすくし、UXを向上させるアシスタント"
   },
   "addCameraNavBtn": {
     "message": "カメラ追加"
@@ -75,7 +75,7 @@
     "message": "消去"
   },
   "aboutDesc": {
-    "message": "ハイブリッド会議の視認性を向上させるローカル完結型ツール"
+    "message": "ハイブリッド会議やリモート授業のUXを向上させるローカル完結型ツール"
   },
   "settingsDataTitle": {
     "message": "設定データ"
