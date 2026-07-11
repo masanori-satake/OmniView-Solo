@@ -871,12 +871,19 @@ class App {
         }
 
         // Deactivate slots that are NOT the targetId AND are NOT whiteboard mode when excludeWhiteboard is ON
+        let deactivatedAny = false;
         for (const [deviceId, slot] of this.slots.entries()) {
             const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
             const keepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
             if (deviceId !== targetId && !keepActive && slot.stream) {
                 await this.deactivateSlot(slot);
+                deactivatedAny = true;
             }
+        }
+
+        if (deactivatedAny) {
+            // Wait for old camera hardware resources to be released before starting the new camera
+            await new Promise(r => setTimeout(r, 750));
         }
 
         if (targetId) {
@@ -1111,6 +1118,8 @@ class App {
             this.addLog(chrome.i18n.getMessage('logAddingCameras', [String(camerasToAdd.length)]));
             for (const camera of camerasToAdd) {
                 this.addLog(chrome.i18n.getMessage('logAddingCamera', [camera.label, camera.deviceId.slice(0, 8)]));
+                // Force Zoom 4 (smallest size, 25%) and persist immediately
+                await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(camera.deviceId, slot);
                 this.slotOrder.push(camera.deviceId);
@@ -1281,14 +1290,16 @@ class App {
     const index = this.slotOrder.indexOf(deviceId);
     if (index === -1) return;
 
+    if (this.pinnedDeviceId) {
+        // A camera is pinned. As per requirements, clicking other camera slots (non-pin buttons)
+        // must not release the pin, and the pinned camera's video stream must be maintained.
+        return;
+    }
+
     if (this.shouldCycle()) {
         if (this.activeSlotIndex !== -1 && this.activeSlotIndex !== index) {
             const currentDeviceId = this.slotOrder[this.activeSlotIndex];
             const currentSlot = this.slots.get(currentDeviceId);
-            // If we are currently pinning a camera, switching to another slot will release the pin
-            if (this.pinnedDeviceId) {
-                this.releasePin(true);
-            }
             if (currentSlot) {
                 await this.deactivateSlot(currentSlot);
                 // Hardware release delay
@@ -1445,6 +1456,8 @@ class App {
   }
 
   async addCamera(camera) {
+    // Force Zoom 4 (smallest size, 25%) and persist immediately
+    await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
     const slot = await this.createCameraSlot(camera);
     this.slots.set(camera.deviceId, slot);
     this.slotOrder.push(camera.deviceId);
@@ -1467,12 +1480,14 @@ class App {
   async startCycling() {
     if (this.cycleTimeoutId) clearTimeout(this.cycleTimeoutId);
     if (!this.shouldCycle()) return;
+    if (this.pinnedDeviceId) return;
     const interval = this.globalSettings.interval || 5;
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), interval * 1000);
   }
 
   async nextCamera() {
     if (!this.shouldCycle()) return;
+    if (this.pinnedDeviceId) return;
 
     // 1. Capture and stop current active slot (only if it is not whiteboard mode with excludeWhiteboard enabled)
     if (this.activeSlotIndex !== -1) {
@@ -1484,6 +1499,8 @@ class App {
             await this.deactivateSlot(slot);
         }
     }
+
+    if (this.pinnedDeviceId) return;
 
     // 2. Advance index
     const allowedIds = this.getCyclingTargetDeviceIds();
@@ -1514,12 +1531,15 @@ class App {
     if (this.cycleCount !== currentCycle) {
         return;
     }
+    if (this.pinnedDeviceId) return;
 
     // 4. Start next slot
     const nextSlot = this.slots.get(nextDeviceId);
     if (nextSlot) {
         await this.activateSlot(nextSlot, nextDeviceId);
     }
+
+    if (this.pinnedDeviceId) return;
 
     // 5. Schedule next switch
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
