@@ -496,7 +496,8 @@ video, .processed-canvas {
 .video-overlay-top-left .material-symbols-outlined,
 .video-overlay-top-right .material-symbols-outlined,
 .video-overlay-bottom-left .material-symbols-outlined,
-.video-overlay-bottom-right .material-symbols-outlined {
+.video-overlay-bottom-right .material-symbols-outlined,
+.video-overlay-top-left-vscale .material-symbols-outlined {
     font-size: 24px;
     color: white;
     text-shadow:
