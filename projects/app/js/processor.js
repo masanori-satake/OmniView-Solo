@@ -161,6 +161,7 @@ export class PerspectiveTransformer {
         };
 
         this.boundMouseDown = (e) => {
+            e.stopPropagation();
             if (!this.showHandles) {
                 if (e.button !== 0) return;
                 this.isSimpleDragging = true;
@@ -195,6 +196,9 @@ export class PerspectiveTransformer {
 
     initEvents() {
         this.canvas.addEventListener('mousedown', this.boundMouseDown);
+        this.canvas.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
         window.addEventListener('mousemove', this.boundMouseMove);
         window.addEventListener('mouseup', this.boundMouseUp);
     }
