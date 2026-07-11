@@ -35,6 +35,18 @@
   "cameraResolutionFpsDisplay": {
     "message": "解像度/fps表示"
   },
+  "initialResolutionTitle": {
+    "message": "初期解像度設定"
+  },
+  "resolutionZoom1Label": {
+    "message": "サイドパネル幅一杯 (拡大 100%)"
+  },
+  "resolutionZoom2Label": {
+    "message": "サイドパネル幅の約1/2 (50%)"
+  },
+  "resolutionZoom4Label": {
+    "message": "サイドパネル幅の約1/4 (25%)"
+  },
   "exportBtn": {
     "message": "エクスポート"
   },
