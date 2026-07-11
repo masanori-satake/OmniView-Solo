@@ -443,6 +443,19 @@
         "id": { "content": "$1" }
     }
   },
+  "logVScaleAutoChanged": {
+    "message": "Automatically selected aspect ratio $RATIO$ for camera $ID$",
+    "placeholders": {
+        "id": { "content": "$1" },
+        "ratio": { "content": "$2" }
+    }
+  },
+  "snackbarVScaleAutoToVertical": {
+    "message": "Automatically adjusted aspect ratio for camera $ID$ as the target is portrait",
+    "placeholders": {
+        "id": { "content": "$1" }
+    }
+  },
   "logResetPerspective": {
     "message": "Resetting perspective for camera $ID$",
     "placeholders": {
