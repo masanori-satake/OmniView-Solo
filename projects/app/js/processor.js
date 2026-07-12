@@ -434,6 +434,7 @@ export class PerspectiveTransformer {
             this.ctx.fill();
 
             this.ctx.fillStyle = '#00e676';
+            this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.arc(x, y, 6, 0, Math.PI * 2);
             this.ctx.fill();
