@@ -3,7 +3,7 @@
     "message": "OmniView-Solo"
   },
   "extensionDescription": {
-    "message": "Assistant to improve UX for remote classes and hybrid meetings by making teaching materials (notebooks, textbooks, sketchbooks, etc.) and whiteboards highly readable."
+    "message": "Assistant making whiteboards and teaching materials highly readable for remote classes and hybrid meetings."
   },
   "addCameraNavBtn": {
     "message": "Add Camera"
