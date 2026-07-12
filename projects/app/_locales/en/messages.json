@@ -3,7 +3,7 @@
     "message": "OmniView-Solo"
   },
   "extensionDescription": {
-    "message": "Whiteboard assistant to improve UX for hybrid meetings and remote classes."
+    "message": "Assistant to improve UX for remote classes and hybrid meetings by making teaching materials (notebooks, textbooks, sketchbooks, etc.) and whiteboards highly readable."
   },
   "addCameraNavBtn": {
     "message": "Add Camera"
@@ -75,7 +75,7 @@
     "message": "Clear"
   },
   "aboutDesc": {
-    "message": "A local-first tool to improve UX for hybrid meetings and remote classes."
+    "message": "A local-first tool to improve UX for remote classes and hybrid meetings."
   },
   "settingsDataTitle": {
     "message": "Settings Data"
@@ -618,7 +618,7 @@
     "message": "Welcome to OmniView-Solo"
   },
   "welcomeDesc": {
-    "message": "OmniView-Solo is a local-first assistant tool designed to enhance the hybrid meeting and remote learning UX by optimizing camera video and images."
+    "message": "OmniView-Solo is a local-first assistant tool designed to enhance the remote learning and hybrid meeting UX by optimizing camera video and images."
   },
   "welcomeUsageTitle": {
     "message": "Easy Setup Steps"
@@ -639,7 +639,7 @@
     "message": "The number of cameras you can connect depends on whether you use a USB hub and the USB specifications supported."
   },
   "welcomeTipsPorts": {
-    "message": "We recommend connecting cameras intended for capturing fine text (e.g. whiteboards) directly to a USB 3.X port on your PC, while using hubs or remaining ports for cameras capturing people. With a little setup, many cameras can be run simultaneously!"
+    "message": "We recommend connecting cameras intended for capturing fine text (e.g. teaching materials or whiteboards) directly to a USB 3.X port on your PC, while using hubs or remaining ports for cameras capturing people. With a little setup, many cameras can be run simultaneously!"
   },
   "welcomeTipsWhiteboard": {
     "message": "Whiteboard Mode supports not only widescreen (16:9) objects, but also portrait (9:16) notebooks or documents. Use it for sketching, notebooks, or idea pads without needing a dedicated document camera."
