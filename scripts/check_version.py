@@ -36,7 +36,7 @@ def check_consistency():
     if os.path.exists('projects/app/app.html'):
         with open('projects/app/app.html', 'r') as f:
             content = f.read()
-            match = re.search(r'<p>Version: (\d+\.\d+\.\d+)</p>', content)
+            match = re.search(r'<p[^>]*>Version: (\d+\.\d+\.\d+)</p>', content)
             if match:
                 app_html_version = match.group(1)
 
