@@ -45,6 +45,29 @@
     background-color: var(--md-sys-color-surface-variant);
 }
 
+@keyframes add-btn-pulse {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.95);
+        background-color: transparent;
+    }
+    50% {
+        opacity: 1.0;
+        transform: scale(1.15);
+        background-color: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+    }
+    100% {
+        opacity: 0.3;
+        transform: scale(0.95);
+        background-color: transparent;
+    }
+}
+
+.blink-pulse {
+    animation: add-btn-pulse 1.5s infinite ease-in-out;
+}
+
 /* Settings Panel */
 #settings-panel {
     position: fixed;
@@ -339,6 +362,7 @@
 /* Camera Slot */
 .camera-slot {
     background-color: var(--md-sys-color-surface-variant);
+    border: 1px solid var(--md-sys-color-outline-variant);
     border-radius: var(--md-sys-shape-medium);
     overflow: hidden;
     display: flex;
@@ -453,8 +477,8 @@ video, .processed-canvas {
 }
 
 .rot-left-btn, .rot-right-btn {
-    background: none;
-    border: none;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0;
     cursor: pointer;
     border-radius: 50%;
@@ -463,10 +487,13 @@ video, .processed-canvas {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
 }
 
 .rot-left-btn:hover, .rot-right-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.7);
 }
 
 .rot-left-btn .material-symbols-outlined,
@@ -545,8 +572,8 @@ video, .processed-canvas {
 .zoom-btn-overlay,
 .vscale-btn-overlay,
 .pin-btn-overlay {
-    background: none;
-    border: none;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0;
     cursor: pointer;
     border-radius: 50%;
@@ -555,13 +582,16 @@ video, .processed-canvas {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
 }
 
 .delete-btn-overlay:hover,
 .zoom-btn-overlay:hover,
 .vscale-btn-overlay:hover,
 .pin-btn-overlay:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.7);
 }
 
 .pin-btn-overlay.pinned {
@@ -651,6 +681,8 @@ video, .processed-canvas {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    background-color: var(--md-sys-color-surface);
 }
 
 .control-row {

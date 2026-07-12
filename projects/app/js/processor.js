@@ -391,6 +391,19 @@ export class PerspectiveTransformer {
 
         if (!this.showHandles) return;
 
+        // Draw a thick black polygon backing first to ensure maximum visibility on bright backgrounds
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 4;
+        this.points.forEach((p, i) => {
+            const x = (p.x / 100) * this.canvas.width;
+            const y = (p.y / 100) * this.canvas.height;
+            if (i === 0) this.ctx.moveTo(x, y);
+            else this.ctx.lineTo(x, y);
+        });
+        this.ctx.closePath();
+        this.ctx.stroke();
+
         this.ctx.beginPath();
         this.ctx.strokeStyle = '#00e676';
         this.ctx.lineWidth = 2;
@@ -413,7 +426,15 @@ export class PerspectiveTransformer {
         this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
+
+            // Draw a black backing circle first
+            this.ctx.fillStyle = '#000000';
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+
             this.ctx.fillStyle = '#00e676';
+            this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.arc(x, y, 6, 0, Math.PI * 2);
             this.ctx.fill();
@@ -454,15 +475,14 @@ export class PerspectiveTransformer {
         const cw = this.canvas.width;
         const ch = this.canvas.height;
         this.ctx.save();
-        this.ctx.strokeStyle = '#00e676';
-        this.ctx.lineWidth = 1;
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        this.ctx.shadowBlur = 2;
-        this.ctx.shadowOffsetX = 1;
-        this.ctx.shadowOffsetY = 1;
 
-        // Draw vertical lines
+        // 1. Draw solid black backing lines first to ensure extreme contrast under bright images
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([]);
+        this.ctx.shadowColor = 'transparent';
+
+        // Backing vertical lines
         for (let i = 1; i <= 3; i++) {
             const x = (i / 4) * cw;
             this.ctx.beginPath();
@@ -471,7 +491,7 @@ export class PerspectiveTransformer {
             this.ctx.stroke();
         }
 
-        // Draw horizontal lines
+        // Backing horizontal lines
         for (let i = 1; i <= 3; i++) {
             const y = (i / 4) * ch;
             this.ctx.beginPath();
@@ -480,7 +500,30 @@ export class PerspectiveTransformer {
             this.ctx.stroke();
         }
 
-        // Draw labels
+        // 2. Draw green dashed lines on top
+        this.ctx.strokeStyle = '#00e676';
+        this.ctx.lineWidth = 1;
+        this.ctx.setLineDash([5, 5]);
+
+        // Green vertical lines
+        for (let i = 1; i <= 3; i++) {
+            const x = (i / 4) * cw;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, ch);
+            this.ctx.stroke();
+        }
+
+        // Green horizontal lines
+        for (let i = 1; i <= 3; i++) {
+            const y = (i / 4) * ch;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(cw, y);
+            this.ctx.stroke();
+        }
+
+        // Draw labels with white text and black shadow
         this.ctx.setLineDash([]);
         this.ctx.font = 'bold 24px sans-serif';
         this.ctx.fillStyle = '#ffffff';
@@ -540,11 +583,27 @@ export class PerspectiveTransformer {
         ];
 
         this.ctx.save();
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        // Draw solid black backing lines first to make F landmark visible on pure light/green backgrounds
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.globalAlpha = 0.5;
+        this.ctx.lineWidth = 14;
+
+        fLines.forEach(line => {
+            const p1 = transform(line[0].x, line[0].y);
+            const p2 = transform(line[1].x, line[1].y);
+            this.ctx.beginPath();
+            this.ctx.moveTo(p1.x, p1.y);
+            this.ctx.lineTo(p2.x, p2.y);
+            this.ctx.stroke();
+        });
+
+        // Draw green foreground
         this.ctx.strokeStyle = '#00e676';
         this.ctx.globalAlpha = 0.4;
         this.ctx.lineWidth = 10;
-        this.ctx.lineCap = 'round';
-        this.ctx.lineJoin = 'round';
 
         fLines.forEach(line => {
             const p1 = transform(line[0].x, line[0].y);
