@@ -258,7 +258,7 @@
     border-bottom: 1px solid var(--md-sys-color-outline);
 }
 
-.spin-btn:hover {
+.spin-btn:not(:disabled):hover {
     background-color: var(--md-sys-color-outline-variant);
     color: var(--md-sys-color-on-surface);
 }
