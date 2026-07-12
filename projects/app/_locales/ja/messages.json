@@ -386,7 +386,7 @@
   "logImportFailed": {
     "message": "インポートに失敗しました: $ERROR$",
     "placeholders": {
-        "error": { "content": "$1" }
+      "error": { "content": "$1" }
     }
   },
   "logActivatingAll": {
@@ -612,5 +612,39 @@
   "bandwidthDialogHeader": { "message": "カメラ接続エラー" },
   "bandwidthDialogBody": { "message": "データの帯域幅が原因で、一部のカメラに接続できない可能性があります。\n「自動切り替え」をONにすると、カメラを順番に切り替えて表示するため、接続できる可能性があります。\n「自動切り替え」をONにしますか？" },
   "bandwidthDialogYes": { "message": "はい" },
-  "bandwidthDialogNo": { "message": "いいえ" }
+  "bandwidthDialogNo": { "message": "いいえ" },
+
+  "welcomeTitle": {
+    "message": "OmniView-Soloへようこそ"
+  },
+  "welcomeDesc": {
+    "message": "OmniView-Soloは、リモート授業やリモート会議のUXをカメラの映像/画像で向上させるローカル完結型のアシスタントツールです。"
+  },
+  "welcomeUsageTitle": {
+    "message": "簡単な使い方"
+  },
+  "welcomeUsageStep1": {
+    "message": "ブラウザでテキストや議事録を開く"
+  },
+  "welcomeUsageStep2": {
+    "message": "OmniView-Soloをクリックしてカメラを追加する"
+  },
+  "welcomeUsageStep3": {
+    "message": "ZoomやTeamsでブラウザウィンドウを画面共有する"
+  },
+  "welcomeTipsTitle": {
+    "message": "接続と配置のヒント"
+  },
+  "welcomeTipsHub": {
+    "message": "繋げるカメラの台数は、USBハブを経由するか、対応するUSBの規格によって異なります。"
+  },
+  "welcomeTipsPorts": {
+    "message": "ホワイトボード等細かい文字を写すカメラはPCのUSB3.Xポートに直接接続し、人物を写すカメラは空いているポートやUSBハブで接続することをお薦めします。工夫しだいで多くのカメラが接続できるので色々試してください。"
+  },
+  "welcomeTipsWhiteboard": {
+    "message": "ホワイトボードモードは、横長(16:9)の被写体だけではなく、縦長(9:16)のノートやテキスト等もサポートしています。高価な書画カメラがなくても、アイデアメモやスケッチブック等にも利用できます。"
+  },
+  "welcomeAddCameraBtn": {
+    "message": "カメラを追加"
+  }
 }

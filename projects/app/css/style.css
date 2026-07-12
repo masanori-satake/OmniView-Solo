@@ -6,6 +6,7 @@
     padding: 8px;
     gap: 8px;
     box-sizing: border-box;
+    position: relative;
 }
 
 /* Header */
@@ -1133,4 +1134,161 @@ label.disabled {
 .m3-icon-button-small:disabled {
     opacity: 0.38;
     cursor: default;
+}
+
+/* Welcoming Card Styles */
+#welcome-container {
+    position: absolute;
+    top: 56px; /* Offset to stay below the header actions */
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    pointer-events: none;
+}
+
+#welcome-container.hidden {
+    display: none;
+}
+
+.welcome-card {
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    width: 100%;
+    max-height: calc(100% - 16px);
+    background: var(--md-sys-color-surface);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-large);
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.welcome-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.welcome-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: var(--md-sys-shape-medium);
+}
+
+.welcome-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface);
+    margin: 4px 0 0 0;
+}
+
+.welcome-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--md-sys-color-on-surface-variant);
+    margin: 0 0 20px 0;
+    text-align: center;
+}
+
+.welcome-section {
+    margin-bottom: 20px;
+}
+
+.welcome-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--md-sys-color-primary);
+    margin: 0 0 12px 0;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    padding-bottom: 4px;
+}
+
+.welcome-section-icon {
+    font-size: 20px !important;
+}
+
+/* Steps List */
+.welcome-usage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.welcome-usage-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--md-sys-color-on-surface);
+}
+
+.list-step-icon {
+    font-size: 18px !important;
+    color: var(--md-sys-color-primary);
+    background-color: var(--md-sys-color-secondary-container);
+    padding: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Tips List */
+.welcome-tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.welcome-tips-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.welcome-tips-list li p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.list-tip-icon {
+    font-size: 18px !important;
+    color: var(--md-sys-color-on-secondary-container);
+    background-color: var(--md-sys-color-surface-variant);
+    padding: 4px;
+    border-radius: var(--md-sys-shape-extra-small);
+    flex-shrink: 0;
+}
+
+.welcome-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.welcome-actions button {
+    font-size: 14px;
+    padding: 10px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
