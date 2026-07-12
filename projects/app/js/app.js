@@ -252,10 +252,12 @@ class App {
     const updateIntervalUI = () => {
         if (cyclingSwitch) {
             cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
-            cyclingSwitch.disabled = this.slotOrder.length < 2;
+            // カメラ接続数が2台未満であっても、自動切り替え設定は常に変更可能とするため、disabledを常にfalseにします
+            cyclingSwitch.disabled = false;
         }
 
-        const enabled = this.globalSettings.cyclingEnabled && this.slotOrder.length >= 2;
+        // カメラ接続数に関わらず、自動切り替えの設定状態（cyclingEnabled）のみに基づいてインターバル入力を有効/無効にします
+        const enabled = !!this.globalSettings.cyclingEnabled;
         intervalInput.disabled = !enabled;
         intervalUp.disabled = !enabled;
         intervalDown.disabled = !enabled;
