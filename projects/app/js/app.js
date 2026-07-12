@@ -250,6 +250,12 @@ class App {
     }
 
     const updateIntervalUI = () => {
+        const cyclingSwitch = document.getElementById('cycling-switch');
+        if (cyclingSwitch) {
+            cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
+            cyclingSwitch.disabled = this.slotOrder.length < 2;
+        }
+
         const enabled = this.globalSettings.cyclingEnabled && this.slotOrder.length >= 2;
         intervalInput.disabled = !enabled;
         intervalUp.disabled = !enabled;
@@ -306,8 +312,6 @@ class App {
     settingsBtn.addEventListener('click', async () => {
         settingsPanel.classList.remove('hidden');
         intervalInput.value = this.globalSettings.interval;
-        cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
-        cyclingSwitch.disabled = this.slotOrder.length < 2;
 
         excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
         cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
@@ -1143,8 +1147,9 @@ class App {
                 this.container.appendChild(slot.element);
             }
 
-            const cyclingSwitch = document.getElementById('cycling-switch');
-            if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+            if (this.updateIntervalUI) {
+                this.updateIntervalUI();
+            }
 
             if (this.currentLayout === 'wide') {
                 this.reorganizeForWide();
@@ -1187,11 +1192,6 @@ class App {
         this.globalSettings.cyclingEnabled = true;
         this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
         await saveGlobalSettings(this.globalSettings);
-
-        const cyclingSwitch = document.getElementById('cycling-switch');
-        if (cyclingSwitch) {
-            cyclingSwitch.checked = true;
-        }
 
         if (this.updateIntervalUI) {
             this.updateIntervalUI();
@@ -1530,8 +1530,9 @@ class App {
     this.slotOrder.push(camera.deviceId);
     this.container.appendChild(slot.element);
 
-    const cyclingSwitch = document.getElementById('cycling-switch');
-    if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+    if (this.updateIntervalUI) {
+        this.updateIntervalUI();
+    }
 
     if (this.currentLayout === 'wide') {
         this.reorganizeForWide();
@@ -2436,8 +2437,9 @@ class App {
 
                 await this.updateCyclingAndActivationState();
             }
-            const cyclingSwitch = document.getElementById('cycling-switch');
-            if (cyclingSwitch) cyclingSwitch.disabled = this.slotOrder.length < 2;
+            if (this.updateIntervalUI) {
+                this.updateIntervalUI();
+            }
             saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     });
