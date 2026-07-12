@@ -389,6 +389,7 @@ class App {
         this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
         await saveGlobalSettings(this.globalSettings);
         updateIntervalUI();
+        this.bandwidthDialogDismissed = false;
         if (!e.target.checked) {
             // Force release pin if cycling is turned off
             this.releasePin(false);
@@ -461,6 +462,7 @@ class App {
                 if (data.global_settings) {
                     this.globalSettings = { ...this.globalSettings, ...data.global_settings };
                     await saveGlobalSettings(this.globalSettings);
+                    this.bandwidthDialogDismissed = false;
                     intervalInput.value = this.globalSettings.interval;
 
                     cyclingSwitch.checked = !!this.globalSettings.cyclingEnabled;
