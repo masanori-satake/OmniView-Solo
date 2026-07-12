@@ -219,6 +219,8 @@
     padding: 8px;
     text-align: center;
     -moz-appearance: textfield;
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
 }
 
 .m3-spinbox input::-webkit-outer-spin-button,
@@ -231,6 +233,7 @@
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--md-sys-color-outline);
+    background-color: var(--md-sys-color-surface-variant);
 }
 
 .spin-btn {
@@ -243,9 +246,22 @@
     align-items: center;
     justify-content: center;
     flex-grow: 1;
+    color: var(--md-sys-color-on-surface-variant);
 }
 
-.spin-btn:hover { background: var(--md-sys-color-surface-variant); }
+.spin-btn .material-symbols-outlined {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.spin-btn:first-child {
+    border-bottom: 1px solid var(--md-sys-color-outline);
+}
+
+.spin-btn:hover {
+    background-color: var(--md-sys-color-outline-variant);
+    color: var(--md-sys-color-on-surface);
+}
 
 /* Switch (M3) */
 .m3-switch {
@@ -361,6 +377,7 @@
 
 /* Camera Slot */
 .camera-slot {
+    box-sizing: border-box;
     background-color: var(--md-sys-color-surface-variant);
     border: 1px solid var(--md-sys-color-outline-variant);
     border-radius: var(--md-sys-shape-medium);
