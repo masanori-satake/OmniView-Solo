@@ -217,8 +217,8 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.13.1</p>
-                        <!-- <p>Version: 0.13.1</p> -->
+                        <p data-i18n="aboutVersion">Version: 0.13.2</p>
+                        <!-- <p>Version: 0.13.2</p> -->
                         <p data-i18n="aboutDesc">ハイブリッド会議やリモート授業のUXを向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>
@@ -254,6 +254,22 @@
                 <div class="dialog-actions">
                     <button id="dialog-cancel-btn" class="m3-button" data-i18n="dialogCancel">キャンセル</button>
                     <button id="dialog-add-btn" class="m3-button-filled" data-i18n="dialogAdd">追加</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="bandwidth-dialog" class="hidden">
+            <div id="bandwidth-dialog-overlay"></div>
+            <div class="dialog-content m3-surface">
+                <div class="dialog-header">
+                    <h2 class="m3-title" data-i18n="bandwidthDialogHeader">カメラ接続エラー</h2>
+                </div>
+                <div class="dialog-body">
+                    <p data-i18n="bandwidthDialogBody" style="white-space: pre-line;">データの帯域幅が原因で、一部のカメラに接続できない可能性があります。<br>「自動切り替え」をONにすると、カメラを順番に切り替えて表示するため、接続できる可能性があります。<br>「自動切り替え」をONにしますか？</p>
+                </div>
+                <div class="dialog-actions">
+                    <button id="bandwidth-dialog-no-btn" class="m3-button" data-i18n="bandwidthDialogNo">いいえ</button>
+                    <button id="bandwidth-dialog-yes-btn" class="m3-button-filled" data-i18n="bandwidthDialogYes">はい</button>
                 </div>
             </div>
         </div>

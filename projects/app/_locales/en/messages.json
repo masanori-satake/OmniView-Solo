@@ -608,5 +608,9 @@
   "handleTopLeft": { "message": "Top Left" },
   "handleTopRight": { "message": "Top Right" },
   "handleBottomRight": { "message": "Bottom Right" },
-  "handleBottomLeft": { "message": "Bottom Left" }
+  "handleBottomLeft": { "message": "Bottom Left" },
+  "bandwidthDialogHeader": { "message": "Camera Connection Error" },
+  "bandwidthDialogBody": { "message": "Some cameras could not be connected, possibly due to data bandwidth limitations.\nEnabling 'Auto Switching' may allow all cameras to connect by displaying them sequentially.\nWould you like to turn ON 'Auto Switching'?" },
+  "bandwidthDialogYes": { "message": "Yes" },
+  "bandwidthDialogNo": { "message": "No" }
 }
