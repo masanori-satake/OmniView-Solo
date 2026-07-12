@@ -30,6 +30,7 @@ class App {
     this.switchRequestCount = 0;
     this.cameraInfoCache = new Map();
     this.logs = [];
+    this.bandwidthDialogDismissed = false;
   }
 
   initI18n() {
@@ -1168,12 +1169,13 @@ class App {
     const noBtn = document.getElementById('bandwidth-dialog-no-btn');
     const yesBtn = document.getElementById('bandwidth-dialog-yes-btn');
 
-    if (!dialog) return;
+    if (!dialog || !overlay || !noBtn || !yesBtn) return;
 
     dialog.classList.remove('hidden');
 
     const closeDialog = () => {
         dialog.classList.add('hidden');
+        this.bandwidthDialogDismissed = true;
     };
 
     overlay.onclick = closeDialog;
@@ -1506,8 +1508,8 @@ class App {
         }
     }
 
-    // Only show the bandwidth suggestion dialog if cycling is OFF and at least one camera failed to start (has no stream)
-    if (!this.globalSettings.cyclingEnabled) {
+    // Only show the bandwidth suggestion dialog if cycling is OFF, the dialog hasn't been dismissed, and at least one camera failed to start (has no stream)
+    if (!this.globalSettings.cyclingEnabled && !this.bandwidthDialogDismissed) {
         const hasFailedCamera = this.slotOrder.some(deviceId => {
             const s = this.slots.get(deviceId);
             return s && !s.stream;
