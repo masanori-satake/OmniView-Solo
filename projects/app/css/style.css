@@ -1150,6 +1150,10 @@ label.disabled {
     pointer-events: none;
 }
 
+#welcome-container.hidden {
+    display: none;
+}
+
 .welcome-card {
     display: flex;
     flex-direction: column;

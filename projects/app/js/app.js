@@ -122,12 +122,7 @@ class App {
 
   showWelcomeOrDialog() {
     this.updateWelcomeVisibility();
-    if (this.slotOrder.length === 0) {
-        this.updateAddCameraBlinking();
-    } else {
-        this.showCameraDialog();
-        this.updateAddCameraBlinking();
-    }
+    this.updateAddCameraBlinking();
   }
 
   setupStartButton() {
@@ -149,7 +144,6 @@ class App {
       if (welcomeAddBtn) {
           welcomeAddBtn.addEventListener('click', () => this.showCameraDialog());
       }
-      this.updateWelcomeVisibility();
   }
 
   updateWelcomeVisibility() {
