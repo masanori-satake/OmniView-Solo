@@ -1179,16 +1179,10 @@ label.disabled {
     text-align: center;
 }
 
-.welcome-brand {
-    display: flex;
-    gap: 12px;
-}
-
-.welcome-main-icon {
-    font-size: 36px !important;
-    color: var(--md-sys-color-primary);
-    background-color: var(--md-sys-color-primary-container);
-    padding: 8px;
+.welcome-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
     border-radius: var(--md-sys-shape-medium);
 }
 
