@@ -1189,7 +1189,6 @@ class App {
 
     yesBtn.onclick = async () => {
         closeDialog();
-        this.bandwidthDialogDismissed = false;
 
         this.globalSettings.cyclingEnabled = true;
         this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
