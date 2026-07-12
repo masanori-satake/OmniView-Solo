@@ -250,7 +250,6 @@ class App {
     }
 
     const updateIntervalUI = () => {
-        const cyclingSwitch = document.getElementById('cycling-switch');
         if (cyclingSwitch) {
             cyclingSwitch.checked = this.globalSettings.cyclingEnabled !== false;
             cyclingSwitch.disabled = this.slotOrder.length < 2;
