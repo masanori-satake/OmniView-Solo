@@ -386,7 +386,7 @@
   "logImportFailed": {
     "message": "Import failed: $ERROR$",
     "placeholders": {
-        "error": { "content": "$1" }
+      "error": { "content": "$1" }
     }
   },
   "logActivatingAll": {
@@ -571,7 +571,7 @@
   "logLockFallbackFailed": {
     "message": "Failed to apply fallback constraints: $ERROR$",
     "placeholders": {
-        "error": { "content": "$1" }
+      "error": { "content": "$1" }
     }
   },
   "logLockFinal": {
@@ -584,7 +584,7 @@
   "logLockError": {
     "message": "Failed to apply constraints: $ERROR$",
     "placeholders": {
-        "error": { "content": "$1" }
+      "error": { "content": "$1" }
     }
   },
   "logLockSettingsChanged": {
@@ -612,5 +612,39 @@
   "bandwidthDialogHeader": { "message": "Camera Connection Error" },
   "bandwidthDialogBody": { "message": "Some cameras could not be connected, possibly due to data bandwidth limitations.\nEnabling 'Auto Switching' may allow all cameras to connect by displaying them sequentially.\nWould you like to turn ON 'Auto Switching'?" },
   "bandwidthDialogYes": { "message": "Yes" },
-  "bandwidthDialogNo": { "message": "No" }
+  "bandwidthDialogNo": { "message": "No" },
+
+  "welcomeTitle": {
+    "message": "Welcome to OmniView-Solo"
+  },
+  "welcomeDesc": {
+    "message": "OmniView-Solo is a local-first assistant tool designed to enhance the hybrid meeting and remote learning UX by optimizing camera video and images."
+  },
+  "welcomeUsageTitle": {
+    "message": "Easy Setup Steps"
+  },
+  "welcomeUsageStep1": {
+    "message": "Open your notes, text, or minutes in a browser"
+  },
+  "welcomeUsageStep2": {
+    "message": "Click OmniView-Solo to add and configure your cameras"
+  },
+  "welcomeUsageStep3": {
+    "message": "Share your browser window on Zoom, Teams, etc."
+  },
+  "welcomeTipsTitle": {
+    "message": "Connection & Setup Tips"
+  },
+  "welcomeTipsHub": {
+    "message": "The number of cameras you can connect depends on whether you use a USB hub and the USB specifications supported."
+  },
+  "welcomeTipsPorts": {
+    "message": "We recommend connecting cameras intended for capturing fine text (e.g. whiteboards) directly to a USB 3.X port on your PC, while using hubs or remaining ports for cameras capturing people. With a little setup, many cameras can be run simultaneously!"
+  },
+  "welcomeTipsWhiteboard": {
+    "message": "Whiteboard Mode supports not only widescreen (16:9) objects, but also portrait (9:16) notebooks or documents. Use it for sketching, notebooks, or idea pads without needing a dedicated document camera."
+  },
+  "welcomeAddCameraBtn": {
+    "message": "Add Camera"
+  }
 }

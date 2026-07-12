@@ -217,8 +217,8 @@
                 <div class="tab-content hidden" id="tab-about">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 0.13.7</p>
-                        <!-- <p>Version: 0.13.7</p> -->
+                        <p data-i18n="aboutVersion">Version: 0.13.8</p>
+                        <!-- <p>Version: 0.13.8</p> -->
                         <p data-i18n="aboutDesc">ハイブリッド会議やリモート授業のUXを向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>
@@ -270,6 +270,72 @@
                 <div class="dialog-actions">
                     <button id="bandwidth-dialog-no-btn" class="m3-button" data-i18n="bandwidthDialogNo">いいえ</button>
                     <button id="bandwidth-dialog-yes-btn" class="m3-button-filled" data-i18n="bandwidthDialogYes">はい</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcoming Card Container -->
+        <div id="welcome-container" class="hidden">
+            <div class="welcome-card m3-surface">
+                <div class="welcome-header">
+                    <div class="welcome-brand">
+                        <span class="material-symbols-outlined welcome-main-icon">school</span>
+                        <span class="material-symbols-outlined welcome-main-icon">groups</span>
+                    </div>
+                    <h1 class="welcome-title" data-i18n="welcomeTitle">OmniView-Soloへようこそ</h1>
+                </div>
+
+                <p class="welcome-desc" data-i18n="welcomeDesc">
+                    OmniView-Soloは、リモート授業やリモート会議のUXをカメラの映像/画像で向上させるローカル完結型のアシスタントツールです。
+                </p>
+
+                <div class="welcome-section">
+                    <h2 class="welcome-section-title">
+                        <span class="material-symbols-outlined welcome-section-icon">tips_and_updates</span>
+                        <span data-i18n="welcomeUsageTitle">簡単な使い方</span>
+                    </h2>
+                    <ol class="welcome-usage-list">
+                        <li>
+                            <span class="material-symbols-outlined list-step-icon">menu_book</span>
+                            <span data-i18n="welcomeUsageStep1">ブラウザでテキストや議事録を開く</span>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined list-step-icon">video_call</span>
+                            <span data-i18n="welcomeUsageStep2">OmniView-Soloをクリックしてカメラを追加する</span>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined list-step-icon">screen_share</span>
+                            <span data-i18n="welcomeUsageStep3">ZoomやTeamsでブラウザウィンドウを画面共有する</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="welcome-section">
+                    <h2 class="welcome-section-title">
+                        <span class="material-symbols-outlined welcome-section-icon">lightbulb</span>
+                        <span data-i18n="welcomeTipsTitle">接続と配置のヒント</span>
+                    </h2>
+                    <ul class="welcome-tips-list">
+                        <li>
+                            <span class="material-symbols-outlined list-tip-icon">usb</span>
+                            <p data-i18n="welcomeTipsHub">繋げるカメラの台数は、USBハブを経由するか、対応するUSBの規格によって異なります。</p>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined list-tip-icon">settings</span>
+                            <p data-i18n="welcomeTipsPorts">ホワイトボード等細かい文字を写すカメラはPCのUSB3.Xポートに直接接続し、人物を写すカメラは空いているポートやUSBハブで接続することを薦めます。工夫しだいで多くのカメラが接続できるので色々試してください。</p>
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined list-tip-icon">note_alt</span>
+                            <p data-i18n="welcomeTipsWhiteboard">ホワイトボードモードは、横長(16:9)の被写体だけではなく、縦長(9:16)のノートやテキスト等もサポートしています。高価な書画カメラがなくても、アイデアメモやスケッチブック等にも利用できます。</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="welcome-actions">
+                    <button id="welcome-add-camera-btn" class="m3-button-filled">
+                        <span class="material-symbols-outlined">video_call</span>
+                        <span data-i18n="welcomeAddCameraBtn">カメラを追加</span>
+                    </button>
                 </div>
             </div>
         </div>

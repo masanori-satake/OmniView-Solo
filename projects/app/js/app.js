@@ -67,6 +67,7 @@ class App {
     this.setupResizeObserver();
     this.setupSettingsPanel();
     this.setupAddCameraButton();
+    this.setupWelcomeCard();
 
     // Log initial device list
     this.addLog(chrome.i18n.getMessage('logAppInitialized'));
@@ -110,12 +111,20 @@ class App {
         } else {
             // No connected cameras found in session
             document.getElementById('initial-overlay').classList.add('hidden');
-            this.showCameraDialog();
-            this.updateAddCameraBlinking();
+            this.showWelcomeOrDialog();
         }
     } else {
         // No session or empty session
         document.getElementById('initial-overlay').classList.add('hidden');
+        this.showWelcomeOrDialog();
+    }
+  }
+
+  showWelcomeOrDialog() {
+    this.updateWelcomeVisibility();
+    if (this.slotOrder.length === 0) {
+        this.updateAddCameraBlinking();
+    } else {
         this.showCameraDialog();
         this.updateAddCameraBlinking();
     }
@@ -126,13 +135,32 @@ class App {
     const btn = document.getElementById('start-btn');
     btn.addEventListener('click', async () => {
       overlay.classList.add('hidden');
-      await this.showCameraDialog();
+      this.showWelcomeOrDialog();
     });
   }
 
   setupAddCameraButton() {
       const addBtn = document.getElementById('add-camera-nav-btn');
       addBtn.addEventListener('click', () => this.showCameraDialog());
+  }
+
+  setupWelcomeCard() {
+      const welcomeAddBtn = document.getElementById('welcome-add-camera-btn');
+      if (welcomeAddBtn) {
+          welcomeAddBtn.addEventListener('click', () => this.showCameraDialog());
+      }
+      this.updateWelcomeVisibility();
+  }
+
+  updateWelcomeVisibility() {
+      const welcome = document.getElementById('welcome-container');
+      if (welcome) {
+          if (this.slotOrder.length === 0) {
+              welcome.classList.remove('hidden');
+          } else {
+              welcome.classList.add('hidden');
+          }
+      }
   }
 
   setupSettingsPanel() {
@@ -877,6 +905,7 @@ class App {
     await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
       this.updateAllPinButtonsVisibility();
       this.updateAddCameraBlinking();
+      this.updateWelcomeVisibility();
 
       if (this.shouldCycle()) {
         const allowedIds = this.getCyclingTargetDeviceIds();
@@ -2428,7 +2457,7 @@ class App {
                     clearTimeout(this.cycleTimeoutId);
                     this.cycleTimeoutId = null;
                 }
-                this.showCameraDialog();
+                this.updateWelcomeVisibility();
                 this.updateAddCameraBlinking();
             } else {
                 if (this.currentLayout === 'wide') {
@@ -2768,7 +2797,7 @@ class App {
               // If it was pinned, release it
               if (this.pinnedDeviceId === deviceId) {
                   this.releasePin(false);
-              }
+                }
           }
       }
   }
