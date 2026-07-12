@@ -111,11 +111,13 @@ class App {
             // No connected cameras found in session
             document.getElementById('initial-overlay').classList.add('hidden');
             this.showCameraDialog();
+            this.updateAddCameraBlinking();
         }
     } else {
         // No session or empty session
         document.getElementById('initial-overlay').classList.add('hidden');
         this.showCameraDialog();
+        this.updateAddCameraBlinking();
     }
   }
 
@@ -874,6 +876,7 @@ class App {
     this.cameraOperationsQueue = this.cameraOperationsQueue || Promise.resolve();
     await (this.cameraOperationsQueue = this.cameraOperationsQueue.then(async () => {
       this.updateAllPinButtonsVisibility();
+      this.updateAddCameraBlinking();
 
       if (this.shouldCycle()) {
         const allowedIds = this.getCyclingTargetDeviceIds();
@@ -2426,6 +2429,7 @@ class App {
                     this.cycleTimeoutId = null;
                 }
                 this.showCameraDialog();
+                this.updateAddCameraBlinking();
             } else {
                 if (this.currentLayout === 'wide') {
                     this.reorganizeForWide();
@@ -2817,6 +2821,17 @@ class App {
           snackbar.classList.add('hidden');
           this.snackbarTimeout = null;
       }, duration);
+  }
+
+  updateAddCameraBlinking() {
+      const addBtn = document.getElementById('add-camera-nav-btn');
+      if (addBtn) {
+          if (this.slotOrder.length === 0) {
+              addBtn.classList.add('blink-pulse');
+          } else {
+              addBtn.classList.remove('blink-pulse');
+          }
+      }
   }
 }
 
