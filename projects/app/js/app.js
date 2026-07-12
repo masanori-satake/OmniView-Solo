@@ -300,6 +300,7 @@ class App {
             wbNewWbSizeLabel.classList.toggle('disabled', !wbAutoFocusEnabled);
         }
     };
+    this.updateIntervalUI = updateIntervalUI;
 
     settingsBtn.addEventListener('click', async () => {
         settingsPanel.classList.remove('hidden');
@@ -1161,6 +1162,43 @@ class App {
     };
   }
 
+  showBandwidthDialog() {
+    const dialog = document.getElementById('bandwidth-dialog');
+    const overlay = document.getElementById('bandwidth-dialog-overlay');
+    const noBtn = document.getElementById('bandwidth-dialog-no-btn');
+    const yesBtn = document.getElementById('bandwidth-dialog-yes-btn');
+
+    if (!dialog) return;
+
+    dialog.classList.remove('hidden');
+
+    const closeDialog = () => {
+        dialog.classList.add('hidden');
+    };
+
+    overlay.onclick = closeDialog;
+    noBtn.onclick = closeDialog;
+
+    yesBtn.onclick = async () => {
+        closeDialog();
+
+        this.globalSettings.cyclingEnabled = true;
+        this.addLog(chrome.i18n.getMessage('logCyclingEnabled', [String(this.globalSettings.cyclingEnabled)]));
+        await saveGlobalSettings(this.globalSettings);
+
+        const cyclingSwitch = document.getElementById('cycling-switch');
+        if (cyclingSwitch) {
+            cyclingSwitch.checked = true;
+        }
+
+        if (this.updateIntervalUI) {
+            this.updateIntervalUI();
+        }
+
+        await this.updateCyclingAndActivationState();
+    };
+  }
+
   updateCameraInfoTab() {
     const infoCameraSelect = document.getElementById('info-camera-select');
     const currentValue = infoCameraSelect.value;
@@ -1467,6 +1505,18 @@ class App {
             saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     }
+
+    // Only show the bandwidth suggestion dialog if cycling is OFF and at least one camera failed to start (has no stream)
+    if (!this.globalSettings.cyclingEnabled) {
+        const hasFailedCamera = this.slotOrder.some(deviceId => {
+            const s = this.slots.get(deviceId);
+            return s && !s.stream;
+        });
+        if (hasFailedCamera) {
+            this.showBandwidthDialog();
+        }
+    }
+
     return false;
   }
 

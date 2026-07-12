@@ -888,7 +888,7 @@ video, .processed-canvas {
 }
 
 /* Dialog */
-#camera-dialog {
+#camera-dialog, #bandwidth-dialog {
     position: fixed;
     top: 0;
     left: 0;
@@ -900,7 +900,7 @@ video, .processed-canvas {
     justify-content: center;
 }
 
-#camera-dialog-overlay {
+#camera-dialog-overlay, #bandwidth-dialog-overlay {
     position: absolute;
     top: 0;
     left: 0;

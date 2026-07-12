@@ -608,5 +608,9 @@
   "handleTopLeft": { "message": "左上" },
   "handleTopRight": { "message": "右上" },
   "handleBottomRight": { "message": "右下" },
-  "handleBottomLeft": { "message": "左下" }
+  "handleBottomLeft": { "message": "左下" },
+  "bandwidthDialogHeader": { "message": "カメラ接続エラー" },
+  "bandwidthDialogBody": { "message": "データの帯域幅が原因で、一部のカメラに接続できない可能性があります。\n「自動切り替え」をONにすると、カメラを順番に切り替えて表示するため、接続できる可能性があります。\n「自動切り替え」をONにしますか？" },
+  "bandwidthDialogYes": { "message": "はい" },
+  "bandwidthDialogNo": { "message": "いいえ" }
 }
