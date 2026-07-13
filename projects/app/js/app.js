@@ -1410,7 +1410,6 @@ class App {
     if (this.switchRequestCount !== currentRequest) return;
 
     this.activeSlotIndex = index;
-    const slot = this.slots.get(deviceId);
     if (slot) {
         if (!slot.stream) {
             await this.activateSlot(slot, deviceId);
