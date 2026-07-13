@@ -686,11 +686,14 @@ class App {
         for (const deviceId of activeDeviceIds) {
             const slot = this.slots.get(deviceId);
             if (slot) {
-                this.setSlotTransitioning(slot, true);
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
-                this.setSlotTransitioning(slot, false);
+                try {
+                    this.setSlotTransitioning(slot, true);
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                } finally {
+                    this.setSlotTransitioning(slot, false);
+                }
             }
         }
     }).catch(err => console.error("Error in reconnectActiveCameras queue:", err)));
@@ -2056,16 +2059,19 @@ class App {
             nextZoom = 2;
         }
         if (nextZoom !== currentZoom) {
-            if (slot) this.setSlotTransitioning(slot, true);
-            updateZoomUI(nextZoom);
-            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
-            if (slot) {
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
+            try {
+                if (slot) this.setSlotTransitioning(slot, true);
+                updateZoomUI(nextZoom);
+                await this.saveCameraSetting(deviceId, { zoom: nextZoom });
+                if (slot) {
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                }
+            } finally {
+                if (slot) this.setSlotTransitioning(slot, false);
+                updateZoomUI(nextZoom);
             }
-            if (slot) this.setSlotTransitioning(slot, false);
-            updateZoomUI(nextZoom);
         }
     };
 
@@ -2082,16 +2088,19 @@ class App {
             nextZoom = 4;
         }
         if (nextZoom !== currentZoom) {
-            if (slot) this.setSlotTransitioning(slot, true);
-            updateZoomUI(nextZoom);
-            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
-            if (slot) {
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
+            try {
+                if (slot) this.setSlotTransitioning(slot, true);
+                updateZoomUI(nextZoom);
+                await this.saveCameraSetting(deviceId, { zoom: nextZoom });
+                if (slot) {
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                }
+            } finally {
+                if (slot) this.setSlotTransitioning(slot, false);
+                updateZoomUI(nextZoom);
             }
-            if (slot) this.setSlotTransitioning(slot, false);
-            updateZoomUI(nextZoom);
         }
     };
 
@@ -2853,6 +2862,14 @@ class App {
           if (slot.updateVScaleUI) {
               const currentScale = parseFloat(element.dataset.vScale || '1.0');
               slot.updateVScaleUI(currentScale);
+          }
+          const index = this.slotOrder.findIndex(id => this.slots.get(id) === slot);
+          if (index !== -1) {
+              this.updateMoveButtons(slot, index);
+          }
+          const guidelineBtn = element.querySelector('.guideline-btn');
+          if (guidelineBtn && slot.processor) {
+              guidelineBtn.disabled = !!slot.processor.transformer.showHandles;
           }
       }
   }
