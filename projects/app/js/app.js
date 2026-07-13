@@ -686,9 +686,14 @@ class App {
         for (const deviceId of activeDeviceIds) {
             const slot = this.slots.get(deviceId);
             if (slot) {
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
+                try {
+                    this.setSlotTransitioning(slot, true);
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                } finally {
+                    this.setSlotTransitioning(slot, false);
+                }
             }
         }
     }).catch(err => console.error("Error in reconnectActiveCameras queue:", err)));
@@ -1361,6 +1366,9 @@ class App {
   }
 
   async switchActiveCamera(deviceId) {
+    const slot = this.slots.get(deviceId);
+    if (slot && slot.isTransitioning) return;
+
     this.switchRequestCount++;
     const currentRequest = this.switchRequestCount;
 
@@ -2040,6 +2048,9 @@ class App {
 
     zoomInBtn.onclick = async (e) => {
         e.stopPropagation();
+        const slot = this.slots.get(deviceId);
+        if (slot && slot.isTransitioning) return;
+
         const currentZoom = parseInt(element.dataset.zoom || '1');
         let nextZoom = currentZoom;
         if (currentZoom === 2) {
@@ -2048,22 +2059,27 @@ class App {
             nextZoom = 2;
         }
         if (nextZoom !== currentZoom) {
-            zoomInBtn.disabled = true;
-            zoomOutBtn.disabled = true;
-            updateZoomUI(nextZoom);
-            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
-            const slot = this.slots.get(deviceId);
-            if (slot) {
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
+            try {
+                if (slot) this.setSlotTransitioning(slot, true);
+                updateZoomUI(nextZoom);
+                await this.saveCameraSetting(deviceId, { zoom: nextZoom });
+                if (slot) {
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                }
+            } finally {
+                if (slot) this.setSlotTransitioning(slot, false);
+                updateZoomUI(nextZoom);
             }
-            updateZoomUI(nextZoom);
         }
     };
 
     zoomOutBtn.onclick = async (e) => {
         e.stopPropagation();
+        const slot = this.slots.get(deviceId);
+        if (slot && slot.isTransitioning) return;
+
         const currentZoom = parseInt(element.dataset.zoom || '1');
         let nextZoom = currentZoom;
         if (currentZoom === 1) {
@@ -2072,17 +2088,19 @@ class App {
             nextZoom = 4;
         }
         if (nextZoom !== currentZoom) {
-            zoomInBtn.disabled = true;
-            zoomOutBtn.disabled = true;
-            updateZoomUI(nextZoom);
-            await this.saveCameraSetting(deviceId, { zoom: nextZoom });
-            const slot = this.slots.get(deviceId);
-            if (slot) {
-                await this.deactivateSlot(slot);
-                await new Promise(r => setTimeout(r, 750));
-                await this.activateSlot(slot, deviceId);
+            try {
+                if (slot) this.setSlotTransitioning(slot, true);
+                updateZoomUI(nextZoom);
+                await this.saveCameraSetting(deviceId, { zoom: nextZoom });
+                if (slot) {
+                    await this.deactivateSlot(slot);
+                    await new Promise(r => setTimeout(r, 750));
+                    await this.activateSlot(slot, deviceId);
+                }
+            } finally {
+                if (slot) this.setSlotTransitioning(slot, false);
+                updateZoomUI(nextZoom);
             }
-            updateZoomUI(nextZoom);
         }
     };
 
@@ -2483,7 +2501,7 @@ class App {
       await this.saveCameraSetting(deviceId, { customLabel });
     });
 
-    const slotObj = { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null, updateVScaleUI };
+    const slotObj = { element, video, canvas, processedCanvas, freezeCanvas, processor: null, stream: null, updateVScaleUI, updateZoomUI };
     return slotObj;
   }
 
@@ -2792,6 +2810,66 @@ class App {
               if (this.pinnedDeviceId === deviceId) {
                   this.releasePin(false);
                 }
+          }
+      }
+  }
+
+  setSlotTransitioning(slot, isTransitioning) {
+      if (!slot) return;
+      slot.isTransitioning = !!isTransitioning;
+
+      const element = slot.element;
+
+      // 1. Show/hide the adjusting overlay (spinner)
+      const adjOverlay = element.querySelector('.adjusting-overlay');
+      if (adjOverlay) {
+          if (isTransitioning) {
+              adjOverlay.classList.remove('hidden');
+          } else {
+              adjOverlay.classList.add('hidden');
+          }
+      }
+
+      // 2. Enable/disable all controls on the slot to block user interactions
+      const allButtons = element.querySelectorAll('button');
+      const allInputs = element.querySelectorAll('input');
+      const allSelects = element.querySelectorAll('select');
+
+      allButtons.forEach(btn => {
+          // Keep standard overlays disabled appropriately if transitioning is over
+          if (isTransitioning) {
+              btn.disabled = true;
+          } else {
+              // Restore buttons
+              btn.disabled = false;
+          }
+      });
+
+      allInputs.forEach(inp => {
+          inp.disabled = !!isTransitioning;
+      });
+
+      allSelects.forEach(sel => {
+          sel.disabled = !!isTransitioning;
+      });
+
+      // 3. Let standard Zoom / VScale helper UIs restore specific button disabled states when transitioning completes
+      if (!isTransitioning) {
+          if (slot.updateZoomUI) {
+              const currentZoom = parseInt(element.dataset.zoom || '1');
+              slot.updateZoomUI(currentZoom);
+          }
+          if (slot.updateVScaleUI) {
+              const currentScale = parseFloat(element.dataset.vScale || '1.0');
+              slot.updateVScaleUI(currentScale);
+          }
+          const index = this.slotOrder.findIndex(id => this.slots.get(id) === slot);
+          if (index !== -1) {
+              this.updateMoveButtons(slot, index);
+          }
+          const guidelineBtn = element.querySelector('.guideline-btn');
+          if (guidelineBtn && slot.processor) {
+              guidelineBtn.disabled = !!slot.processor.transformer.showHandles;
           }
       }
   }
