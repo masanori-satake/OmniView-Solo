@@ -357,9 +357,12 @@ export class PerspectiveTransformer {
         window.removeEventListener('mouseup', this.boundWindowMouseUpCapture, { capture: true });
         window.removeEventListener('mousemove', this.boundMouseMove);
         window.removeEventListener('mouseup', this.boundMouseUp);
-        this.video.style.transform = '';
-        this.video.style.objectFit = 'contain';
-        this.video.style.visibility = 'visible';
+
+        if (this.video) {
+            this.video.style.transform = '';
+            this.video.style.objectFit = 'contain';
+            this.video.style.visibility = 'visible';
+        }
         if (this.processedCanvas) {
             this.processedCanvas.style.transform = '';
             this.processedCanvas.style.display = 'none';
@@ -373,7 +376,17 @@ export class PerspectiveTransformer {
             if (rotRight) rotRight.classList.add('hidden');
         }
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        // Thoroughly nullify references
+        this.video = null;
+        this.canvas = null;
+        this.ctx = null;
+        this.processedCanvas = null;
+        this.onPointsChange = null;
+        this.onShowingHandlesChange = null;
     }
 
     draw() {
@@ -682,29 +695,45 @@ export class MedianStacker {
         this.video = video;
         this.history = [];
         this.maxHistory = 5;
-        this.interval = null;
+        this.timeoutId = null;
         this.lastMedian = null;
+        this.offscreenCanvas = null;
+        this.offscreenCtx = null;
     }
 
     start() {
-        if (this.interval) return;
-        this.interval = setInterval(() => this.capture(), 2000);
+        if (this.timeoutId) return;
+        const loop = () => {
+            this.capture();
+            this.timeoutId = setTimeout(loop, 2000);
+        };
+        this.timeoutId = setTimeout(loop, 2000);
     }
 
     capture() {
+        if (!this.video) return;
         const w = this.video.videoWidth;
         const h = this.video.videoHeight;
         if (!w || !h) return;
 
         if (this.history.length > 0 && (this.history[0].width !== w || this.history[0].height !== h)) {
             this.history = [];
+            this.lastMedian = null;
+            if (this.offscreenCanvas) {
+                this.offscreenCanvas.width = w;
+                this.offscreenCanvas.height = h;
+            }
         }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(this.video, 0, 0);
-        const data = ctx.getImageData(0, 0, w, h);
+        if (!this.offscreenCanvas) {
+            this.offscreenCanvas = document.createElement('canvas');
+            this.offscreenCanvas.width = w;
+            this.offscreenCanvas.height = h;
+            this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: true });
+        }
+
+        this.offscreenCtx.drawImage(this.video, 0, 0);
+        const data = this.offscreenCtx.getImageData(0, 0, w, h);
 
         this.history.push(data);
         if (this.history.length > this.maxHistory) this.history.shift();
@@ -717,7 +746,13 @@ export class MedianStacker {
 
         const w = this.history[0].width, h = this.history[0].height;
         const size = w * h * 4;
-        const result = new ImageData(new Uint8ClampedArray(size), w, h);
+
+        // Reuse ImageData buffer if possible, ensuring we don't overwrite history frames
+        const isBufferInHistory = this.lastMedian && this.history.includes(this.lastMedian);
+        if (!this.lastMedian || isBufferInHistory || this.lastMedian.width !== w || this.lastMedian.height !== h) {
+            this.lastMedian = new ImageData(new Uint8ClampedArray(size), w, h);
+        }
+
         const len = this.history.length;
         const vals = new Uint8Array(len);
 
@@ -736,17 +771,19 @@ export class MedianStacker {
                     vals[k + 1] = key;
                 }
 
-                result.data[i + c] = vals[Math.floor(len / 2)];
+                this.lastMedian.data[i + c] = vals[Math.floor(len / 2)];
             }
-            result.data[i + 3] = 255;
+            this.lastMedian.data[i + 3] = 255;
         }
-        this.lastMedian = result;
     }
 
     cleanup() {
-        if (this.interval) { clearInterval(this.interval); this.interval = null; }
+        if (this.timeoutId) { clearTimeout(this.timeoutId); this.timeoutId = null; }
         this.history = [];
         this.lastMedian = null;
+        this.video = null;
+        this.offscreenCanvas = null;
+        this.offscreenCtx = null;
     }
 
     async getMedianFrame(transformer) {
@@ -803,9 +840,22 @@ export class WhiteboardProcessor {
     }
 
     stop() {
-        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
-        this.transformer.destroy();
-        this.stacker.cleanup();
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        if (this.transformer) {
+            this.transformer.destroy();
+            this.transformer = null;
+        }
+        if (this.stacker) {
+            this.stacker.cleanup();
+            this.stacker = null;
+        }
+        this.video = null;
+        this.overlayCanvas = null;
+        this.processedCanvas = null;
+        this.ctx = null;
     }
 
     render() {

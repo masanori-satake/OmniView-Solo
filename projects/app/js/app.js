@@ -2460,6 +2460,7 @@ class App {
             await this.deactivateSlot(slot);
             slot.element.remove();
             this.slots.delete(deviceId);
+            this.cameraInfoCache.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
             if (this.slotOrder.length === 0) {
