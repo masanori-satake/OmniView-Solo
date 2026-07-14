@@ -747,8 +747,9 @@ export class MedianStacker {
         const w = this.history[0].width, h = this.history[0].height;
         const size = w * h * 4;
 
-        // Reuse ImageData buffer if possible
-        if (!this.lastMedian || this.lastMedian.width !== w || this.lastMedian.height !== h) {
+        // Reuse ImageData buffer if possible, ensuring we don't overwrite history frames
+        const isBufferInHistory = this.lastMedian && this.history.includes(this.lastMedian);
+        if (!this.lastMedian || isBufferInHistory || this.lastMedian.width !== w || this.lastMedian.height !== h) {
             this.lastMedian = new ImageData(new Uint8ClampedArray(size), w, h);
         }
 
