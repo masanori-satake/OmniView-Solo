@@ -2477,6 +2477,10 @@ class App {
 
             // Invalidate any pending async cycling / nextCamera delays
             this.cycleCount++;
+            if (this.cycleTimeoutId) {
+                clearTimeout(this.cycleTimeoutId);
+                this.cycleTimeoutId = null;
+            }
 
             // Immediately mark as removed in slots & slotOrder before async deactivateSlot cleanup
             this.slots.delete(deviceId);
