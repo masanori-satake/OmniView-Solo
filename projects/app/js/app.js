@@ -1717,6 +1717,18 @@ class App {
                 }
             });
 
+                // Check if the slot/camera was deleted or removed while waiting for video playing/readyState
+                if (!this.slots.has(deviceId) || !this.slotOrder.includes(deviceId)) {
+                    this.addLog(`Activation aborted for camera ${deviceId.slice(0, 8)}: slot was removed during video startup.`);
+                    if (slot.stream) {
+                        slot.stream.getTracks().forEach(track => track.stop());
+                        slot.stream = null;
+                    }
+                    slot.video.srcObject = null;
+                    slot.element.classList.remove('active');
+                    return false;
+                }
+
                 const setting = this.settings[deviceId] || {};
                 const role = setting.defaultRole || 'person';
                 if (role === 'whiteboard') {
@@ -2456,6 +2468,9 @@ class App {
             if (this.pinnedDeviceId === deviceId) {
                 this.releasePin(false);
             }
+
+            // Invalidate any pending async cycling / nextCamera delays
+            this.cycleCount++;
 
             await this.deactivateSlot(slot);
             slot.element.remove();

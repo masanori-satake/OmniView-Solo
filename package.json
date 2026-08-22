@@ -1,6 +1,6 @@
 {
   "name": "omniview-solo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "リモート授業やハイブリッド会議のUXを向上させるローカル完結型Chrome拡張機能",
   "type": "module",
   "scripts": {
