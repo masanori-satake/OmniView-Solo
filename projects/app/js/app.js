@@ -1660,18 +1660,22 @@ class App {
     }
     slot.isActivating = true;
 
+    const isCameraStillNeeded = () => {
+        if (this.slots.get(deviceId) !== slot || !this.slotOrder.includes(deviceId)) {
+            return false;
+        }
+        const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
+        const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
+        return alwaysKeepActive || (this.shouldCycle()
+            ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+            : true);
+    };
+
     const maxRetries = resolution ? 1 : 3; // No retries during multi-camera search
     try {
         for (let i = 0; i < maxRetries; i++) {
             // Check if camera is still needed
-            const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
-            const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-            const isStillNeeded = (this.slots.get(deviceId) === slot) &&
-                this.slotOrder.includes(deviceId) &&
-                (alwaysKeepActive || (this.shouldCycle()
-                    ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                    : true));
-            if (!isStillNeeded) {
+            if (!isCameraStillNeeded()) {
                 this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
             }
@@ -1683,12 +1687,7 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = (this.slots.get(deviceId) === slot) &&
-                    this.slotOrder.includes(deviceId) &&
-                    (alwaysKeepActive || (this.shouldCycle()
-                        ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                        : true));
-                if (!isStillNeededPost) {
+                if (!isCameraStillNeeded()) {
                     this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
                     return false;
@@ -1698,7 +1697,7 @@ class App {
                 slot.video.srcObject = stream;
                 slot.element.classList.add('active');
 
-                await new Promise((resolve) => {
+                await new Promise((resolve, reject) => {
                     const timeoutId = setTimeout(() => {
                         cleanup();
                         resolve();
@@ -1712,9 +1711,9 @@ class App {
                         cleanup();
                         resolve();
                     };
-                    const onError = () => {
+                    const onError = (err) => {
                         cleanup();
-                        resolve();
+                        reject(new Error(err?.message || 'Video element error'));
                     };
                     slot.video.addEventListener('playing', onPlaying);
                     slot.video.addEventListener('error', onError);
@@ -1724,7 +1723,7 @@ class App {
                 });
 
                 // Check if the slot/camera was deleted or removed while waiting for video playing/readyState
-                if (this.slots.get(deviceId) !== slot || !this.slotOrder.includes(deviceId)) {
+                if (!isCameraStillNeeded()) {
                     this.addLog(`Activation aborted for camera ${deviceId.slice(0, 8)}: slot was removed or replaced during video startup.`);
                     if (slot.stream) {
                         slot.stream.getTracks().forEach(track => track.stop());
@@ -2487,34 +2486,39 @@ class App {
             this.cameraInfoCache.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
-            await this.deactivateSlot(slot);
-            slot.element.remove();
+            try {
+                await this.deactivateSlot(slot);
+            } catch (err) {
+                this.addLog(`Error deactivating slot ${deviceId.slice(0, 8)}: ${err.message}`, true);
+            } finally {
+                slot.element.remove();
 
-            if (this.slotOrder.length === 0) {
-                this.activeSlotIndex = -1;
-                if (this.cycleTimeoutId) {
-                    clearTimeout(this.cycleTimeoutId);
-                    this.cycleTimeoutId = null;
-                }
-                this.updateWelcomeVisibility();
-                this.updateAddCameraBlinking();
-            } else {
-                if (this.currentLayout === 'wide') {
-                    this.reorganizeForWide();
+                if (this.slotOrder.length === 0) {
+                    this.activeSlotIndex = -1;
+                    if (this.cycleTimeoutId) {
+                        clearTimeout(this.cycleTimeoutId);
+                        this.cycleTimeoutId = null;
+                    }
+                    this.updateWelcomeVisibility();
+                    this.updateAddCameraBlinking();
                 } else {
-                    this.reorganizeForNarrow();
-                }
-                if (index < this.activeSlotIndex) {
-                    this.activeSlotIndex--;
-                }
-                this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
+                    if (this.currentLayout === 'wide') {
+                        this.reorganizeForWide();
+                    } else {
+                        this.reorganizeForNarrow();
+                    }
+                    if (index < this.activeSlotIndex) {
+                        this.activeSlotIndex--;
+                    }
+                    this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
 
-                await this.updateCyclingAndActivationState();
+                    await this.updateCyclingAndActivationState();
+                }
+                if (this.updateIntervalUI) {
+                    this.updateIntervalUI();
+                }
+                saveSessionState(this.slotOrder, this.activeSlotIndex);
             }
-            if (this.updateIntervalUI) {
-                this.updateIntervalUI();
-            }
-            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     });
 
