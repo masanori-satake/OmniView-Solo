@@ -1642,7 +1642,9 @@ class App {
         await this.activateSlot(nextSlot, nextDeviceId);
     }
 
-    if (this.pinnedDeviceId) return;
+    if (this.cycleCount !== currentCycle || this.pinnedDeviceId || !this.shouldCycle()) {
+        return;
+    }
 
     // 5. Schedule next switch
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
@@ -1664,9 +1666,11 @@ class App {
             // Check if camera is still needed
             const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
             const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-            const isStillNeeded = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
-                ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                : true));
+            const isStillNeeded = (this.slots.get(deviceId) === slot) &&
+                this.slotOrder.includes(deviceId) &&
+                (alwaysKeepActive || (this.shouldCycle()
+                    ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+                    : true));
             if (!isStillNeeded) {
                 this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
@@ -1679,9 +1683,11 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
-                    ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                    : true));
+                const isStillNeededPost = (this.slots.get(deviceId) === slot) &&
+                    this.slotOrder.includes(deviceId) &&
+                    (alwaysKeepActive || (this.shouldCycle()
+                        ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+                        : true));
                 if (!isStillNeededPost) {
                     this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
@@ -1693,33 +1699,33 @@ class App {
                 slot.element.classList.add('active');
 
                 await new Promise((resolve) => {
-                const timeoutId = setTimeout(() => {
-                    cleanup();
-                    resolve();
-                }, 5000);
-                const cleanup = () => {
-                    clearTimeout(timeoutId);
-                    slot.video.removeEventListener('playing', onPlaying);
-                    slot.video.removeEventListener('error', onError);
-                };
-                const onPlaying = () => {
-                    cleanup();
-                    resolve();
-                };
-                const onError = () => {
-                    cleanup();
-                    resolve();
-                };
-                slot.video.addEventListener('playing', onPlaying);
-                slot.video.addEventListener('error', onError);
-                if (slot.video.readyState >= 3) {
-                    onPlaying();
-                }
-            });
+                    const timeoutId = setTimeout(() => {
+                        cleanup();
+                        resolve();
+                    }, 5000);
+                    const cleanup = () => {
+                        clearTimeout(timeoutId);
+                        slot.video.removeEventListener('playing', onPlaying);
+                        slot.video.removeEventListener('error', onError);
+                    };
+                    const onPlaying = () => {
+                        cleanup();
+                        resolve();
+                    };
+                    const onError = () => {
+                        cleanup();
+                        resolve();
+                    };
+                    slot.video.addEventListener('playing', onPlaying);
+                    slot.video.addEventListener('error', onError);
+                    if (slot.video.readyState >= 3) {
+                        onPlaying();
+                    }
+                });
 
                 // Check if the slot/camera was deleted or removed while waiting for video playing/readyState
-                if (!this.slots.has(deviceId) || !this.slotOrder.includes(deviceId)) {
-                    this.addLog(`Activation aborted for camera ${deviceId.slice(0, 8)}: slot was removed during video startup.`);
+                if (this.slots.get(deviceId) !== slot || !this.slotOrder.includes(deviceId)) {
+                    this.addLog(`Activation aborted for camera ${deviceId.slice(0, 8)}: slot was removed or replaced during video startup.`);
                     if (slot.stream) {
                         slot.stream.getTracks().forEach(track => track.stop());
                         slot.stream = null;
@@ -2472,11 +2478,13 @@ class App {
             // Invalidate any pending async cycling / nextCamera delays
             this.cycleCount++;
 
-            await this.deactivateSlot(slot);
-            slot.element.remove();
+            // Immediately mark as removed in slots & slotOrder before async deactivateSlot cleanup
             this.slots.delete(deviceId);
             this.cameraInfoCache.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
+
+            await this.deactivateSlot(slot);
+            slot.element.remove();
 
             if (this.slotOrder.length === 0) {
                 this.activeSlotIndex = -1;
