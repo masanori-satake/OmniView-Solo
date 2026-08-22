@@ -1666,9 +1666,15 @@ class App {
         }
         const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
         const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-        return alwaysKeepActive || (this.shouldCycle()
+        if (alwaysKeepActive) {
+            return true;
+        }
+        if (this.pinnedDeviceId) {
+            return deviceId === this.pinnedDeviceId;
+        }
+        return this.shouldCycle()
             ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-            : true);
+            : true;
     };
 
     const maxRetries = resolution ? 1 : 3; // No retries during multi-camera search
@@ -1814,55 +1820,59 @@ class App {
         if (adjOverlay) adjOverlay.classList.add('hidden');
     }
 
-    // Capture current frame to freezeCanvas
     const { video, freezeCanvas, canvas, processor } = slot;
-    if (processor) {
-        const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
-        if (warpedData) {
-            freezeCanvas.width = warpedData.width;
-            freezeCanvas.height = warpedData.height;
+    try {
+        // Capture current frame to freezeCanvas
+        if (processor) {
+            const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
+            if (warpedData) {
+                freezeCanvas.width = warpedData.width;
+                freezeCanvas.height = warpedData.height;
+                const ctx = freezeCanvas.getContext('2d');
+                ctx.putImageData(warpedData, 0, 0);
+            }
+        } else if (video.videoWidth > 0) {
+            freezeCanvas.width = video.videoWidth;
+            freezeCanvas.height = video.videoHeight;
             const ctx = freezeCanvas.getContext('2d');
-            ctx.putImageData(warpedData, 0, 0);
+            ctx.drawImage(video, 0, 0);
         }
-    } else if (video.videoWidth > 0) {
-        freezeCanvas.width = video.videoWidth;
-        freezeCanvas.height = video.videoHeight;
-        const ctx = freezeCanvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-    }
+    } catch (e) {
+        console.warn('Frame capture failed during deactivateSlot:', e);
+    } finally {
+        // Stop processor
+        if (processor) {
+            processor.stop();
+            slot.processor = null;
+        }
 
-    // Stop processor
-    if (processor) {
-        processor.stop();
-        slot.processor = null;
-    }
+        // Clear overlay canvas and reset Set button
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const setBtn = slot.element.querySelector('.set-btn');
+        if (setBtn) setBtn.classList.remove('active');
 
-    // Clear overlay canvas and reset Set button
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const setBtn = slot.element.querySelector('.set-btn');
-    if (setBtn) setBtn.classList.remove('active');
+        // Reset adjustment states to ensure clean state on re-activation
+        const videoWrapper = slot.element.querySelector('.video-wrapper');
+        if (videoWrapper) {
+            videoWrapper.classList.remove('adjusting-perspective');
+        }
+        const vOverlay = slot.element.querySelector('.vscale-overlay');
+        const role = slot.element.querySelector('.role-switch')?.checked ? 'whiteboard' : 'person';
+        if (vOverlay && role === 'whiteboard') {
+            vOverlay.classList.remove('hidden');
+        }
 
-    // Reset adjustment states to ensure clean state on re-activation
-    const videoWrapper = slot.element.querySelector('.video-wrapper');
-    if (videoWrapper) {
-        videoWrapper.classList.remove('adjusting-perspective');
-    }
-    const vOverlay = slot.element.querySelector('.vscale-overlay');
-    const role = slot.element.querySelector('.role-switch')?.checked ? 'whiteboard' : 'person';
-    if (vOverlay && role === 'whiteboard') {
-        vOverlay.classList.remove('hidden');
-    }
+        // Stop stream
+        if (slot.stream) {
+            slot.stream.getTracks().forEach(track => track.stop());
+            slot.stream = null;
+        }
+        video.srcObject = null;
+        slot.element.classList.remove('active');
 
-    // Stop stream
-    if (slot.stream) {
-        slot.stream.getTracks().forEach(track => track.stop());
-        slot.stream = null;
+        this.updateResolutionFpsDisplay(slot);
     }
-    video.srcObject = null;
-    slot.element.classList.remove('active');
-
-    this.updateResolutionFpsDisplay(slot);
   }
 
   async moveCamera(deviceId, direction) {
