@@ -1592,6 +1592,8 @@ class App {
     if (!this.shouldCycle()) return;
     if (this.pinnedDeviceId) return;
 
+    const initialCycle = this.cycleCount;
+
     // 1. Capture and stop current active slot (only if it is not whiteboard mode with excludeWhiteboard enabled)
     if (this.activeSlotIndex !== -1) {
         const currentDeviceId = this.slotOrder[this.activeSlotIndex];
@@ -1603,7 +1605,7 @@ class App {
         }
     }
 
-    if (this.pinnedDeviceId) return;
+    if (this.cycleCount !== initialCycle || this.pinnedDeviceId || !this.shouldCycle()) return;
 
     // 2. Advance index
     const allowedIds = this.getCyclingTargetDeviceIds();
@@ -1642,7 +1644,9 @@ class App {
         await this.activateSlot(nextSlot, nextDeviceId);
     }
 
-    if (this.pinnedDeviceId) return;
+    if (this.cycleCount !== currentCycle || this.pinnedDeviceId || !this.shouldCycle()) {
+        return;
+    }
 
     // 5. Schedule next switch
     this.cycleTimeoutId = setTimeout(() => this.nextCamera(), this.globalSettings.interval * 1000);
@@ -1658,16 +1662,28 @@ class App {
     }
     slot.isActivating = true;
 
+    const isCameraStillNeeded = () => {
+        if (this.slots.get(deviceId) !== slot || !this.slotOrder.includes(deviceId)) {
+            return false;
+        }
+        const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
+        const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
+        if (alwaysKeepActive) {
+            return true;
+        }
+        if (this.pinnedDeviceId) {
+            return deviceId === this.pinnedDeviceId;
+        }
+        return this.shouldCycle()
+            ? (this.slotOrder[this.activeSlotIndex] === deviceId)
+            : true;
+    };
+
     const maxRetries = resolution ? 1 : 3; // No retries during multi-camera search
     try {
         for (let i = 0; i < maxRetries; i++) {
             // Check if camera is still needed
-            const isWhiteboard = this.getSlotRole(deviceId) === 'whiteboard';
-            const alwaysKeepActive = this.globalSettings.excludeWhiteboard && isWhiteboard;
-            const isStillNeeded = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
-                ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                : true));
-            if (!isStillNeeded) {
+            if (!isCameraStillNeeded()) {
                 this.addLog(chrome.i18n.getMessage('logActivationAborted', [deviceId.slice(0, 8)]));
                 return false;
             }
@@ -1679,10 +1695,7 @@ class App {
                 const stream = await startCamera(deviceId, targetRes);
 
                 // Check if still needed after async acquisition to prevent leaks
-                const isStillNeededPost = this.slotOrder.includes(deviceId) && (alwaysKeepActive || (this.shouldCycle()
-                    ? (this.slotOrder[this.activeSlotIndex] === deviceId)
-                    : true));
-                if (!isStillNeededPost) {
+                if (!isCameraStillNeeded()) {
                     this.addLog(chrome.i18n.getMessage('logActivationAbortedPost', [deviceId.slice(0, 8)]));
                     stream.getTracks().forEach(track => track.stop());
                     return false;
@@ -1692,30 +1705,42 @@ class App {
                 slot.video.srcObject = stream;
                 slot.element.classList.add('active');
 
-                await new Promise((resolve) => {
-                const timeoutId = setTimeout(() => {
-                    cleanup();
-                    resolve();
-                }, 5000);
-                const cleanup = () => {
-                    clearTimeout(timeoutId);
-                    slot.video.removeEventListener('playing', onPlaying);
-                    slot.video.removeEventListener('error', onError);
-                };
-                const onPlaying = () => {
-                    cleanup();
-                    resolve();
-                };
-                const onError = () => {
-                    cleanup();
-                    resolve();
-                };
-                slot.video.addEventListener('playing', onPlaying);
-                slot.video.addEventListener('error', onError);
-                if (slot.video.readyState >= 3) {
-                    onPlaying();
+                await new Promise((resolve, reject) => {
+                    const timeoutId = setTimeout(() => {
+                        cleanup();
+                        resolve();
+                    }, 5000);
+                    const cleanup = () => {
+                        clearTimeout(timeoutId);
+                        slot.video.removeEventListener('playing', onPlaying);
+                        slot.video.removeEventListener('error', onError);
+                    };
+                    const onPlaying = () => {
+                        cleanup();
+                        resolve();
+                    };
+                    const onError = (err) => {
+                        cleanup();
+                        reject(new Error(err?.message || 'Video element error'));
+                    };
+                    slot.video.addEventListener('playing', onPlaying);
+                    slot.video.addEventListener('error', onError);
+                    if (slot.video.readyState >= 3) {
+                        onPlaying();
+                    }
+                });
+
+                // Check if the slot/camera was deleted or removed while waiting for video playing/readyState
+                if (!isCameraStillNeeded()) {
+                    this.addLog(`Activation aborted for camera ${deviceId.slice(0, 8)}: slot was removed or replaced during video startup.`);
+                    if (slot.stream) {
+                        slot.stream.getTracks().forEach(track => track.stop());
+                        slot.stream = null;
+                    }
+                    slot.video.srcObject = null;
+                    slot.element.classList.remove('active');
+                    return false;
                 }
-            });
 
                 const setting = this.settings[deviceId] || {};
                 const role = setting.defaultRole || 'person';
@@ -1797,55 +1822,59 @@ class App {
         if (adjOverlay) adjOverlay.classList.add('hidden');
     }
 
-    // Capture current frame to freezeCanvas
     const { video, freezeCanvas, canvas, processor } = slot;
-    if (processor) {
-        const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
-        if (warpedData) {
-            freezeCanvas.width = warpedData.width;
-            freezeCanvas.height = warpedData.height;
+    try {
+        // Capture current frame to freezeCanvas
+        if (processor) {
+            const warpedData = await processor.stacker.getWarpedCurrentFrame(processor.transformer);
+            if (warpedData) {
+                freezeCanvas.width = warpedData.width;
+                freezeCanvas.height = warpedData.height;
+                const ctx = freezeCanvas.getContext('2d');
+                ctx.putImageData(warpedData, 0, 0);
+            }
+        } else if (video.videoWidth > 0) {
+            freezeCanvas.width = video.videoWidth;
+            freezeCanvas.height = video.videoHeight;
             const ctx = freezeCanvas.getContext('2d');
-            ctx.putImageData(warpedData, 0, 0);
+            ctx.drawImage(video, 0, 0);
         }
-    } else if (video.videoWidth > 0) {
-        freezeCanvas.width = video.videoWidth;
-        freezeCanvas.height = video.videoHeight;
-        const ctx = freezeCanvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-    }
+    } catch (e) {
+        console.warn('Frame capture failed during deactivateSlot:', e);
+    } finally {
+        // Stop processor
+        if (processor) {
+            processor.stop();
+            slot.processor = null;
+        }
 
-    // Stop processor
-    if (processor) {
-        processor.stop();
-        slot.processor = null;
-    }
+        // Clear overlay canvas and reset Set button
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const setBtn = slot.element.querySelector('.set-btn');
+        if (setBtn) setBtn.classList.remove('active');
 
-    // Clear overlay canvas and reset Set button
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const setBtn = slot.element.querySelector('.set-btn');
-    if (setBtn) setBtn.classList.remove('active');
+        // Reset adjustment states to ensure clean state on re-activation
+        const videoWrapper = slot.element.querySelector('.video-wrapper');
+        if (videoWrapper) {
+            videoWrapper.classList.remove('adjusting-perspective');
+        }
+        const vOverlay = slot.element.querySelector('.vscale-overlay');
+        const role = slot.element.querySelector('.role-switch')?.checked ? 'whiteboard' : 'person';
+        if (vOverlay && role === 'whiteboard') {
+            vOverlay.classList.remove('hidden');
+        }
 
-    // Reset adjustment states to ensure clean state on re-activation
-    const videoWrapper = slot.element.querySelector('.video-wrapper');
-    if (videoWrapper) {
-        videoWrapper.classList.remove('adjusting-perspective');
-    }
-    const vOverlay = slot.element.querySelector('.vscale-overlay');
-    const role = slot.element.querySelector('.role-switch')?.checked ? 'whiteboard' : 'person';
-    if (vOverlay && role === 'whiteboard') {
-        vOverlay.classList.remove('hidden');
-    }
+        // Stop stream
+        if (slot.stream) {
+            slot.stream.getTracks().forEach(track => track.stop());
+            slot.stream = null;
+        }
+        video.srcObject = null;
+        slot.element.classList.remove('active');
 
-    // Stop stream
-    if (slot.stream) {
-        slot.stream.getTracks().forEach(track => track.stop());
-        slot.stream = null;
+        this.updateResolutionFpsDisplay(slot);
     }
-    video.srcObject = null;
-    slot.element.classList.remove('active');
-
-    this.updateResolutionFpsDisplay(slot);
   }
 
   async moveCamera(deviceId, direction) {
@@ -2457,37 +2486,51 @@ class App {
                 this.releasePin(false);
             }
 
-            await this.deactivateSlot(slot);
-            slot.element.remove();
+            // Invalidate any pending async cycling / nextCamera delays
+            this.cycleCount++;
+            if (this.cycleTimeoutId) {
+                clearTimeout(this.cycleTimeoutId);
+                this.cycleTimeoutId = null;
+            }
+
+            // Immediately mark as removed in slots & slotOrder before async deactivateSlot cleanup
             this.slots.delete(deviceId);
             this.cameraInfoCache.delete(deviceId);
             this.slotOrder = this.slotOrder.filter(id => id !== deviceId);
 
-            if (this.slotOrder.length === 0) {
-                this.activeSlotIndex = -1;
-                if (this.cycleTimeoutId) {
-                    clearTimeout(this.cycleTimeoutId);
-                    this.cycleTimeoutId = null;
-                }
-                this.updateWelcomeVisibility();
-                this.updateAddCameraBlinking();
-            } else {
-                if (this.currentLayout === 'wide') {
-                    this.reorganizeForWide();
-                } else {
-                    this.reorganizeForNarrow();
-                }
-                if (index < this.activeSlotIndex) {
-                    this.activeSlotIndex--;
-                }
-                this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
+            try {
+                await this.deactivateSlot(slot);
+            } catch (err) {
+                this.addLog(`Error deactivating slot ${deviceId.slice(0, 8)}: ${err.message}`, true);
+            } finally {
+                slot.element.remove();
 
-                await this.updateCyclingAndActivationState();
+                if (this.slotOrder.length === 0) {
+                    this.activeSlotIndex = -1;
+                    if (this.cycleTimeoutId) {
+                        clearTimeout(this.cycleTimeoutId);
+                        this.cycleTimeoutId = null;
+                    }
+                    this.updateWelcomeVisibility();
+                    this.updateAddCameraBlinking();
+                } else {
+                    if (this.currentLayout === 'wide') {
+                        this.reorganizeForWide();
+                    } else {
+                        this.reorganizeForNarrow();
+                    }
+                    if (index < this.activeSlotIndex) {
+                        this.activeSlotIndex--;
+                    }
+                    this.activeSlotIndex = this.activeSlotIndex % this.slotOrder.length;
+
+                    await this.updateCyclingAndActivationState();
+                }
+                if (this.updateIntervalUI) {
+                    this.updateIntervalUI();
+                }
+                saveSessionState(this.slotOrder, this.activeSlotIndex);
             }
-            if (this.updateIntervalUI) {
-                this.updateIntervalUI();
-            }
-            saveSessionState(this.slotOrder, this.activeSlotIndex);
         }
     });
 
