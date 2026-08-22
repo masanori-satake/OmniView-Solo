@@ -1592,6 +1592,8 @@ class App {
     if (!this.shouldCycle()) return;
     if (this.pinnedDeviceId) return;
 
+    const initialCycle = this.cycleCount;
+
     // 1. Capture and stop current active slot (only if it is not whiteboard mode with excludeWhiteboard enabled)
     if (this.activeSlotIndex !== -1) {
         const currentDeviceId = this.slotOrder[this.activeSlotIndex];
@@ -1603,7 +1605,7 @@ class App {
         }
     }
 
-    if (this.pinnedDeviceId) return;
+    if (this.cycleCount !== initialCycle || this.pinnedDeviceId || !this.shouldCycle()) return;
 
     // 2. Advance index
     const allowedIds = this.getCyclingTargetDeviceIds();
