@@ -3,3 +3,14 @@ dist/
 *.zip
 *.log
 shared/js/lib/opencv.js
+
+# Local settings
+settings.json
+.vscode/
+
+# Root level test scripts & verification images
+/test*.html
+/test*.js
+/test*.py
+/test*.png
+/chrome_*.png
