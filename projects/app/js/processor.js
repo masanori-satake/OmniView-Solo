@@ -13,6 +13,7 @@ export class PerspectiveTransformer {
         this.labels = labels;
         this.onShowingHandlesChange = onShowingHandlesChange;
         this.draggingPoint = null;
+        this.activePointerId = null;
         this.isMultiDragging = false;
         this.isSimpleDragging = false;
         this.lastDragX = 0;
@@ -39,6 +40,8 @@ export class PerspectiveTransformer {
         this.resizeObserver.observe(this.canvas);
 
         this.boundPointerMove = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
+
             if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 const rect = this.canvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -152,32 +155,40 @@ export class PerspectiveTransformer {
             }
         };
 
-        this.boundPointerUp = () => {
+        this.boundPointerUp = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
+
+            let pointsChanged = false;
             if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 this.draggingPoint = null;
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             } else if (this.isMultiDragging) {
                 this.isMultiDragging = false;
                 this.draggingPoint = null;
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             } else if (this.isSimpleDragging) {
                 this.isSimpleDragging = false;
                 this.updateCursor();
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             }
+
+            if (typeof this.canvas.releasePointerCapture === 'function') {
+                try {
+                    this.canvas.releasePointerCapture(this.activePointerId);
+                } catch {
+                    // Capture may already have been released after pointercancel.
+                }
+            }
+            this.activePointerId = null;
+            if (pointsChanged && this.onPointsChange) this.onPointsChange(this.points);
         };
 
         this.dragStartX = 0;
         this.dragStartY = 0;
         this.hasDragged = false;
 
-        this.boundCanvasPointerDown = (e) => {
-            this.dragStartX = e.clientX;
-            this.dragStartY = e.clientY;
-            this.hasDragged = false;
-        };
-
         this.boundWindowPointerUpCapture = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
             if (Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) > 5) {
                 this.hasDragged = true;
             }
@@ -190,8 +201,22 @@ export class PerspectiveTransformer {
         };
 
         this.boundPointerDown = (e) => {
+            if (this.activePointerId !== null) return;
+            if (e.button !== undefined && e.button !== 0) return;
+
+            this.activePointerId = e.pointerId;
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+            this.hasDragged = false;
+            if (typeof this.canvas.setPointerCapture === 'function') {
+                try {
+                    this.canvas.setPointerCapture(e.pointerId);
+                } catch {
+                    // Pointer capture is best-effort on older Chromium versions.
+                }
+            }
+
             if (!this.showHandles) {
-                if (e.button !== undefined && e.button !== 0) return;
                 this.isSimpleDragging = true;
                 this.lastDragX = e.clientX;
                 this.lastDragY = e.clientY;
@@ -260,7 +285,6 @@ export class PerspectiveTransformer {
     }
 
     initEvents() {
-        this.canvas.addEventListener('pointerdown', this.boundCanvasPointerDown);
         this.canvas.addEventListener('pointerdown', this.boundPointerDown);
         this.canvas.addEventListener('click', this.boundCanvasClick);
         this.canvas.addEventListener('keydown', this.boundKeyDown);
@@ -397,7 +421,6 @@ export class PerspectiveTransformer {
         if (!this.canvas) {
             return;
         }
-        this.canvas.removeEventListener('pointerdown', this.boundCanvasPointerDown);
         this.canvas.removeEventListener('pointerdown', this.boundPointerDown);
         this.canvas.removeEventListener('click', this.boundCanvasClick);
         this.canvas.removeEventListener('keydown', this.boundKeyDown);

@@ -93,7 +93,12 @@ def run():
             }
             const res = solve(A, b);
             if (!res) return [1, 0, 0, 0, 1, 0, 0, 0, 1];
-            return [res[0], res[1], res[2], res[3], res[4], res[5], res[6], res[7], 1];
+            let h = [res[0], res[1], res[2], res[3], res[4], res[5], res[6], res[7], 1];
+            const cx = src.reduce((sum, point) => sum + point.x, 0) / src.length;
+            const cy = src.reduce((sum, point) => sum + point.y, 0) / src.length;
+            const wCenter = h[6] * cx + h[7] * cy + h[8];
+            if (wCenter < 0) h = h.map(value => -value);
+            return h;
         }
 
         function toMatrix3d(h) {
@@ -120,6 +125,7 @@ def run():
         </body>
         </html>
         """
+        html_content = html_content.rstrip() + "\n"
 
         with open("test_chrome.html", "w") as f:
             f.write(html_content)
@@ -136,13 +142,12 @@ def run():
         page.wait_for_timeout(500)
         page.screenshot(path="chrome_2_standard.png")
 
-        browser.close()
-
-run()
         # Test 3: Wide Top Trapezoid (TL(10,20), TR(90,20), BR(65,80), BL(35,80))
         m2 = page.evaluate("applyTransform([{x: 10, y: 20}, {x: 90, y: 20}, {x: 65, y: 80}, {x: 35, y: 80}])")
         print("m2:", m2)
         page.wait_for_timeout(500)
         page.screenshot(path="chrome_3_wide_top.png")
+
+        browser.close()
 
 run()

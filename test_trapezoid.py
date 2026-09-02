@@ -5,25 +5,18 @@ html_content = """
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-.container {
-    width: 640px;
-    height: 360px;
-    background: #222;
-    position: relative;
-    overflow: hidden;
-}
-canvas {
-    width: 100%;
-    height: 100%;
-    transform-origin: 0 0;
-    object-fit: fill;
-}
-</style>
+<link rel="stylesheet" href="projects/app/css/m3-theme.css">
+<link rel="stylesheet" href="projects/app/css/style.css">
 </head>
 <body>
-<div class="container">
-    <canvas id="c" width="640" height="360"></canvas>
+<div id="app" class="layout-narrow">
+<main id="camera-container">
+<div class="container camera-slot zoom-1 active">
+    <div class="video-wrapper">
+        <canvas id="c" class="overlay-canvas" width="640" height="360"></canvas>
+    </div>
+</div>
+</main>
 </div>
 <script>
 const canvas = document.getElementById('c');
@@ -41,6 +34,7 @@ canvas.style.transform = m;
 </body>
 </html>
 """
+html_content = html_content.rstrip() + "\n"
 
 with open("test_trap.html", "w") as f:
     f.write(html_content)
