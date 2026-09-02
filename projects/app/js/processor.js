@@ -884,6 +884,58 @@ export class WhiteboardProcessor {
         this.animationFrame = null;
         this.lastVisibility = '';
         this.lastDisplay = '';
+
+        this.isStarted = false;
+        this.isPaused = false;
+        this.isTabVisible = typeof document !== 'undefined' ? !document.hidden : true;
+        this.isElementIntersecting = true;
+        this.intersectionObserver = null;
+
+        this.initVisibilityListeners();
+    }
+
+    initVisibilityListeners() {
+        this.boundVisibilityChange = () => {
+            this.isTabVisible = typeof document !== 'undefined' ? !document.hidden : true;
+            this.updateRenderState();
+        };
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', this.boundVisibilityChange);
+        }
+
+        if (typeof IntersectionObserver !== 'undefined' && this.overlayCanvas) {
+            this.intersectionObserver = new IntersectionObserver((entries) => {
+                if (entries.length > 0) {
+                    this.isElementIntersecting = entries[0].isIntersecting;
+                    this.updateRenderState();
+                }
+            });
+            this.intersectionObserver.observe(this.overlayCanvas);
+        }
+    }
+
+    updateRenderState() {
+        const shouldRun = this.isStarted && this.isTabVisible && this.isElementIntersecting;
+        if (!shouldRun && !this.isPaused) {
+            this.pause();
+        } else if (shouldRun && this.isPaused) {
+            this.resume();
+        }
+    }
+
+    pause() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        this.isPaused = true;
+    }
+
+    resume() {
+        if (this.isPaused) {
+            this.isPaused = false;
+            this.startLoop();
+        }
     }
 
     setOcclusionRemoval(enabled) {
@@ -895,11 +947,35 @@ export class WhiteboardProcessor {
     }
 
     start() {
-        const loop = () => { this.render(); this.animationFrame = requestAnimationFrame(loop); };
+        this.isStarted = true;
+        this.isPaused = false;
+        this.updateRenderState();
+        if (!this.isPaused) {
+            this.startLoop();
+        }
+    }
+
+    startLoop() {
+        if (this.animationFrame) return;
+        const loop = () => {
+            if (!this.isPaused && this.isStarted) {
+                this.render();
+                this.animationFrame = requestAnimationFrame(loop);
+            }
+        };
         loop();
     }
 
     stop() {
+        this.isStarted = false;
+        if (this.boundVisibilityChange && typeof document !== 'undefined') {
+            document.removeEventListener('visibilitychange', this.boundVisibilityChange);
+            this.boundVisibilityChange = null;
+        }
+        if (this.intersectionObserver) {
+            this.intersectionObserver.disconnect();
+            this.intersectionObserver = null;
+        }
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
             this.animationFrame = null;
