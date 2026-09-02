@@ -95,6 +95,9 @@
     transform: translate(-50%, -50%);
     width: 80%;
     max-width: 400px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     background: var(--md-sys-color-surface);
     border-radius: var(--md-sys-shape-large);
     overflow: hidden;
@@ -103,7 +106,18 @@
 
 .settings-tabs {
     display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--md-sys-color-surface);
     border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    flex-shrink: 0;
+}
+
+.tab-content {
+    padding: 16px;
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
 .tab-btn {
@@ -963,10 +977,14 @@ video, .processed-canvas {
     position: relative;
     width: 85%;
     max-width: 320px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     background: var(--md-sys-color-surface);
     border-radius: var(--md-sys-shape-large);
     padding: 24px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-sizing: border-box;
 }
 
 .dialog-header h2 {
