@@ -67,11 +67,23 @@ export function getHomography(src, dst) {
     if (!res) {
         return [1, 0, 0, 0, 1, 0, 0, 0, 1];
     }
-    return [
+    let h = [
         res[0], res[1], res[2],
         res[3], res[4], res[5],
         res[6], res[7], 1
     ];
+
+    // Normalize matrix sign so that the center of the source quad has positive w in projective space.
+    // In CSS matrix3d transform, if w = h6*x + h7*y + h8 < 0, Chromium's 3D rendering pipeline
+    // places the element behind the near clipping plane, causing it to render as pure black.
+    const cx = (src[0].x + src[1].x + src[2].x + src[3].x) / 4;
+    const cy = (src[0].y + src[1].y + src[2].y + src[3].y) / 4;
+    const wCenter = h[6] * cx + h[7] * cy + h[8];
+    if (wCenter < 0) {
+        h = h.map(v => -v);
+    }
+
+    return h;
 }
 
 /**

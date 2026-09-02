@@ -13,6 +13,7 @@ export class PerspectiveTransformer {
         this.labels = labels;
         this.onShowingHandlesChange = onShowingHandlesChange;
         this.draggingPoint = null;
+        this.activePointerId = null;
         this.isMultiDragging = false;
         this.isSimpleDragging = false;
         this.lastDragX = 0;
@@ -24,6 +25,13 @@ export class PerspectiveTransformer {
         this.lastObjectFit = '';
         this.lastElementCount = 0;
         this.rotatedDuringAdjustment = false;
+        this.activeHandleIndex = 0; // Currently focused handle index for keyboard navigation (0..3)
+
+        // Ensure touch-action is none to prevent scrolling during touch adjustments
+        if (this.canvas) {
+            this.canvas.style.touchAction = 'none';
+            this.canvas.tabIndex = 0; // Allow keyboard focus
+        }
 
         this.resizeObserver = new ResizeObserver(() => {
             this.updateTransform();
@@ -31,7 +39,9 @@ export class PerspectiveTransformer {
         });
         this.resizeObserver.observe(this.canvas);
 
-        this.boundMouseMove = (e) => {
+        this.boundPointerMove = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
+
             if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 const rect = this.canvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -145,32 +155,40 @@ export class PerspectiveTransformer {
             }
         };
 
-        this.boundMouseUp = () => {
+        this.boundPointerUp = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
+
+            let pointsChanged = false;
             if (this.draggingPoint !== null && this.draggingPoint >= 0) {
                 this.draggingPoint = null;
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             } else if (this.isMultiDragging) {
                 this.isMultiDragging = false;
                 this.draggingPoint = null;
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             } else if (this.isSimpleDragging) {
                 this.isSimpleDragging = false;
                 this.updateCursor();
-                if (this.onPointsChange) this.onPointsChange(this.points);
+                pointsChanged = true;
             }
+
+            if (typeof this.canvas.releasePointerCapture === 'function') {
+                try {
+                    this.canvas.releasePointerCapture(this.activePointerId);
+                } catch {
+                    // Capture may already have been released after pointercancel.
+                }
+            }
+            this.activePointerId = null;
+            if (pointsChanged && this.onPointsChange) this.onPointsChange(this.points);
         };
 
         this.dragStartX = 0;
         this.dragStartY = 0;
         this.hasDragged = false;
 
-        this.boundCanvasMouseDown = (e) => {
-            this.dragStartX = e.clientX;
-            this.dragStartY = e.clientY;
-            this.hasDragged = false;
-        };
-
-        this.boundWindowMouseUpCapture = (e) => {
+        this.boundWindowPointerUpCapture = (e) => {
+            if (this.activePointerId === null || e.pointerId !== this.activePointerId) return;
             if (Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) > 5) {
                 this.hasDragged = true;
             }
@@ -182,9 +200,23 @@ export class PerspectiveTransformer {
             }
         };
 
-        this.boundMouseDown = (e) => {
+        this.boundPointerDown = (e) => {
+            if (this.activePointerId !== null) return;
+            if (e.button !== undefined && e.button !== 0) return;
+
+            this.activePointerId = e.pointerId;
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+            this.hasDragged = false;
+            if (typeof this.canvas.setPointerCapture === 'function') {
+                try {
+                    this.canvas.setPointerCapture(e.pointerId);
+                } catch {
+                    // Pointer capture is best-effort on older Chromium versions.
+                }
+            }
+
             if (!this.showHandles) {
-                if (e.button !== 0) return;
                 this.isSimpleDragging = true;
                 this.lastDragX = e.clientX;
                 this.lastDragY = e.clientY;
@@ -195,10 +227,13 @@ export class PerspectiveTransformer {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
+            // Touch target radius is 32px for touch pointer, 20px for mouse/pen
+            const targetRadius = e.pointerType === 'touch' ? 32 : 20;
+
             this.draggingPoint = this.points.findIndex(p => {
                 const px = (p.x / 100) * rect.width;
                 const py = (p.y / 100) * rect.height;
-                return Math.hypot(px - x, py - y) < 20;
+                return Math.hypot(px - x, py - y) < targetRadius;
             });
 
             if (this.draggingPoint === -1) {
@@ -207,6 +242,40 @@ export class PerspectiveTransformer {
                 this.lastDragY = e.clientY;
             } else {
                 this.isMultiDragging = false;
+                this.activeHandleIndex = this.draggingPoint;
+                this.draw();
+            }
+        };
+
+        this.boundKeyDown = (e) => {
+            if (!this.showHandles) return;
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.activeHandleIndex = (this.activeHandleIndex + 3) % 4;
+                } else {
+                    this.activeHandleIndex = (this.activeHandleIndex + 1) % 4;
+                }
+                this.draw();
+                return;
+            }
+
+            const isArrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key);
+            if (isArrow) {
+                e.preventDefault();
+                const stepPct = e.shiftKey ? 0.1 : 1.0;
+                const pt = this.points[this.activeHandleIndex];
+                if (!pt) return;
+
+                if (e.key === 'ArrowUp') pt.y = Math.max(0, pt.y - stepPct);
+                if (e.key === 'ArrowDown') pt.y = Math.min(100, pt.y + stepPct);
+                if (e.key === 'ArrowLeft') pt.x = Math.max(0, pt.x - stepPct);
+                if (e.key === 'ArrowRight') pt.x = Math.min(100, pt.x + stepPct);
+
+                this.updateTransform();
+                this.draw();
+                if (this.onPointsChange) this.onPointsChange(this.points);
             }
         };
 
@@ -216,12 +285,13 @@ export class PerspectiveTransformer {
     }
 
     initEvents() {
-        this.canvas.addEventListener('mousedown', this.boundCanvasMouseDown);
-        this.canvas.addEventListener('mousedown', this.boundMouseDown);
+        this.canvas.addEventListener('pointerdown', this.boundPointerDown);
         this.canvas.addEventListener('click', this.boundCanvasClick);
-        window.addEventListener('mouseup', this.boundWindowMouseUpCapture, { capture: true });
-        window.addEventListener('mousemove', this.boundMouseMove);
-        window.addEventListener('mouseup', this.boundMouseUp);
+        this.canvas.addEventListener('keydown', this.boundKeyDown);
+        window.addEventListener('pointerup', this.boundWindowPointerUpCapture, { capture: true });
+        window.addEventListener('pointermove', this.boundPointerMove);
+        window.addEventListener('pointerup', this.boundPointerUp);
+        window.addEventListener('pointercancel', this.boundPointerUp);
     }
 
     updateCursor() {
@@ -351,12 +421,13 @@ export class PerspectiveTransformer {
         if (!this.canvas) {
             return;
         }
-        this.canvas.removeEventListener('mousedown', this.boundCanvasMouseDown);
-        this.canvas.removeEventListener('mousedown', this.boundMouseDown);
+        this.canvas.removeEventListener('pointerdown', this.boundPointerDown);
         this.canvas.removeEventListener('click', this.boundCanvasClick);
-        window.removeEventListener('mouseup', this.boundWindowMouseUpCapture, { capture: true });
-        window.removeEventListener('mousemove', this.boundMouseMove);
-        window.removeEventListener('mouseup', this.boundMouseUp);
+        this.canvas.removeEventListener('keydown', this.boundKeyDown);
+        window.removeEventListener('pointerup', this.boundWindowPointerUpCapture, { capture: true });
+        window.removeEventListener('pointermove', this.boundPointerMove);
+        window.removeEventListener('pointerup', this.boundPointerUp);
+        window.removeEventListener('pointercancel', this.boundPointerUp);
 
         if (this.video) {
             this.video.style.transform = '';
@@ -439,6 +510,18 @@ export class PerspectiveTransformer {
         this.points.forEach((p, i) => {
             const x = (p.x / 100) * this.canvas.width;
             const y = (p.y / 100) * this.canvas.height;
+            const isActive = (this.activeHandleIndex === i);
+
+            // Draw active focus ring if focused via keyboard
+            if (isActive) {
+                this.ctx.fillStyle = 'rgba(255, 235, 59, 0.4)';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 14, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#FFEB3B';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            }
 
             // Draw a black backing circle first
             this.ctx.fillStyle = '#000000';
@@ -446,7 +529,7 @@ export class PerspectiveTransformer {
             this.ctx.arc(x, y, 8, 0, Math.PI * 2);
             this.ctx.fill();
 
-            this.ctx.fillStyle = '#00e676';
+            this.ctx.fillStyle = isActive ? '#ffeb3b' : '#00e676';
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.arc(x, y, 6, 0, Math.PI * 2);
@@ -824,6 +907,58 @@ export class WhiteboardProcessor {
         this.animationFrame = null;
         this.lastVisibility = '';
         this.lastDisplay = '';
+
+        this.isStarted = false;
+        this.isPaused = false;
+        this.isTabVisible = typeof document !== 'undefined' ? !document.hidden : true;
+        this.isElementIntersecting = true;
+        this.intersectionObserver = null;
+
+        this.initVisibilityListeners();
+    }
+
+    initVisibilityListeners() {
+        this.boundVisibilityChange = () => {
+            this.isTabVisible = typeof document !== 'undefined' ? !document.hidden : true;
+            this.updateRenderState();
+        };
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', this.boundVisibilityChange);
+        }
+
+        if (typeof IntersectionObserver !== 'undefined' && this.overlayCanvas) {
+            this.intersectionObserver = new IntersectionObserver((entries) => {
+                if (entries.length > 0) {
+                    this.isElementIntersecting = entries[0].isIntersecting;
+                    this.updateRenderState();
+                }
+            });
+            this.intersectionObserver.observe(this.overlayCanvas);
+        }
+    }
+
+    updateRenderState() {
+        const shouldRun = this.isStarted && this.isTabVisible && this.isElementIntersecting;
+        if (!shouldRun && !this.isPaused) {
+            this.pause();
+        } else if (shouldRun && this.isPaused) {
+            this.resume();
+        }
+    }
+
+    pause() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        this.isPaused = true;
+    }
+
+    resume() {
+        if (this.isPaused) {
+            this.isPaused = false;
+            this.startLoop();
+        }
     }
 
     setOcclusionRemoval(enabled) {
@@ -835,11 +970,35 @@ export class WhiteboardProcessor {
     }
 
     start() {
-        const loop = () => { this.render(); this.animationFrame = requestAnimationFrame(loop); };
+        this.isStarted = true;
+        this.isPaused = false;
+        this.updateRenderState();
+        if (!this.isPaused) {
+            this.startLoop();
+        }
+    }
+
+    startLoop() {
+        if (this.animationFrame) return;
+        const loop = () => {
+            if (!this.isPaused && this.isStarted) {
+                this.render();
+                this.animationFrame = requestAnimationFrame(loop);
+            }
+        };
         loop();
     }
 
     stop() {
+        this.isStarted = false;
+        if (this.boundVisibilityChange && typeof document !== 'undefined') {
+            document.removeEventListener('visibilitychange', this.boundVisibilityChange);
+            this.boundVisibilityChange = null;
+        }
+        if (this.intersectionObserver) {
+            this.intersectionObserver.disconnect();
+            this.intersectionObserver = null;
+        }
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
             this.animationFrame = null;
