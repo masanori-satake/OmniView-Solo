@@ -176,6 +176,11 @@
     margin-bottom: 16px;
 }
 
+.settings-row > label:not(.m3-switch) {
+    flex: 1;
+    min-width: 0;
+}
+
 .settings-row.nested-1 {
     margin-left: 12px;
 }
@@ -226,6 +231,7 @@
     border: 1px solid var(--md-sys-color-outline);
     border-radius: var(--md-sys-shape-extra-small);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .m3-spinbox input {
@@ -284,6 +290,7 @@
     display: inline-block;
     width: 52px;
     height: 32px;
+    flex: 0 0 52px;
 }
 
 .m3-switch input {
