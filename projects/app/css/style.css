@@ -176,7 +176,7 @@
     margin-bottom: 16px;
 }
 
-.settings-row label {
+.settings-row > label:not(.m3-switch) {
     flex: 1;
     min-width: 0;
 }
@@ -290,7 +290,7 @@
     display: inline-block;
     width: 52px;
     height: 32px;
-    flex-shrink: 0;
+    flex: 0 0 52px;
 }
 
 .m3-switch input {
