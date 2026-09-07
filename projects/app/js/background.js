@@ -61,14 +61,14 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
     }
 
     if (message?.type === 'switch_to_sidepanel') {
+      const windowId = sender?.tab?.windowId;
       (async () => {
-        await setViewMode('sidepanel');
-        await syncPanelBehavior();
         try {
-          const windowId = sender?.tab?.windowId;
           if (windowId !== undefined) {
             await chrome.sidePanel.open({ windowId });
           }
+          await setViewMode('sidepanel');
+          await syncPanelBehavior();
           if (message.tabId !== undefined) {
             await chrome.tabs.remove(message.tabId);
           }
