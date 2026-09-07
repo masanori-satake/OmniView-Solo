@@ -4,7 +4,7 @@
   "description": "リモート授業やハイブリッド会議のUXを向上させるローカル完結型Chrome拡張機能",
   "type": "module",
   "scripts": {
-    "test": "python3 scripts/check_version.py && python3 scripts/check_messages.py && node scripts/verify_build.js",
+    "test": "python3 scripts/check_version.py && python3 scripts/check_messages.py && node scripts/verify_build.js && vitest run",
     "build": "python3 scripts/check_version.py && python3 scripts/check_messages.py && python3 scripts/create_package.py",
     "version:bump": "python3 scripts/bump_version.py",
     "icons": "python3 scripts/generate_png_icons.py"
@@ -12,6 +12,8 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "eslint": "^10.0.2",
-    "playwright": "^1.61.1"
+    "fast-check": "^3.23.2",
+    "playwright": "^1.61.1",
+    "vitest": "^3.2.4"
   }
 }

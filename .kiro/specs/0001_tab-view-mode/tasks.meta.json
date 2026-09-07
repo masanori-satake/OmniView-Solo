@@ -1,0 +1,460 @@
+{
+  "pbtResults": {
+    "2.4 Property 2 のプロパティテストを書く": {
+      "status": "passed",
+      "lastRunTimestamp": 1788791462689
+    },
+    "2.3 Property 5 のプロパティテストを書く": {
+      "status": "passed",
+      "lastRunTimestamp": 1788791474590
+    },
+    "2.2 Property 1 のプロパティテストを書く": {
+      "status": "passed",
+      "lastRunTimestamp": 1788791799902
+    }
+  },
+  "executionHistory": {
+    "1.1 manifest.json を作成する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789289824
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789315148
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789429842
+      }
+    ],
+    "1.2 extension/ ディレクトリ構成と空ファイルを作成する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789290485
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789319085
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789434607
+      }
+    ],
+    "2.1 storageManager.js を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789291584
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789440867
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789498326
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790840169
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790916273
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790955042
+      }
+    ],
+    "2.2 Property 1 のプロパティテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789292426
+      },
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789503902
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790840605
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790959434
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791813045
+      }
+    ],
+    "2.3 Property 5 のプロパティテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789293598
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790840988
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790963415
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791818740
+      }
+    ],
+    "2.4 Property 2 のプロパティテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789294358
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790841481
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790967478
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791823029
+      }
+    ],
+    "3.1 viewModeSwitch.js を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789295116
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790841898
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790971507
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791829144
+      }
+    ],
+    "3.2 sidepanel.css に ViewModeSwitch スタイルを追加する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789295851
+      }
+    ],
+    "3.3 ViewModeSwitch のユニットテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789296453
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790842731
+      }
+    ],
+    "4.1 chrome.action.onClicked ハンドラーを実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789297608
+      }
+    ],
+    "4.2 onMessage ハンドラーを実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789298633
+      }
+    ],
+    "4.3 Property 4 のプロパティテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789299091
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790844065
+      }
+    ],
+    "4.4 background.js のユニットテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789299502
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790844470
+      }
+    ],
+    "5. チェックポイント — ここまでのテストをすべて通過させる": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789300361
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790844884
+      }
+    ],
+    "6.1 sidepanel.html に ViewModeSwitch を追加する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789301006
+      }
+    ],
+    "6.2 sidepanel.js に起動時 Storage 読み込みと ViewModeSwitch 初期化を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789301714
+      }
+    ],
+    "6.3 sidepanel.js にタブ切り替え処理を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789302355
+      }
+    ],
+    "6.4 sidepanel.js のユニットテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789302970
+      }
+    ],
+    "7.1 tabview.html を作成する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789303530
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790846786
+      }
+    ],
+    "7.2 tabview.js に起動時 Storage 読み込みと ViewModeSwitch 初期化を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789304070
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790847148
+      }
+    ],
+    "7.3 tabview.js にサイドパネル切り替え処理を実装する": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789304467
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790847748
+      }
+    ],
+    "7.4 tabview.js のユニットテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789305253
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790848171
+      }
+    ],
+    "8.1 Property 3 のプロパティテストを書く": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789306273
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790848515
+      }
+    ],
+    "9. 最終チェックポイント — すべてのテストを通過させる": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789306966
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790848889
+      }
+    ],
+    "1. プロジェクト骨格と manifest の整備": [
+      {
+        "executionId": "56a700c2-3825-4b95-913d-6cb0acce9f91",
+        "chatSessionId": "sess_d03b241b-5929-40ab-99d2-976d2b76e700",
+        "timestamp": 1788789436147
+      }
+    ],
+    "1.1 manifest.chrome.json を改修する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790839130
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790853831
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790905601
+      }
+    ],
+    "1.2 Vitest と fast-check のテスト環境を設定する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790839634
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790858121
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790910973
+      }
+    ],
+    "3.2 style.css に ViewModeSwitch スタイルを追加する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790842300
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790976020
+      },
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791833875
+      }
+    ],
+    "4.1 background.js に syncPanelBehavior と onClicked を実装する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790843131
+      }
+    ],
+    "4.2 background.js に onMessage ハンドラーを実装する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790843571
+      }
+    ],
+    "6.1 app.html に ViewModeSwitch を追加する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790845302
+      }
+    ],
+    "6.2 app.js に起動時 ViewMode 読み込みと ViewModeSwitch 初期化を実装する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790845625
+      }
+    ],
+    "6.3 app.js にタブ切り替え処理を実装する": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790846002
+      }
+    ],
+    "6.4 app.js のユニットテストを書く": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790846378
+      }
+    ],
+    "1. manifest と Vitest 環境の整備": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788790911888
+      }
+    ],
+    "2. storageManager.js の実装": [
+      {
+        "executionId": "fcf71cf4-2396-4175-a64d-6120b16bea0b",
+        "chatSessionId": "sess_705ecf7a-adfb-477d-98fd-a1cfbcdf4a6b",
+        "timestamp": 1788791824185
+      }
+    ]
+  }
+}
