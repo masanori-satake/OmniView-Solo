@@ -12,7 +12,7 @@
 [![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
 [![Web Deploy](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/deploy_pages.yml)
 
-『OmniView-Solo』は、ハイブリッド会議やリモート授業のUXを向上させるため、伝わりにくい会議室や教室の雰囲気と、補正された見やすいホワイトボードの映像をリモートメンバーや生徒と共有するためのChrome拡張機能（サイドパネル専用）です。
+『OmniView-Solo』は、ハイブリッド会議やリモート授業のUXを向上させるため、伝わりにくい会議室や教室の雰囲気と、補正された見やすいホワイトボードの映像をリモートメンバーや生徒と共有するためのChrome拡張機能（サイドパネル表示 / タブ全体表示対応）です。
 
 ## 特徴
 
@@ -35,10 +35,11 @@
 
 ## 使い方
 
-1. ブラウザのサイドパネルから OmniView-Solo を開きます。
-2. カメラを選択し、モードを「Whiteboard」に設定します。
-3. プレビュー上の4つの点をドラッグしてホワイトボードの四隅に合わせます。
-4. 「Capture」ボタンを押すと、補正された画像がクリップボードにコピーされます。
+1. ブラウザのサイドパネルまたは拡張機能アイコンから OmniView-Solo を開きます。
+2. ヘッダー左側の表示モード切替スイッチで「サイドパネル」と「タブ全体表示」を自由に行き来できます。
+3. カメラを選択し、モードを「Whiteboard」に設定します。
+4. プレビュー上の4つの点をドラッグしてホワイトボードの四隅に合わせます。
+5. 「Capture」ボタンを押すと、補正された画像がクリップボードにコピーされます。
 
 ## 免責事項
 
