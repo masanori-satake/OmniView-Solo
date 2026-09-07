@@ -51,8 +51,13 @@ export async function getViewMode() {
  * @returns {Promise<void>}
  */
 export async function setViewMode(mode) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     chrome.storage.local.set({ view_mode: mode }, () => {
+      const error = chrome.runtime?.lastError;
+      if (error) {
+        reject(error);
+        return;
+      }
       resolve();
     });
   });

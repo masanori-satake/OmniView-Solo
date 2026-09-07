@@ -15,13 +15,12 @@ if (!global.navigator.mediaDevices) {
   };
 }
 
-let mockViewMode = 'tab';
 let savedSlotOrder = [];
 let savedActiveIndex = -1;
 let sentMessages = [];
 
 vi.mock('./storageManager.js', () => ({
-  getViewMode: vi.fn(async () => mockViewMode),
+  getViewMode: vi.fn(async () => 'sidepanel'),
 }));
 
 vi.mock('./camera.js', async (importOriginal) => {
@@ -48,7 +47,6 @@ vi.mock('./camera.js', async (importOriginal) => {
 
 describe('tabview.js - TabView ViewModeSwitch integration', () => {
   beforeEach(() => {
-    mockViewMode = 'tab';
     savedSlotOrder = [];
     savedActiveIndex = -1;
     sentMessages = [];
@@ -95,6 +93,7 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
         <div id="snackbar" class="hidden"><span id="snackbar-message"></span></div>
       </div>
     `;
+    document.body.dataset.viewMode = 'tab';
 
     global.chrome = {
       i18n: { getMessage: vi.fn((key) => key) },
@@ -111,7 +110,7 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     };
   });
 
-  test('setupTabViewModeSwitch は ViewModeSwitch を tab 状態で初期化する', async () => {
+  test('保存済みモードが sidepanel でも ViewModeSwitch を tab 状態で初期化する', async () => {
     const { setupTabViewModeSwitch } = await import('./tabview.js');
     await setupTabViewModeSwitch();
 
@@ -129,6 +128,7 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     await setupTabViewModeSwitch();
 
     const switchEl = document.querySelector('.view-mode-switch');
+    expect(switchEl.getAttribute('aria-checked')).toBe('false');
     switchEl.click(); // tab -> sidepanel
 
     await new Promise((r) => setTimeout(r, 50));

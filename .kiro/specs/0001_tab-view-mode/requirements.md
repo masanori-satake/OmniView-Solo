@@ -4,7 +4,7 @@
 
 OmniView-Solo は現在、Chrome のサイドパネルに限定されたレイアウトでカメラ映像を表示している。資料を参照しながら会議に参加する場面ではサイドパネルが有効だが、資料を使わず言葉だけで議論するシーンでは、カメラ映像をより大きく表示したいというニーズがある。
 
-本フィーチャーは、サイドパネルとタブ全体表示をワンタップで切り替える「表示位置切り替え」機能を追加する。タブモードではブラウザウィンドウ全体を使って OmniView-Solo の全機能（カメラ映像・役割割り当て・ホワイトボード補正等）を表示し、カメラ接続状態はモード間で継続される。
+本フィーチャーは、サイドパネルとタブ全体表示をワンタップで切り替える「表示位置切り替え」機能を追加する。タブモードではブラウザウィンドウ全体を使って OmniView-Solo の全機能（カメラ映像・役割割り当て・ホワイトボード補正等）を表示し、保存された deviceId と設定からカメラ構成をモード間で復元する。
 
 ---
 
@@ -49,19 +49,22 @@ OmniView-Solo は現在、Chrome のサイドパネルに限定されたレイ�
 3. WHEN **ViewModeSwitch** をタブ側（左）に切り替えた場合、THE **Extension** SHALL サイドパネルを閉じる。
 4. THE **TabView** SHALL サイドパネルで提供していたすべての機能（カメラ映像表示・役割割り当て・ホワイトボード補正・クリップボードコピー等）をタブ全体に表示する。
 5. THE **TabView** SHALL ヘッダーに **ViewModeSwitch** を表示し、タブ側（左）を選択状態で表示する。
+6. IF **TabView** の作成に失敗した場合、THEN THE **Extension** SHALL サイドパネルを閉じず、**ViewModeSwitch** をサイドパネル側へ戻して Snackbar でエラーを通知する。
 
 ---
 
-### Requirement 3:カメラ接続状態の継続性
+### Requirement 3:カメラ構成の復元
 
-**User Story:** 利用者として、サイドパネルとタブを切り替えても接続済みカメラが再接続なしで表示され続けるようにしたい。切り替えのたびにカメラを設定し直す手間をなくすため。
+**User Story:** 利用者として、サイドパネルとタブを切り替えた後も同じカメラ構成と設定が復元されるようにしたい。切り替えのたびにカメラを設定し直す手間をなくすため。
 
 #### Acceptance Criteria
 
-1. WHEN **ViewModeSwitch** をタブ側に切り替えた場合、THE **TabView** SHALL サイドパネルで接続・表示していたカメラと同一のカメラ一覧を表示する。
-2. WHEN **ViewModeSwitch** をサイドパネル側に切り替えた場合、THE **SidePanel** SHALL タブモードで接続・表示していたカメラと同一のカメラ一覧を表示する。
+1. WHEN **ViewModeSwitch** をタブ側に切り替えた場合、THE **TabView** SHALL 保存済み deviceId のストリームを再取得し、復元できたカメラを元の構成と設定で表示する。
+2. WHEN **ViewModeSwitch** をサイドパネル側に切り替えた場合、THE **SidePanel** SHALL 保存済み deviceId のストリームを再取得し、復元できたカメラを元の構成と設定で表示する。
 3. THE **Storage** SHALL 現在アクティブなカメラの `deviceId` リスト（`session_state.slotOrder`）および各カメラの設定（`camera_settings`）をモード切り替え前に保存する。
 4. IF **Storage** に保存されたカメラ設定の読み込みに失敗した場合、THEN THE **Extension** SHALL カメラ一覧を空の状態で起動し、エラーを通知する。
+5. THE **Extension** SHALL 切り替え前のページが所有していた同一のライブストリームの継続を保証しない。
+6. IF ストリーム再取得時に権限拒否、デバイス消失、または取得失敗が発生した場合、THEN THE **Extension** SHALL 該当カメラを利用不能として表示対象から除外し、Snackbar とログでエラーを通知する。
 
 ---
 
@@ -98,6 +101,6 @@ OmniView-Solo は現在、Chrome のサイドパネルに限定されたレイ�
 
 1. WHEN **ViewMode** が変更された場合、THE **Extension** SHALL 新しい **ViewMode** 値を `chrome.storage.local` の `view_mode` キーに即時保存する。
 2. WHEN サイドパネルが起動した場合、THE **SidePanel** SHALL `chrome.storage.local` から `view_mode` を読み込み、**ViewModeSwitch** の表示状態に反映する。
-3. WHEN **TabView** が読み込まれた場合、THE **TabView** SHALL `chrome.storage.local` から `view_mode` を読み込み、**ViewModeSwitch** の表示状態に反映する。
+3. WHEN **TabView** が読み込まれた場合、THE **TabView** SHALL 保存された `view_mode` にかかわらず **ViewModeSwitch** を `"tab"` の状態で初期化する。
 4. IF `chrome.storage.local` の読み込みに失敗した場合、THEN THE **Extension** SHALL `"sidepanel"` を **ViewMode** のデフォルト値として使用する。
 5. WHEN **Background_Service_Worker** が起動した場合、THE **Background_Service_Worker** SHALL `chrome.storage.local` から `view_mode` を読み込み、アイコンクリック時の動作を決定する。

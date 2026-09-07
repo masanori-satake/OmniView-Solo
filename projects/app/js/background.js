@@ -27,6 +27,50 @@ export async function syncPanelBehavior() {
   }
 }
 
+/**
+ * 表示モード切り替えメッセージを処理する。
+ * @returns {Promise<{ok: boolean, error?: string}|undefined>}
+ */
+export async function handleRuntimeMessage(message, sender) {
+  if (message?.type === 'switch_to_tab') {
+    try {
+      await setViewMode('tab');
+      await syncPanelBehavior();
+      await chrome.tabs.create({ url: chrome.runtime.getURL('tabview.html') });
+      return { ok: true };
+    } catch (err) {
+      console.error('[OmniView-Solo] タブを開くのに失敗しました:', err);
+      try {
+        await setViewMode('sidepanel');
+        await syncPanelBehavior();
+      } catch (rollbackError) {
+        console.error('[OmniView-Solo] 表示モードの復元に失敗しました:', rollbackError);
+      }
+      return { ok: false, error: err?.message || String(err) };
+    }
+  }
+
+  if (message?.type === 'switch_to_sidepanel') {
+    const windowId = sender?.tab?.windowId;
+    try {
+      if (windowId !== undefined) {
+        await chrome.sidePanel.open({ windowId });
+      }
+      await setViewMode('sidepanel');
+      await syncPanelBehavior();
+      if (message.tabId !== undefined) {
+        await chrome.tabs.remove(message.tabId);
+      }
+      return { ok: true };
+    } catch (err) {
+      console.error('[OmniView-Solo] サイドパネルを開くのに失敗しました:', err);
+      return { ok: false, error: err?.message || String(err) };
+    }
+  }
+
+  return undefined;
+}
+
 // 拡張機能起動時の同期
 if (typeof chrome !== 'undefined' && chrome.runtime) {
   chrome.runtime.onInstalled?.addListener(() => syncPanelBehavior());
@@ -51,32 +95,9 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
 
   // メッセージハンドラー
   chrome.runtime.onMessage?.addListener((message, sender, sendResponse) => {
-    if (message?.type === 'switch_to_tab') {
-      (async () => {
-        await setViewMode('tab');
-        await syncPanelBehavior();
-        await chrome.tabs.create({ url: chrome.runtime.getURL('tabview.html') });
-      })();
-      return true;
-    }
+    if (message?.type !== 'switch_to_tab' && message?.type !== 'switch_to_sidepanel') return false;
 
-    if (message?.type === 'switch_to_sidepanel') {
-      const windowId = sender?.tab?.windowId;
-      (async () => {
-        try {
-          if (windowId !== undefined) {
-            await chrome.sidePanel.open({ windowId });
-          }
-          await setViewMode('sidepanel');
-          await syncPanelBehavior();
-          if (message.tabId !== undefined) {
-            await chrome.tabs.remove(message.tabId);
-          }
-        } catch (err) {
-          console.error('[OmniView-Solo] サイドパネルを開くのに失敗しました:', err);
-        }
-      })();
-      return true;
-    }
+    handleRuntimeMessage(message, sender).then(sendResponse);
+    return true;
   });
 }

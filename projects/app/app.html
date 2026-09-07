@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/m3-theme.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body data-view-mode="sidepanel">
     <div id="app" class="layout-narrow">
         <header id="app-header">
             <div id="view-mode-switch-container">
@@ -144,17 +144,17 @@
                         <label for="wb-autofocus-prev-wb-size-select" id="wb-autofocus-prev-wb-size-label" data-i18n="wbAutoFocusPrevWbSizeLabel">既存ホワイトボードの退避サイズ</label>
                         <select id="wb-autofocus-prev-wb-size-select" class="m3-select">
                             <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
-                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
-                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">表示領域の幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">表示領域の幅の約1/4 (25%)</option>
                         </select>
                     </div>
                     <div class="settings-row nested-2">
                         <label for="wb-autofocus-new-wb-size-select" id="wb-autofocus-new-wb-size-label" data-i18n="wbAutoFocusNewWbSizeLabel">新規ホワイトボードの表示サイズ</label>
                         <select id="wb-autofocus-new-wb-size-select" class="m3-select">
                             <option value="keep" data-i18n="wbSizeKeep">そのままのサイズ</option>
-                            <option value="zoom1" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (拡大 100%)</option>
-                            <option value="zoom2" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</option>
-                            <option value="zoom4" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</option>
+                            <option value="zoom1" data-i18n="resolutionZoom1Label">表示領域の幅いっぱい (100%)</option>
+                            <option value="zoom2" data-i18n="resolutionZoom2Label">表示領域の幅の約1/2 (50%)</option>
+                            <option value="zoom4" data-i18n="resolutionZoom4Label">表示領域の幅の約1/4 (25%)</option>
                         </select>
                     </div>
 
@@ -165,15 +165,15 @@
                         <label style="font-weight: bold;" data-i18n="initialResolutionTitle">表示サイズ別解像度上限</label>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="resolution-zoom1-select" id="resolution-zoom1-label" data-i18n="resolutionZoom1Label">サイドパネル幅一杯 (100%)</label>
+                        <label for="resolution-zoom1-select" id="resolution-zoom1-label" data-i18n="resolutionZoom1Label">表示領域の幅いっぱい (100%)</label>
                         <select id="resolution-zoom1-select" class="m3-select"></select>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="resolution-zoom2-select" id="resolution-zoom2-label" data-i18n="resolutionZoom2Label">サイドパネル幅の約1/2 (50%)</label>
+                        <label for="resolution-zoom2-select" id="resolution-zoom2-label" data-i18n="resolutionZoom2Label">表示領域の幅の約1/2 (50%)</label>
                         <select id="resolution-zoom2-select" class="m3-select"></select>
                     </div>
                     <div class="settings-row nested-1">
-                        <label for="resolution-zoom4-select" id="resolution-zoom4-label" data-i18n="resolutionZoom4Label">サイドパネル幅の約1/4 (25%)</label>
+                        <label for="resolution-zoom4-select" id="resolution-zoom4-label" data-i18n="resolutionZoom4Label">表示領域の幅の約1/4 (25%)</label>
                         <select id="resolution-zoom4-select" class="m3-select"></select>
                     </div>
 

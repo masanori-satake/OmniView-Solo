@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { resolveIconClickAction, syncPanelBehavior } from './background.js';
+import { handleRuntimeMessage, resolveIconClickAction, syncPanelBehavior } from './background.js';
 
 describe('background.js', () => {
   beforeEach(() => {
@@ -75,6 +75,28 @@ describe('background.js', () => {
       await syncPanelBehavior();
       expect(chrome.sidePanel.setPanelBehavior).toHaveBeenCalledWith({
         openPanelOnActionClick: false,
+      });
+    });
+
+    test('switch_to_tab はタブ作成完了後に成功レスポンスを返す', async () => {
+      const response = await handleRuntimeMessage({ type: 'switch_to_tab' }, {});
+
+      expect(chrome.tabs.create).toHaveBeenCalledWith({
+        url: 'chrome-extension://mock-id/tabview.html',
+      });
+      expect(response).toEqual({ ok: true });
+    });
+
+    test('switch_to_tab のタブ作成失敗時は失敗レスポンスを返して sidepanel に戻す', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      chrome.tabs.create.mockRejectedValueOnce(new Error('tab creation failed'));
+
+      const response = await handleRuntimeMessage({ type: 'switch_to_tab' }, {});
+
+      expect(response).toEqual({ ok: false, error: 'tab creation failed' });
+      expect(store.get('view_mode')).toBe('sidepanel');
+      expect(chrome.sidePanel.setPanelBehavior).toHaveBeenLastCalledWith({
+        openPanelOnActionClick: true,
       });
     });
   });

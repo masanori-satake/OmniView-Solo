@@ -6,8 +6,8 @@
  */
 
 import fc from 'fast-check';
-import { describe, test } from 'vitest';
-import { getViewModeWithDefault } from './storageManager.js';
+import { describe, expect, test, vi } from 'vitest';
+import { getViewModeWithDefault, setViewMode } from './storageManager.js';
 
 // ---------------------------------------------------------------------------
 // Property 1: 不正な ViewMode 値は "sidepanel" にフォールバックする
@@ -41,5 +41,34 @@ describe('Property 1: 不正な ViewMode 値は "sidepanel" にフォールバ�
       fc.property(fc.constant('tab'), (v) => getViewModeWithDefault(v) === 'tab'),
       { numRuns: 10 }
     );
+  });
+});
+
+describe('setViewMode', () => {
+  test('chrome.storage.local.set が失敗した場合は runtime.lastError で reject する', async () => {
+    const storageError = new Error('storage write failed');
+    global.chrome = {
+      runtime: { lastError: storageError },
+      storage: {
+        local: {
+          set: vi.fn((_value, callback) => callback()),
+        },
+      },
+    };
+
+    await expect(setViewMode('tab')).rejects.toBe(storageError);
+  });
+
+  test('chrome.storage.local.set が成功した場合のみ resolve する', async () => {
+    global.chrome = {
+      runtime: {},
+      storage: {
+        local: {
+          set: vi.fn((_value, callback) => callback()),
+        },
+      },
+    };
+
+    await expect(setViewMode('tab')).resolves.toBeUndefined();
   });
 });

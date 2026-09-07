@@ -42,13 +42,13 @@
     "message": "表示サイズ別解像度上限"
   },
   "resolutionZoom1Label": {
-    "message": "サイドパネル幅一杯 (100%)"
+    "message": "表示領域の幅いっぱい (100%)"
   },
   "resolutionZoom2Label": {
-    "message": "サイドパネル幅の約1/2 (50%)"
+    "message": "表示領域の幅の約1/2 (50%)"
   },
   "resolutionZoom4Label": {
-    "message": "サイドパネル幅の約1/4 (25%)"
+    "message": "表示領域の幅の約1/4 (25%)"
   },
   "exportBtn": {
     "message": "エクスポート"
@@ -182,6 +182,9 @@
   },
   "snackbarCopyFailed": {
     "message": "コピーに失敗しました"
+  },
+  "snackbarSwitchToTabFailed": {
+    "message": "タブ表示への切り替えに失敗しました"
   },
   "snackbarImportSuccess": {
     "message": "設定をインポートしました。反映するには、必要に応じてカメラを再起動してください。"

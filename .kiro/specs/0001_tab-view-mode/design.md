@@ -4,7 +4,7 @@
 
 サイドパネル表示とタブ全体表示をワンタップで切り替える「表示位置切り替え」機能の設計書。
 
-ユーザーは `projects/app/app.html`（サイドパネル）のヘッダーに配置された **ViewModeSwitch**（M3 スタイルのトグルスイッチ）を操作することで、OmniView-Solo の表示先を `sidepanel` と `tab` の間で切り替えられる。カメラの接続状態（deviceId リスト・各設定）は `chrome.storage.local` を介して両モード間で引き継がれる。
+ユーザーは `projects/app/app.html`（サイドパネル）のヘッダーに配置された **ViewModeSwitch**（M3 スタイルのトグルスイッチ）を操作することで、OmniView-Solo の表示先を `sidepanel` と `tab` の間で切り替えられる。カメラ構成（deviceId リスト・各設定）は `chrome.storage.local` を介して両モード間で復元される。
 
 ### 設計上の主な決定事項
 
@@ -14,7 +14,7 @@
 | サイドパネルを「閉じる」方法 | `window.close()` を app.js から呼び出す | サービスワーカー経由でサイドパネルを閉じる API は MV3 に存在しない |
 | タブ間通信 | `chrome.runtime.sendMessage` / `chrome.runtime.onMessage` | background.js を中継することで任意のページ・SW 間で通信できる |
 | タブモードのアイコンクリック時の動作 | クリックしたウィンドウに常に新規 TabView を開く | ウィンドウをまたいで既存タブを探す UX より「そのウィンドウで即開く」方が直感的 |
-| カメラ状態の引き継ぎ | Storage への事前書き込み + 遷移後ページが起動時に読み込む | Transferable なオブジェクトを直接渡す手段がない |
+| カメラ構成の引き継ぎ | Storage への事前書き込み + 遷移後ページが起動時に読み込み、各 deviceId のストリームを再取得する | ページ遷移後も同一の `MediaStream` を維持する所有者は設けず、Storage では deviceId と設定のみを保証する |
 | `setPanelBehavior` の扱い | タブモード時は `openPanelOnActionClick: false` に変更する | `openPanelOnActionClick: true` は `chrome.action.onClicked` を上書きするため、タブモード時はアイコンクリックで自前処理が必要 |
 | カメラ状態の保存キー | `active_camera_ids` = `session_state.slotOrder`、`camera_settings` = 既存キー | `camera.js` の既存 `saveSessionState`・`loadSessionState` 実装との整合性を保つ |
 
@@ -46,7 +46,7 @@ flowchart TD
     SP_Switch -->|"sendMessage: switch_to_tab"| BG_MsgHandler
     BG_MsgHandler --> BG_OpenTab
     BG_MsgHandler --> Storage
-    SP_Switch -->|"window.close()"| SidePanelPage
+    SP_Switch -->|"タブ作成成功後に window.close()"| SidePanelPage
 
     TV_Switch -->|"sendMessage: switch_to_sidepanel"| BG_MsgHandler
     BG_MsgHandler --> BG_OpenSP
@@ -75,10 +75,17 @@ sequenceDiagram
     SP->>Store: session_state (slotOrder) を保存
     SP->>BG: sendMessage({ type: "switch_to_tab" })
     BG->>Store: view_mode = "tab" を保存
-    BG->>Tab: chrome.tabs.create({ url: "tabview.html" })
-    SP->>SP: window.close()
-    Tab->>Store: view_mode, session_state, camera_settings を読み込み
-    Tab->>User: カメラ一覧を表示（継続）
+    BG->>Tab: chrome.tabs.create({ url: "tabview.html" }) を待機
+    alt タブ作成に成功
+        BG->>SP: { ok: true }
+        SP->>SP: window.close()
+        Tab->>Store: session_state, camera_settings を読み込み
+        Tab->>Tab: 各 deviceId の MediaStream を再取得
+        Tab->>User: 復元できたカメラ一覧を表示
+    else タブ作成に失敗
+        BG->>SP: { ok: false, error }
+        SP->>SP: スイッチを sidepanel に戻して Snackbar を表示
+    end
 ```
 
 ### 通信フロー：タブ → サイドパネル切り替え
@@ -99,12 +106,15 @@ sequenceDiagram
     alt サイドパネルを開くのに成功
         BG->>TV: chrome.tabs.remove(tabId)
         SP->>Store: view_mode, session_state, camera_settings を読み込み
-        SP->>User: カメラ一覧を表示（継続）
+        SP->>SP: 各 deviceId の MediaStream を再取得
+        SP->>User: 復元できたカメラ一覧を表示
     else 失敗
         BG->>BG: console.error() を記録
         Note over TV: タブを閉じずに維持
     end
 ```
+
+`session_state` と `camera_settings` が保証するのはカメラ構成の復元であり、切り替え前のページが所有していたライブストリームの継続ではない。遷移後ページは保存済み deviceId ごとにカメラを再取得する。権限拒否、デバイス消失、または再取得失敗が発生したカメラは利用不能として表示対象から除外し、復元できなかったことを Snackbar とログで通知する。
 
 ### 通信フロー：拡張機能アイコンクリック
 

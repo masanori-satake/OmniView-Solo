@@ -17,13 +17,13 @@
 ## Tasks
 
 - [x] 1. manifest と Vitest 環境の整備
-  - `projects/app/manifest.chrome.json` に `tabview.html` を `web_accessible_resources` として追加する
+  - `tabview.html` は拡張機能内部から開くため `web_accessible_resources` には公開しない
   - `package.json` に Vitest と fast-check の設定を追加する
   - `vitest.config.js` を作成する（Node 環境、`projects/app/js/**/*.test.js` をテスト対象）
   - _Requirements: 2.2, 5.1_
 
-  - [x] 1.1 manifest.chrome.json を改修する
-    - `web_accessible_resources` に `tabview.html` を追加する（matches: `<all_urls>`）
+  - [x] 1.1 manifest.chrome.json を確認する
+    - `tabview.html` を `web_accessible_resources` に含めない
     - _Requirements: 2.2, 5.1_
 
   - [x] 1.2 Vitest と fast-check のテスト環境を設定する
@@ -61,6 +61,13 @@
     - `chrome.storage.local` をインメモリ Map でモックする
     - テストファイル: `projects/app/js/camera.test.js`
     - **Validates: Requirements 3.1, 3.2**
+
+  - [ ] 2.5 カメラ構成の復元失敗を検証する
+    - 保存済み deviceId のストリーム再取得時に権限を拒否された場合、該当カメラが表示されず Snackbar とログで通知されることを検証する
+    - 保存済み deviceId のデバイスが消失している場合、該当カメラが表示されず Snackbar とログで通知されることを検証する
+    - その他の `getUserMedia` 失敗時にも、復元できたカメラだけが表示され、失敗内容が Snackbar とログで通知されることを検証する
+    - テストファイル: `projects/app/js/app.test.js`、`projects/app/js/tabview.test.js`
+    - **Validates: Requirements 3.1, 3.2, 3.6**
 
 - [x] 3. ViewModeSwitch コンポーネントの実装
   - `projects/app/js/viewModeSwitch.js` を新規作成する
@@ -102,7 +109,7 @@
     - _Requirements: 5.1, 5.2, 5.3_
 
   - [x] 4.2 background.js に onMessage ハンドラーを実装する
-    - `switch_to_tab`: `setViewMode("tab")` → `syncPanelBehavior()` → `chrome.tabs.create({ url: tabview.html })`
+    - `switch_to_tab`: `setViewMode("tab")` → `syncPanelBehavior()` → `chrome.tabs.create({ url: tabview.html })` を待ち、成功・失敗を呼び出し元へ返す
     - `switch_to_sidepanel`: `setViewMode("sidepanel")` → `syncPanelBehavior()` → `chrome.sidePanel.open()` → 成功時 `chrome.tabs.remove(tabId)` / 失敗時 `console.error` のみ
     - _Requirements: 2.1, 2.2, 2.3, 4.1, 4.2, 4.3, 4.4_
 
@@ -142,20 +149,23 @@
     - _Requirements: 1.5, 1.6, 6.2_
 
   - [x] 6.3 app.js にタブ切り替え処理を実装する
-    - `onModeChange("tab")` で `saveSessionState(this.slotOrder, this.activeSlotIndex)` → `chrome.runtime.sendMessage({ type: "switch_to_tab" })` → `window.close()` を順に実行する
+    - `onModeChange("tab")` で `saveSessionState(this.slotOrder, this.activeSlotIndex)` → `chrome.runtime.sendMessage({ type: "switch_to_tab" })` を順に実行し、成功レスポンス受信後のみ `window.close()` を実行する
+    - 失敗レスポンス受信時はスイッチを `"sidepanel"` に戻し、Snackbar で通知する
     - _Requirements: 2.1, 2.2, 2.3, 3.3_
 
   - [x] 6.4 app.js のユニットテストを書く
     - Storage に `"sidepanel"` が保存されているとき ViewModeSwitch が右選択状態で初期化されることを確認する
     - Storage に `"tab"` が保存されているとき左選択状態で初期化されることを確認する
     - スイッチ操作前に `saveSessionState()` が呼ばれ、その後 `sendMessage({ type: "switch_to_tab" })` が呼ばれることを確認する
+    - 復元中のスイッチ操作で空の状態が保存されず、復元後のカメラ構成と設定が保持されることを確認する
+    - タブ作成失敗時にサイドパネルが閉じず、スイッチ復元と Snackbar 表示が行われることを確認する
     - テストファイル: `projects/app/js/app.test.js`
     - _Requirements: 1.6, 1.7, 2.1, 3.3_
 
 - [x] 7. tabview.html / tabview.js の新規実装
   - `projects/app/tabview.html` を新規作成する（`app.html` と共通の UI 構造）
   - `projects/app/js/tabview.js` を新規作成する
-  - 起動時に `getViewMode()`・`loadSessionState()`・`loadCameraSettings()` を読み込む
+  - 起動時に `loadSessionState()`・`loadCameraSettings()` を読み込む
   - ViewModeSwitch の初期状態は `"tab"`
   - サイドパネル側に切り替えたとき: `saveSessionState()` → `sendMessage({ type: "switch_to_sidepanel", tabId })`
   - _Requirements: 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 6.3_
@@ -167,7 +177,7 @@
     - _Requirements: 2.4, 2.5_
 
   - [x] 7.2 tabview.js に起動時 Storage 読み込みと ViewModeSwitch 初期化を実装する
-    - `getViewMode()`・`loadSessionState()`・`loadCameraSettings()` を起動時に呼び出す
+    - `loadSessionState()`・`loadCameraSettings()` を起動時に呼び出し、ViewModeSwitch は保存値にかかわらず `"tab"` で初期化する
     - `session_state.slotOrder` に対応するカメラスロットを生成する
     - Storage 読み込み失敗時は Snackbar でエラー通知する
     - `initViewModeSwitch(el, "tab", onModeChange)` を呼び出す
@@ -217,7 +227,8 @@
     { "id": 5, "tasks": ["6.2", "7.1"] },
     { "id": 6, "tasks": ["6.3", "7.2"] },
     { "id": 7, "tasks": ["6.4", "7.3"] },
-    { "id": 8, "tasks": ["7.4", "8.1"] }
+    { "id": 8, "tasks": ["7.4", "8.1"] },
+    { "id": 9, "tasks": ["2.5"] }
   ]
 }
 ```

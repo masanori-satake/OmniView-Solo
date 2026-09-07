@@ -18,6 +18,10 @@ if (!global.navigator.mediaDevices) {
 
 let mockViewMode = 'sidepanel';
 let executionSequence = [];
+let mockCameraSettings = {};
+let mockCameras = [];
+let loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
+let mockSwitchResponse = { ok: true };
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => mockViewMode),
@@ -27,14 +31,14 @@ vi.mock('./camera.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    loadCameraSettings: vi.fn(async () => ({})),
+    loadCameraSettings: vi.fn(async () => mockCameraSettings),
     loadGlobalSettings: vi.fn(async () => ({
       interval: 5,
       cyclingEnabled: true,
       excludeWhiteboard: true,
     })),
-    getCameras: vi.fn(async () => []),
-    loadSessionState: vi.fn(async () => ({ slotOrder: [], activeSlotIndex: 0 })),
+    getCameras: vi.fn(async () => mockCameras),
+    loadSessionState: vi.fn(() => loadSessionStateImpl()),
     saveSessionState: vi.fn(async (order, index) => {
       executionSequence.push({ action: 'saveSessionState', order, index });
     }),
@@ -43,8 +47,13 @@ vi.mock('./camera.js', async (importOriginal) => {
 
 describe('app.js - SidePanel ViewModeSwitch integration', () => {
   beforeEach(() => {
+    vi.resetModules();
     mockViewMode = 'sidepanel';
     executionSequence = [];
+    mockCameraSettings = {};
+    mockCameras = [];
+    loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
+    mockSwitchResponse = { ok: true };
 
     // DOM モック
     document.body.innerHTML = `
@@ -91,13 +100,15 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <div id="snackbar" class="hidden"><span id="snackbar-message"></span></div>
       </div>
     `;
+    document.body.dataset.viewMode = 'sidepanel';
 
     global.chrome = {
       i18n: { getMessage: vi.fn((key) => key) },
       runtime: {
         getManifest: vi.fn(() => ({ version: '1.0.8' })),
-        sendMessage: vi.fn((msg) => {
+        sendMessage: vi.fn(async (msg) => {
           executionSequence.push({ action: 'sendMessage', message: msg });
+          return mockSwitchResponse;
         }),
       },
       storage: {
@@ -111,17 +122,72 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
   });
 
   test('setupViewModeSwitch は getViewMode の値に応じて ViewModeSwitch を初期化する', async () => {
-    const { app } = await import('./app.js');
+    const { appReady } = await import('./app.js');
     mockViewMode = 'sidepanel';
-    await app.setupViewModeSwitch();
+    await appReady;
 
     const switchEl = document.querySelector('.view-mode-switch');
     expect(switchEl.getAttribute('aria-checked')).toBe('true');
   });
 
+  test('セッション復元中は切り替えを受け付けず、復元後のカメラ構成を保存する', async () => {
+    let resolveSession;
+    loadSessionStateImpl = () => new Promise((resolve) => {
+      resolveSession = resolve;
+    });
+    mockCameraSettings = {
+      cam1: { customLabel: '復元済みカメラ', defaultRole: 'whiteboard' },
+    };
+    mockCameras = [{ deviceId: 'cam1', label: 'Camera 1' }];
+
+    const { app, appReady } = await import('./app.js');
+    const cameraModule = await import('./camera.js');
+    await vi.waitFor(() => expect(cameraModule.loadSessionState).toHaveBeenCalled());
+
+    app.createCameraSlot = vi.fn(async () => ({ element: document.createElement('div') }));
+    app.updateCyclingAndActivationState = vi.fn(async () => {});
+
+    const switchEl = document.querySelector('.view-mode-switch');
+    switchEl.click();
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+
+    resolveSession({ slotOrder: ['cam1'], activeSlotIndex: 0 });
+    await appReady;
+
+    expect(app.slotOrder).toEqual(['cam1']);
+    expect(app.settings).toEqual(mockCameraSettings);
+
+    switchEl.click();
+    await vi.waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalled());
+
+    expect(executionSequence[0]).toEqual({
+      action: 'saveSessionState',
+      order: ['cam1'],
+      index: 0,
+    });
+    expect(app.settings).toEqual(mockCameraSettings);
+    expect(window.close).toHaveBeenCalledOnce();
+  });
+
+  test('タブ作成に失敗した場合はサイドパネル表示へ戻して Snackbar を表示する', async () => {
+    mockSwitchResponse = { ok: false, error: 'tab creation failed' };
+    const { appReady } = await import('./app.js');
+    await appReady;
+
+    const switchEl = document.querySelector('.view-mode-switch');
+    switchEl.click();
+
+    await vi.waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalled());
+    expect(switchEl.getAttribute('aria-checked')).toBe('true');
+    expect(document.getElementById('snackbar-message').textContent).toBe('snackbarSwitchToTabFailed');
+    expect(document.getElementById('snackbar').classList.contains('hidden')).toBe(false);
+    expect(window.close).not.toHaveBeenCalled();
+  });
+
   describe('Property 3: モード切り替え前に必ずカメラ状態が保存される', () => {
     test('任意のカメラスロット状態で切り替え時、saveSessionState が sendMessage より前に実行される', async () => {
-      const { app } = await import('./app.js');
+      const { app, appReady } = await import('./app.js');
+      await appReady;
 
       await fc.assert(
         fc.asyncProperty(

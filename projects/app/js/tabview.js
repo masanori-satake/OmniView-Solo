@@ -1,20 +1,12 @@
 import { app, appReady } from './app.js';
 import { initViewModeSwitch } from './viewModeSwitch.js';
-import { getViewMode } from './storageManager.js';
 import { saveSessionState } from './camera.js';
 
 export async function setupTabViewModeSwitch() {
   const switchContainer = document.querySelector('.view-mode-switch');
   if (!switchContainer) return;
 
-  let viewMode = 'tab';
-  try {
-    viewMode = await getViewMode();
-  } catch (err) {
-    app.showSnackbar(chrome.i18n.getMessage('snackbarStorageError') || 'ストレージの読み込みに失敗しました');
-  }
-
-  initViewModeSwitch(switchContainer, viewMode, async (nextMode) => {
+  initViewModeSwitch(switchContainer, 'tab', async (nextMode) => {
     if (nextMode === 'sidepanel') {
       await saveSessionState(app.slotOrder, app.activeSlotIndex);
       let tabId = undefined;

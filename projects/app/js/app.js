@@ -1,6 +1,6 @@
 import { getCameras, loadCameraSettings, saveCameraSetting as saveCameraSettingToStorage, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
 import { WhiteboardProcessor } from './processor.js';
-import { initViewModeSwitch } from './viewModeSwitch.js';
+import { initViewModeSwitch, setViewModeSwitchState } from './viewModeSwitch.js';
 import { getViewMode } from './storageManager.js';
 
 
@@ -70,8 +70,6 @@ class App {
     this.setupSettingsPanel();
     this.setupAddCameraButton();
     this.setupWelcomeCard();
-    await this.setupViewModeSwitch();
-
     // Log initial device list
     this.addLog(chrome.i18n.getMessage('logAppInitialized'));
     this.logDeviceList();
@@ -121,6 +119,11 @@ class App {
         document.getElementById('initial-overlay').classList.add('hidden');
         this.showWelcomeOrDialog();
     }
+
+    // TabView は tabview.js 側で固定の初期モードを使って初期化する。
+    if (document.body.dataset.viewMode !== 'tab') {
+      await this.setupViewModeSwitch();
+    }
   }
 
   async setupViewModeSwitch() {
@@ -136,9 +139,17 @@ class App {
 
     initViewModeSwitch(switchContainer, viewMode, async (nextMode) => {
       if (nextMode === 'tab') {
-        await saveSessionState(this.slotOrder, this.activeSlotIndex);
-        chrome.runtime.sendMessage({ type: 'switch_to_tab' });
-        window.close();
+        try {
+          await saveSessionState(this.slotOrder, this.activeSlotIndex);
+          const response = await chrome.runtime.sendMessage({ type: 'switch_to_tab' });
+          if (!response?.ok) {
+            throw new Error(response?.error || 'switch_to_tab failed');
+          }
+          window.close();
+        } catch (err) {
+          setViewModeSwitchState(switchContainer, 'sidepanel');
+          this.showSnackbar(chrome.i18n.getMessage('snackbarSwitchToTabFailed') || 'タブ表示への切り替えに失敗しました');
+        }
       }
     });
   }
