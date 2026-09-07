@@ -1,5 +1,7 @@
 import { getCameras, loadCameraSettings, saveCameraSetting as saveCameraSettingToStorage, startCamera, loadGlobalSettings, saveGlobalSettings, saveSessionState, loadSessionState, RESOLUTION_LEVELS, RESOLUTION_PRESETS_2K } from './camera.js';
 import { WhiteboardProcessor } from './processor.js';
+import { initViewModeSwitch } from './viewModeSwitch.js';
+import { getViewMode } from './storageManager.js';
 
 
 class App {
@@ -68,6 +70,7 @@ class App {
     this.setupSettingsPanel();
     this.setupAddCameraButton();
     this.setupWelcomeCard();
+    await this.setupViewModeSwitch();
 
     // Log initial device list
     this.addLog(chrome.i18n.getMessage('logAppInitialized'));
@@ -118,6 +121,26 @@ class App {
         document.getElementById('initial-overlay').classList.add('hidden');
         this.showWelcomeOrDialog();
     }
+  }
+
+  async setupViewModeSwitch() {
+    const switchContainer = document.querySelector('.view-mode-switch');
+    if (!switchContainer) return;
+
+    let viewMode = 'sidepanel';
+    try {
+      viewMode = await getViewMode();
+    } catch (err) {
+      this.showSnackbar(chrome.i18n.getMessage('snackbarStorageError') || 'ストレージの読み込みに失敗しました');
+    }
+
+    initViewModeSwitch(switchContainer, viewMode, async (nextMode) => {
+      if (nextMode === 'tab') {
+        await saveSessionState(this.slotOrder, this.activeSlotIndex);
+        chrome.runtime.sendMessage({ type: 'switch_to_tab' });
+        window.close();
+      }
+    });
   }
 
   showWelcomeOrDialog() {
