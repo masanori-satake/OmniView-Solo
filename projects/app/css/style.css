@@ -1317,3 +1317,105 @@ label.disabled {
     padding: 10px 24px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+/* ===== ViewModeSwitch (.vms-*) ===== */
+
+/* コンテナ */
+.view-mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* フォーカスリング（キーボード操作時のみ表示） */
+.view-mode-switch:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 4px;
+    border-radius: var(--md-sys-shape-extra-small);
+}
+
+/* アイコン（左: タブ全体、右: サイドパネル） */
+.vms-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-sys-color-on-surface-variant);
+    transition: color 0.2s;
+}
+
+.vms-icon .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* サイドパネルモード選択時: サイドパネルアイコンをプライマリカラーに */
+.vms-track--sidepanel ~ .vms-icon--sidepanel,
+.view-mode-switch[aria-checked="true"] .vms-icon--sidepanel {
+    color: var(--md-sys-color-primary);
+}
+
+/* タブモード選択時: タブアイコンをプライマリカラーに */
+.view-mode-switch[aria-checked="false"] .vms-icon--tab {
+    color: var(--md-sys-color-primary);
+}
+
+/* トラック（スライドレール） */
+.vms-track {
+    position: relative;
+    width: 52px;
+    height: 32px;
+    border-radius: 16px;
+    background-color: var(--md-sys-color-surface-variant);
+    border: 2px solid var(--md-sys-color-outline);
+    box-sizing: border-box;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* サムの共通スタイル */
+.vms-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) translateX(2px);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--md-sys-color-outline);
+    box-sizing: border-box;
+}
+
+/* サイドパネルモード: トラック背景 = primary、サム = on-primary、サムを右へ */
+.vms-track--sidepanel {
+    background-color: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+}
+
+.vms-track--sidepanel .vms-thumb {
+    transform: translateY(-50%) translateX(20px);
+    width: 28px;
+    height: 28px;
+    background-color: var(--md-sys-color-on-primary);
+    top: 50%;
+    left: 0;
+}
+
+/* タブモード: トラックはデフォルト（surface-variant）、サムは左 */
+.vms-track--tab {
+    background-color: var(--md-sys-color-surface-variant);
+    border-color: var(--md-sys-color-outline);
+}
+
+.vms-track--tab .vms-thumb {
+    transform: translateY(-50%) translateX(2px);
+    background-color: var(--md-sys-color-outline);
+}
+
+/* トランジション中のサムアニメーション */
+.vms-track--animating .vms-thumb {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s;
+}

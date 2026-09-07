@@ -42,13 +42,13 @@
     "message": "Resolution Limit by Display Size"
   },
   "resolutionZoom1Label": {
-    "message": "Full Panel Width (100%)"
+    "message": "Full Display Width (100%)"
   },
   "resolutionZoom2Label": {
-    "message": "Approx. 1/2 Width (Zoom 50%)"
+    "message": "Approx. 1/2 Display Width (50%)"
   },
   "resolutionZoom4Label": {
-    "message": "Approx. 1/4 Width (Zoom 25%)"
+    "message": "Approx. 1/4 Display Width (25%)"
   },
   "exportBtn": {
     "message": "Export"
@@ -182,6 +182,9 @@
   },
   "snackbarCopyFailed": {
     "message": "Failed to copy"
+  },
+  "snackbarSwitchToTabFailed": {
+    "message": "Failed to switch to tab view"
   },
   "snackbarImportSuccess": {
     "message": "Settings imported. Restart cameras if necessary to apply changes."
