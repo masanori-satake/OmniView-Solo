@@ -26,6 +26,7 @@ export class PerspectiveTransformer {
         this.lastElementCount = 0;
         this.rotatedDuringAdjustment = false;
         this.activeHandleIndex = 0; // Currently focused handle index for keyboard navigation (0..3)
+        this.lastDrawStateKey = null;
 
         // Ensure touch-action is none to prevent scrolling during touch adjustments
         if (this.canvas) {
@@ -414,6 +415,7 @@ export class PerspectiveTransformer {
     }
 
     destroy() {
+        this.lastDrawStateKey = null;
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;
@@ -460,13 +462,23 @@ export class PerspectiveTransformer {
         this.onShowingHandlesChange = null;
     }
 
-    draw() {
+    draw(force = false) {
         const width = this.canvas.clientWidth;
         const height = this.canvas.clientHeight;
         if (this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
         }
+
+        // Performance Optimization: Skip redundant redraws when handles, guidelines, points, and canvas size are unchanged
+        const pointsKey = this.points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(';');
+        const drawStateKey = `${width}x${height}|${this.showHandles}|${this.showGuidelines}|${this.activeHandleIndex}|${this.draggingPoint}|${this.isMultiDragging}|${pointsKey}`;
+
+        if (!force && this.lastDrawStateKey === drawStateKey) {
+            return;
+        }
+        this.lastDrawStateKey = drawStateKey;
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         if (this.showGuidelines && !this.showHandles) {
@@ -782,6 +794,7 @@ export class MedianStacker {
         this.lastMedian = null;
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
+        this.version = 0; // Incremented whenever median calculation updates lastMedian
     }
 
     start() {
@@ -824,8 +837,8 @@ export class MedianStacker {
     }
 
     computeMedian() {
-        if (this.history.length === 0) { this.lastMedian = null; return; }
-        if (this.history.length < 2) { this.lastMedian = this.history[0]; return; }
+        if (this.history.length === 0) { this.lastMedian = null; this.version++; return; }
+        if (this.history.length < 2) { this.lastMedian = this.history[0]; this.version++; return; }
 
         const w = this.history[0].width, h = this.history[0].height;
         const size = w * h * 4;
@@ -839,9 +852,12 @@ export class MedianStacker {
         const len = this.history.length;
         const vals = new Uint8Array(len);
 
+        // Performance Optimization: Cache array references to avoid millions of property lookups in pixel loop
+        const historyDatas = this.history.map(h => h.data);
+
         for (let i = 0; i < size; i += 4) {
             for (let c = 0; c < 3; c++) {
-                for (let j = 0; j < len; j++) vals[j] = this.history[j].data[i + c];
+                for (let j = 0; j < len; j++) vals[j] = historyDatas[j][i + c];
 
                 // Insertion sort for small array
                 for (let j = 1; j < len; j++) {
@@ -858,12 +874,14 @@ export class MedianStacker {
             }
             this.lastMedian.data[i + 3] = 255;
         }
+        this.version++;
     }
 
     cleanup() {
         if (this.timeoutId) { clearTimeout(this.timeoutId); this.timeoutId = null; }
         this.history = [];
         this.lastMedian = null;
+        this.version++;
         this.video = null;
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
@@ -913,6 +931,8 @@ export class WhiteboardProcessor {
         this.isTabVisible = typeof document !== 'undefined' ? !document.hidden : true;
         this.isElementIntersecting = true;
         this.intersectionObserver = null;
+        this.lastDrawnMedianVersion = -1;
+        this.isOverlayCleared = false;
 
         this.initVisibilityListeners();
     }
@@ -964,6 +984,7 @@ export class WhiteboardProcessor {
     setOcclusionRemoval(enabled) {
         if (this.occlusionRemoval === enabled) return;
         this.occlusionRemoval = enabled;
+        this.lastDrawnMedianVersion = -1;
         if (enabled) this.stacker.start();
         else this.stacker.cleanup();
         this.transformer.updateTransform();
@@ -1020,9 +1041,13 @@ export class WhiteboardProcessor {
     render() {
         if (this.transformer.showHandles || this.transformer.showGuidelines) {
             this.transformer.draw();
-        } else {
+            this.isOverlayCleared = false;
+        } else if (!this.isOverlayCleared) {
             const canvas = this.transformer.canvas;
-            this.transformer.ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (canvas && this.transformer.ctx) {
+                this.transformer.ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            this.isOverlayCleared = true;
         }
 
         const showProcessed = this.occlusionRemoval && !!this.stacker.lastMedian;
@@ -1036,6 +1061,9 @@ export class WhiteboardProcessor {
         if (this.lastDisplay !== display) {
             this.processedCanvas.style.display = display;
             this.lastDisplay = display;
+            if (showProcessed) {
+                this.lastDrawnMedianVersion = -1; // Force redraw on display toggle
+            }
         }
 
         if (this.occlusionRemoval) {
@@ -1048,6 +1076,7 @@ export class WhiteboardProcessor {
         if (!w || !h) return;
         if (this.processedCanvas.width !== w || this.processedCanvas.height !== h) {
             this.processedCanvas.width = w; this.processedCanvas.height = h;
+            this.lastDrawnMedianVersion = -1;
         }
 
         let imageData = this.stacker.lastMedian;
@@ -1058,7 +1087,13 @@ export class WhiteboardProcessor {
             return;
         }
 
+        // Performance Optimization: Avoid costly putImageData calls if median frame version has not changed
+        if (this.lastDrawnMedianVersion === this.stacker.version) {
+            return;
+        }
+
         this.ctx.putImageData(imageData, 0, 0);
+        this.lastDrawnMedianVersion = this.stacker.version;
     }
 
     async capture() {
