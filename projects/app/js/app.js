@@ -1326,9 +1326,21 @@ class App {
         if (log.message.startsWith('---')) div.classList.add('log-separator');
 
         if (log.message.startsWith('---')) {
-            div.innerHTML = `<div class="separator-line"></div><div class="separator-text">${log.message}</div><div class="separator-line"></div>`;
+            const sepLine1 = document.createElement('div');
+            sepLine1.className = 'separator-line';
+            const sepText = document.createElement('div');
+            sepText.className = 'separator-text';
+            sepText.textContent = log.message;
+            const sepLine2 = document.createElement('div');
+            sepLine2.className = 'separator-line';
+            div.append(sepLine1, sepText, sepLine2);
         } else {
-            div.innerHTML = `<span class="log-time">${log.time}</span>${log.message}`;
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.textContent = log.time;
+            div.appendChild(timeSpan);
+            // DOM-based XSS 対策: textNode を使用してユーザー制御入力（カメラ名等）を含むログメッセージを安全にレンダリングする
+            div.appendChild(document.createTextNode(log.message));
         }
         container.appendChild(div);
     });

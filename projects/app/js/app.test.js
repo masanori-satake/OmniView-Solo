@@ -97,6 +97,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <label id="pin-release-time-label"></label>
         <select id="info-camera-select"></select>
         <div id="welcome-container" class="hidden"></div>
+        <div id="logs-container"></div>
         <div id="snackbar" class="hidden"><span id="snackbar-message"></span></div>
       </div>
     `;
@@ -182,6 +183,20 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     expect(document.getElementById('snackbar-message').textContent).toBe('snackbarSwitchToTabFailed');
     expect(document.getElementById('snackbar').classList.contains('hidden')).toBe(false);
     expect(window.close).not.toHaveBeenCalled();
+  });
+
+  test('renderLogs は HTMLタグやスクリプトをエスケープして安全にレンダリングする (XSS対策)', async () => {
+    const { app, appReady } = await import('./app.js');
+    await appReady;
+
+    app.addLog('<script>alert("xss")</script>');
+    const container = document.getElementById('logs-container');
+    const logEntries = container.querySelectorAll('.log-entry');
+    const lastEntry = logEntries[logEntries.length - 1];
+
+    expect(lastEntry).not.toBeNull();
+    expect(lastEntry.querySelector('script')).toBeNull();
+    expect(lastEntry.textContent).toContain('<script>alert("xss")</script>');
   });
 
   describe('Property 3: モード切り替え前に必ずカメラ状態が保存される', () => {
