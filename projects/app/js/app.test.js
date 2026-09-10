@@ -224,16 +224,23 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     const { app, appReady } = await import('./app.js');
     await appReady;
 
+    const cameraSettings = {
+      validCam: { customLabel: 'Safe Label' }
+    };
+    Object.defineProperty(cameraSettings, '__proto__', {
+      value: { polluted: true },
+      enumerable: true,
+    });
     const maliciousJson = JSON.stringify({
       version: 1,
-      camera_settings: {
-        '__proto__': { polluted: true },
-        'validCam': { customLabel: 'Safe Label' }
-      }
+      camera_settings: cameraSettings
     });
 
     const file = new Blob([maliciousJson], { type: 'application/json' });
     const importInput = document.getElementById('import-input');
+    const importModeSelect = document.getElementById('import-mode-select');
+    importModeSelect.innerHTML = '<option value="overwrite">overwrite</option>';
+    importModeSelect.value = 'overwrite';
 
     const fileReaderMock = {
       readAsText: function() {
@@ -253,6 +260,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     expect(Object.prototype.polluted).toBeUndefined();
+    expect(app.settings.validCam.customLabel).toBe('Safe Label');
     global.FileReader = origFileReader;
   });
 

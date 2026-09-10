@@ -555,7 +555,7 @@ class App {
                     this.updateAllResolutionFpsDisplays();
                 }
 
-                if (data.camera_settings && typeof data.camera_settings === 'object') {
+                if (data.camera_settings !== null && typeof data.camera_settings === 'object' && !Array.isArray(data.camera_settings)) {
                     let currentSettings = mode === 'overwrite' ? {} : await loadCameraSettings();
 
                     for (const [deviceId, imported] of Object.entries(data.camera_settings)) {
