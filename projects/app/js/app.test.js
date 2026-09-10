@@ -71,8 +71,8 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <div id="settings-panel" class="hidden"></div>
         <div id="settings-overlay"></div>
         <input type="number" id="interval-input" value="5">
-        <button id="interval-up"></button>
-        <button id="interval-down"></button>
+        <button id="interval-up" data-i18n-title="incrementInterval"></button>
+        <button id="interval-down" data-i18n-title="decrementInterval"></button>
         <input type="checkbox" id="cycling-switch">
         <label id="interval-label"></label>
         <input type="checkbox" id="exclude-whiteboard-switch">
@@ -92,8 +92,8 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <select id="wb-autofocus-new-wb-size-select"></select>
         <input type="checkbox" id="pin-release-switch">
         <input type="number" id="pin-release-time-input">
-        <button id="pin-release-time-up"></button>
-        <button id="pin-release-time-down"></button>
+        <button id="pin-release-time-up" data-i18n-title="incrementPinReleaseTime"></button>
+        <button id="pin-release-time-down" data-i18n-title="decrementPinReleaseTime"></button>
         <label id="pin-release-time-label"></label>
         <select id="info-camera-select"></select>
         <div id="camera-capabilities-list"></div>
@@ -313,9 +313,6 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         const addBtn = document.getElementById('add-camera-nav-btn');
         addBtn.setAttribute('data-i18n-title', 'addCameraNavBtn');
 
-        const intervalUpBtn = document.getElementById('interval-up');
-        intervalUpBtn.setAttribute('data-i18n-title', 'incrementVal');
-
         const generalTabBtn = document.createElement('button');
         generalTabBtn.setAttribute('data-i18n-tooltip', 'tabGeneral');
         document.body.appendChild(generalTabBtn);
@@ -323,7 +320,10 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         app.initI18n();
 
         expect(addBtn.getAttribute('aria-label')).toBe('addCameraNavBtn');
-        expect(intervalUpBtn.getAttribute('aria-label')).toBe('incrementVal');
+        expect(document.getElementById('interval-up').getAttribute('aria-label')).toBe('incrementInterval');
+        expect(document.getElementById('interval-down').getAttribute('aria-label')).toBe('decrementInterval');
+        expect(document.getElementById('pin-release-time-up').getAttribute('aria-label')).toBe('incrementPinReleaseTime');
+        expect(document.getElementById('pin-release-time-down').getAttribute('aria-label')).toBe('decrementPinReleaseTime');
         expect(generalTabBtn.getAttribute('aria-label')).toBe('tabGeneral');
       });
 
