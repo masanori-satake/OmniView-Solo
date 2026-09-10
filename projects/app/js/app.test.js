@@ -316,10 +316,15 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         const intervalUpBtn = document.getElementById('interval-up');
         intervalUpBtn.setAttribute('data-i18n-title', 'incrementVal');
 
+        const generalTabBtn = document.createElement('button');
+        generalTabBtn.setAttribute('data-i18n-tooltip', 'tabGeneral');
+        document.body.appendChild(generalTabBtn);
+
         app.initI18n();
 
         expect(addBtn.getAttribute('aria-label')).toBe('addCameraNavBtn');
         expect(intervalUpBtn.getAttribute('aria-label')).toBe('incrementVal');
+        expect(generalTabBtn.getAttribute('aria-label')).toBe('tabGeneral');
       });
 
       test('createCameraSlot は生成されたカメラスロット内の全アイコンボタンに aria-label を設定する', async () => {

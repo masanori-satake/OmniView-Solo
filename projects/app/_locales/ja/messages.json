@@ -238,6 +238,18 @@
   "decrementVal": {
     "message": "値を減らす"
   },
+  "incrementInterval": {
+    "message": "表示間隔を増やす"
+  },
+  "decrementInterval": {
+    "message": "表示間隔を減らす"
+  },
+  "incrementPinReleaseTime": {
+    "message": "ピン留め保持期間を増やす"
+  },
+  "decrementPinReleaseTime": {
+    "message": "ピン留め保持期間を減らす"
+  },
   "deleteBtnOverlay": {
     "message": "削除"
   },
