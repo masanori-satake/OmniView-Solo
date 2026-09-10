@@ -22,6 +22,12 @@ let mockCameraSettings = {};
 let mockCameras = [];
 let loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
 let mockSwitchResponse = { ok: true };
+const i18nMessages = {
+  incrementInterval: 'Increase switching interval',
+  decrementInterval: 'Decrease switching interval',
+  incrementPinReleaseTime: 'Increase pin retention period',
+  decrementPinReleaseTime: 'Decrease pin retention period',
+};
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => mockViewMode),
@@ -105,7 +111,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     document.body.dataset.viewMode = 'sidepanel';
 
     global.chrome = {
-      i18n: { getMessage: vi.fn((key) => key) },
+      i18n: { getMessage: vi.fn((key) => i18nMessages[key] || key) },
       runtime: {
         getManifest: vi.fn(() => ({ version: '1.0.8' })),
         sendMessage: vi.fn(async (msg) => {
@@ -320,10 +326,10 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         app.initI18n();
 
         expect(addBtn.getAttribute('aria-label')).toBe('addCameraNavBtn');
-        expect(document.getElementById('interval-up').getAttribute('aria-label')).toBe('incrementInterval');
-        expect(document.getElementById('interval-down').getAttribute('aria-label')).toBe('decrementInterval');
-        expect(document.getElementById('pin-release-time-up').getAttribute('aria-label')).toBe('incrementPinReleaseTime');
-        expect(document.getElementById('pin-release-time-down').getAttribute('aria-label')).toBe('decrementPinReleaseTime');
+        expect(document.getElementById('interval-up').getAttribute('aria-label')).toBe('Increase switching interval');
+        expect(document.getElementById('interval-down').getAttribute('aria-label')).toBe('Decrease switching interval');
+        expect(document.getElementById('pin-release-time-up').getAttribute('aria-label')).toBe('Increase pin retention period');
+        expect(document.getElementById('pin-release-time-down').getAttribute('aria-label')).toBe('Decrease pin retention period');
         expect(generalTabBtn.getAttribute('aria-label')).toBe('tabGeneral');
       });
 
