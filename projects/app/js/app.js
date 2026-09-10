@@ -515,10 +515,13 @@ class App {
         reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Invalid JSON format');
+                }
                 const mode = importModeSelect.value;
                 this.addLog(chrome.i18n.getMessage('logImporting', [mode]));
 
-                if (data.global_settings) {
+                if (data.global_settings && typeof data.global_settings === 'object') {
                     this.globalSettings = { ...this.globalSettings, ...data.global_settings };
                     await saveGlobalSettings(this.globalSettings);
                     this.bandwidthDialogDismissed = false;
@@ -552,10 +555,14 @@ class App {
                     this.updateAllResolutionFpsDisplays();
                 }
 
-                if (data.camera_settings) {
+                if (data.camera_settings && typeof data.camera_settings === 'object') {
                     let currentSettings = mode === 'overwrite' ? {} : await loadCameraSettings();
 
                     for (const [deviceId, imported] of Object.entries(data.camera_settings)) {
+                        // プロトタイプ汚染対策: __proto__, constructor, prototype キーを無視する
+                        if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
+                            continue;
+                        }
                         if (mode === 'overwrite') {
                             currentSettings[deviceId] = imported;
                         } else if (mode === 'add') {
@@ -1393,7 +1400,10 @@ class App {
 
     if (!info) {
         if (shouldRender && listContainer) {
-            listContainer.innerHTML = `<p>${chrome.i18n.getMessage('noStreamInfo')}</p>`;
+            listContainer.textContent = '';
+            const noInfoPara = document.createElement('p');
+            noInfoPara.textContent = chrome.i18n.getMessage('noStreamInfo');
+            listContainer.appendChild(noInfoPara);
         }
         return;
     }
@@ -1403,10 +1413,15 @@ class App {
     for (const entry of info) {
         const item = document.createElement('div');
         item.className = 'info-item';
-        item.innerHTML = `
-            <span class="info-label">${chrome.i18n.getMessage(entry.key)}</span>
-            <span class="info-value">${entry.value}</span>
-        `;
+        // DOM-based XSS 対策: innerHTML を使用せず textContent で安全にノードを構築する
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'info-label';
+        labelSpan.textContent = chrome.i18n.getMessage(entry.key);
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'info-value';
+        valueSpan.textContent = entry.value;
+        item.appendChild(labelSpan);
+        item.appendChild(valueSpan);
         listContainer.appendChild(item);
     }
   }
