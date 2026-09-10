@@ -232,6 +232,12 @@
       "error": { "content": "$2" }
     }
   },
+  "incrementVal": {
+    "message": "値を増やす"
+  },
+  "decrementVal": {
+    "message": "値を減らす"
+  },
   "deleteBtnOverlay": {
     "message": "削除"
   },

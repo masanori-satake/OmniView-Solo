@@ -49,12 +49,18 @@ class App {
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
       const key = el.getAttribute('data-i18n-title');
       const message = chrome.i18n.getMessage(key);
-      if (message) el.title = message;
+      if (message) {
+        el.title = message;
+        el.setAttribute('aria-label', message);
+      }
     });
     document.querySelectorAll('[data-i18n-tooltip]').forEach(el => {
       const key = el.getAttribute('data-i18n-tooltip');
       const message = chrome.i18n.getMessage(key);
-      if (message) el.dataset.tooltip = message;
+      if (message) {
+        el.dataset.tooltip = message;
+        el.setAttribute('aria-label', message);
+      }
     });
   }
 
@@ -1996,16 +2002,16 @@ class App {
         <canvas class="overlay-canvas"></canvas>
 
         <!-- Rotation overlays -->
-        <button class="video-overlay-top-left rot-left-btn hidden" title="${chrome.i18n.getMessage('rotLeftBtnTitle')}">
+        <button class="video-overlay-top-left rot-left-btn hidden" title="${chrome.i18n.getMessage('rotLeftBtnTitle')}" aria-label="${chrome.i18n.getMessage('rotLeftBtnTitle')}">
             <span class="material-symbols-outlined">rotate_left</span>
         </button>
-        <button class="video-overlay-top-right-rot rot-right-btn hidden" title="${chrome.i18n.getMessage('rotRightBtnTitle')}">
+        <button class="video-overlay-top-right-rot rot-right-btn hidden" title="${chrome.i18n.getMessage('rotRightBtnTitle')}" aria-label="${chrome.i18n.getMessage('rotRightBtnTitle')}">
             <span class="material-symbols-outlined">rotate_right</span>
         </button>
 
         <!-- Left Side Pin Button Overlay -->
         <div class="video-overlay-bottom-left pin-overlay hidden">
-            <button class="pin-btn-overlay" title="${chrome.i18n.getMessage('pinBtnTitle')}">
+            <button class="pin-btn-overlay" title="${chrome.i18n.getMessage('pinBtnTitle')}" aria-label="${chrome.i18n.getMessage('pinBtnTitle')}">
                 <span class="material-symbols-outlined">push_pin</span>
             </button>
         </div>
@@ -2015,7 +2021,7 @@ class App {
             <div class="pause-indicator">
                 <span class="material-symbols-outlined">pause_circle</span>
             </div>
-            <button class="delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}">
+            <button class="delete-btn-overlay" title="${chrome.i18n.getMessage('deleteBtnOverlay')}" aria-label="${chrome.i18n.getMessage('deleteBtnOverlay')}">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
@@ -2024,24 +2030,24 @@ class App {
         <div class="camera-resolution-fps-overlay hidden"></div>
 
         <div class="video-overlay-top-left-vscale vscale-overlay whiteboard-only ${vScaleHiddenClass}">
-            <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}">
+            <button class="vscale-btn-overlay vscale-reset-btn" title="${chrome.i18n.getMessage('vResetBtnTitle')}" aria-label="${chrome.i18n.getMessage('vResetBtnTitle')}">
                 <span class="material-symbols-outlined">restart_alt</span>
             </button>
-            <button class="vscale-btn-overlay vscale-compress-btn" title="${chrome.i18n.getMessage('vCompressBtnTitle')}">
+            <button class="vscale-btn-overlay vscale-compress-btn" title="${chrome.i18n.getMessage('vCompressBtnTitle')}" aria-label="${chrome.i18n.getMessage('vCompressBtnTitle')}">
                 <span class="material-symbols-outlined">compress</span>
             </button>
-            <button class="vscale-btn-overlay vscale-expand-btn" title="${chrome.i18n.getMessage('vExpandBtnTitle')}">
+            <button class="vscale-btn-overlay vscale-expand-btn" title="${chrome.i18n.getMessage('vExpandBtnTitle')}" aria-label="${chrome.i18n.getMessage('vExpandBtnTitle')}">
                 <span class="material-symbols-outlined">expand</span>
             </button>
-            <button class="vscale-btn-overlay vscale-max-btn" title="${chrome.i18n.getMessage('vMaximizeBtnTitle')}">
+            <button class="vscale-btn-overlay vscale-max-btn" title="${chrome.i18n.getMessage('vMaximizeBtnTitle')}" aria-label="${chrome.i18n.getMessage('vMaximizeBtnTitle')}">
                 <span class="material-symbols-outlined">crop_portrait</span>
             </button>
         </div>
         <div class="video-overlay-bottom-right">
-            <button class="zoom-btn-overlay zoom-out-btn" title="${chrome.i18n.getMessage('zoomOutBtnTitle')}">
+            <button class="zoom-btn-overlay zoom-out-btn" title="${chrome.i18n.getMessage('zoomOutBtnTitle')}" aria-label="${chrome.i18n.getMessage('zoomOutBtnTitle')}">
                 <span class="material-symbols-outlined">zoom_out</span>
             </button>
-            <button class="zoom-btn-overlay zoom-in-btn" title="${chrome.i18n.getMessage('zoomInBtnTitle')}">
+            <button class="zoom-btn-overlay zoom-in-btn" title="${chrome.i18n.getMessage('zoomInBtnTitle')}" aria-label="${chrome.i18n.getMessage('zoomInBtnTitle')}">
                 <span class="material-symbols-outlined">zoom_in</span>
             </button>
         </div>
@@ -2053,10 +2059,10 @@ class App {
       <div class="slot-controls">
         <div class="control-row">
           <div class="slot-move-controls">
-              <button class="m3-icon-button-small move-up-btn" title="${chrome.i18n.getMessage('moveUpBtn')}">
+              <button class="m3-icon-button-small move-up-btn" title="${chrome.i18n.getMessage('moveUpBtn')}" aria-label="${chrome.i18n.getMessage('moveUpBtn')}">
                   <span class="material-symbols-outlined">arrow_upward</span>
               </button>
-              <button class="m3-icon-button-small move-down-btn" title="${chrome.i18n.getMessage('moveDownBtn')}">
+              <button class="m3-icon-button-small move-down-btn" title="${chrome.i18n.getMessage('moveDownBtn')}" aria-label="${chrome.i18n.getMessage('moveDownBtn')}">
                   <span class="material-symbols-outlined">arrow_downward</span>
               </button>
           </div>
@@ -2073,25 +2079,25 @@ class App {
           </div>
           <input type="text" class="m3-textfield label-input" placeholder="${chrome.i18n.getMessage('cameraNamePlaceholder')}">
 
-          <button class="m3-icon-button-small guideline-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('guidelineBtnTitle')}">
+          <button class="m3-icon-button-small guideline-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('guidelineBtnTitle')}" aria-label="${chrome.i18n.getMessage('guidelineBtnTitle')}">
               <span class="material-symbols-outlined">grid_on</span>
           </button>
 
-          <button class="m3-icon-button-small lock-btn" title="${chrome.i18n.getMessage('lockBtnTitle')}">
+          <button class="m3-icon-button-small lock-btn" title="${chrome.i18n.getMessage('lockBtnTitle')}" aria-label="${chrome.i18n.getMessage('lockBtnTitle')}">
               <span class="material-symbols-outlined">lock_open</span>
           </button>
 
-          <button class="m3-icon-button-small occlusion-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('occlusionBtnTitle')}">
+          <button class="m3-icon-button-small occlusion-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('occlusionBtnTitle')}" aria-label="${chrome.i18n.getMessage('occlusionBtnTitle')}">
               <span class="material-symbols-outlined">person_off</span>
           </button>
 
-          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('setBtnTitle')}">
+          <button class="m3-icon-button-small set-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('setBtnTitle')}" aria-label="${chrome.i18n.getMessage('setBtnTitle')}">
               <span class="material-symbols-outlined">settings_overscan</span>
           </button>
-          <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('resetBtnTitle')}">
+          <button class="m3-icon-button-small reset-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('resetBtnTitle')}" aria-label="${chrome.i18n.getMessage('resetBtnTitle')}">
               <span class="material-symbols-outlined">restart_alt</span>
           </button>
-          <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('copyBtnTitle')}">
+          <button class="m3-icon-button-small copy-btn whiteboard-only ${setting.role === 'whiteboard' ? '' : 'hidden'}" title="${chrome.i18n.getMessage('copyBtnTitle')}" aria-label="${chrome.i18n.getMessage('copyBtnTitle')}">
               <span class="material-symbols-outlined">photo_camera</span>
           </button>
         </div>
@@ -2847,6 +2853,7 @@ class App {
               if (pinBtnEl) {
                   pinBtnEl.classList.remove('pinned');
                   pinBtnEl.title = chrome.i18n.getMessage('pinBtnTitle');
+                  pinBtnEl.setAttribute('aria-label', pinBtnEl.title);
               }
           }
       }
@@ -2858,6 +2865,7 @@ class App {
           if (pinBtnEl) {
               pinBtnEl.classList.add('pinned');
               pinBtnEl.title = chrome.i18n.getMessage('unpinBtnTitle');
+              pinBtnEl.setAttribute('aria-label', pinBtnEl.title);
           }
       }
 
@@ -2883,6 +2891,7 @@ class App {
           if (pinBtnEl) {
               pinBtnEl.classList.remove('pinned');
               pinBtnEl.title = chrome.i18n.getMessage('pinBtnTitle');
+              pinBtnEl.setAttribute('aria-label', pinBtnEl.title);
           }
       }
 

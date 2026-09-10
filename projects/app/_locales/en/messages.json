@@ -232,6 +232,12 @@
       "error": { "content": "$2" }
     }
   },
+  "incrementVal": {
+    "message": "Increase value"
+  },
+  "decrementVal": {
+    "message": "Decrease value"
+  },
   "deleteBtnOverlay": {
     "message": "Delete"
   },

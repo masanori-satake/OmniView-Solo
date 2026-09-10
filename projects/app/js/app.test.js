@@ -304,4 +304,35 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
       );
     });
   });
+
+    describe('Accessibility - ARIA Labels', () => {
+      test('initI18n は data-i18n-title および data-i18n-tooltip を持つ要素に aria-label を設定する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const addBtn = document.getElementById('add-camera-nav-btn');
+        addBtn.setAttribute('data-i18n-title', 'addCameraNavBtn');
+
+        const intervalUpBtn = document.getElementById('interval-up');
+        intervalUpBtn.setAttribute('data-i18n-title', 'incrementVal');
+
+        app.initI18n();
+
+        expect(addBtn.getAttribute('aria-label')).toBe('addCameraNavBtn');
+        expect(intervalUpBtn.getAttribute('aria-label')).toBe('incrementVal');
+      });
+
+      test('createCameraSlot は生成されたカメラスロット内の全アイコンボタンに aria-label を設定する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const slot = await app.createCameraSlot({ deviceId: 'test-cam', label: 'Test Camera' });
+        const buttons = slot.element.querySelectorAll('button');
+
+        expect(buttons.length).toBeGreaterThan(0);
+        buttons.forEach(btn => {
+          expect(btn.getAttribute('aria-label')).toBeTruthy();
+        });
+      });
+    });
 });
