@@ -232,6 +232,24 @@
       "error": { "content": "$2" }
     }
   },
+  "incrementVal": {
+    "message": "Increase value"
+  },
+  "decrementVal": {
+    "message": "Decrease value"
+  },
+  "incrementInterval": {
+    "message": "Increase switching interval"
+  },
+  "decrementInterval": {
+    "message": "Decrease switching interval"
+  },
+  "incrementPinReleaseTime": {
+    "message": "Increase pin retention period"
+  },
+  "decrementPinReleaseTime": {
+    "message": "Decrease pin retention period"
+  },
   "deleteBtnOverlay": {
     "message": "Delete"
   },

@@ -22,6 +22,12 @@ let mockCameraSettings = {};
 let mockCameras = [];
 let loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
 let mockSwitchResponse = { ok: true };
+const i18nMessages = {
+  incrementInterval: 'Increase switching interval',
+  decrementInterval: 'Decrease switching interval',
+  incrementPinReleaseTime: 'Increase pin retention period',
+  decrementPinReleaseTime: 'Decrease pin retention period',
+};
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => mockViewMode),
@@ -71,8 +77,8 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <div id="settings-panel" class="hidden"></div>
         <div id="settings-overlay"></div>
         <input type="number" id="interval-input" value="5">
-        <button id="interval-up"></button>
-        <button id="interval-down"></button>
+        <button id="interval-up" data-i18n-title="incrementInterval"></button>
+        <button id="interval-down" data-i18n-title="decrementInterval"></button>
         <input type="checkbox" id="cycling-switch">
         <label id="interval-label"></label>
         <input type="checkbox" id="exclude-whiteboard-switch">
@@ -92,8 +98,8 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <select id="wb-autofocus-new-wb-size-select"></select>
         <input type="checkbox" id="pin-release-switch">
         <input type="number" id="pin-release-time-input">
-        <button id="pin-release-time-up"></button>
-        <button id="pin-release-time-down"></button>
+        <button id="pin-release-time-up" data-i18n-title="incrementPinReleaseTime"></button>
+        <button id="pin-release-time-down" data-i18n-title="decrementPinReleaseTime"></button>
         <label id="pin-release-time-label"></label>
         <select id="info-camera-select"></select>
         <div id="camera-capabilities-list"></div>
@@ -105,7 +111,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     document.body.dataset.viewMode = 'sidepanel';
 
     global.chrome = {
-      i18n: { getMessage: vi.fn((key) => key) },
+      i18n: { getMessage: vi.fn((key) => i18nMessages[key] || key) },
       runtime: {
         getManifest: vi.fn(() => ({ version: '1.0.8' })),
         sendMessage: vi.fn(async (msg) => {
@@ -304,4 +310,40 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
       );
     });
   });
+
+    describe('Accessibility - ARIA Labels', () => {
+      test('initI18n は data-i18n-title および data-i18n-tooltip を持つ要素に aria-label を設定する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const addBtn = document.getElementById('add-camera-nav-btn');
+        addBtn.setAttribute('data-i18n-title', 'addCameraNavBtn');
+
+        const generalTabBtn = document.createElement('button');
+        generalTabBtn.setAttribute('data-i18n-tooltip', 'tabGeneral');
+        document.body.appendChild(generalTabBtn);
+
+        app.initI18n();
+
+        expect(addBtn.getAttribute('aria-label')).toBe('addCameraNavBtn');
+        expect(document.getElementById('interval-up').getAttribute('aria-label')).toBe('Increase switching interval');
+        expect(document.getElementById('interval-down').getAttribute('aria-label')).toBe('Decrease switching interval');
+        expect(document.getElementById('pin-release-time-up').getAttribute('aria-label')).toBe('Increase pin retention period');
+        expect(document.getElementById('pin-release-time-down').getAttribute('aria-label')).toBe('Decrease pin retention period');
+        expect(generalTabBtn.getAttribute('aria-label')).toBe('tabGeneral');
+      });
+
+      test('createCameraSlot は生成されたカメラスロット内の全アイコンボタンに aria-label を設定する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const slot = await app.createCameraSlot({ deviceId: 'test-cam', label: 'Test Camera' });
+        const buttons = slot.element.querySelectorAll('button');
+
+        expect(buttons.length).toBeGreaterThan(0);
+        buttons.forEach(btn => {
+          expect(btn.getAttribute('aria-label')).toBeTruthy();
+        });
+      });
+    });
 });
