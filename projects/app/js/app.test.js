@@ -96,6 +96,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <button id="pin-release-time-down"></button>
         <label id="pin-release-time-label"></label>
         <select id="info-camera-select"></select>
+        <div id="camera-capabilities-list"></div>
         <div id="welcome-container" class="hidden"></div>
         <div id="logs-container"></div>
         <div id="snackbar" class="hidden"><span id="snackbar-message"></span></div>
@@ -197,6 +198,70 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     expect(lastEntry).not.toBeNull();
     expect(lastEntry.querySelector('script')).toBeNull();
     expect(lastEntry.textContent).toContain('<script>alert("xss")</script>');
+  });
+
+  test('displayCameraInfo は HTMLタグを含むカメラ情報エントリを安全にエスケープして表示する (XSS対策)', async () => {
+    const { app, appReady } = await import('./app.js');
+    await appReady;
+
+    const malformedInfo = [
+      { key: 'infoDeviceId', value: '<img src=x onerror=alert(1)>' }
+    ];
+    app.cameraInfoCache.set('cam-xss', malformedInfo);
+
+    const infoSelect = document.getElementById('info-camera-select');
+    infoSelect.innerHTML = '<option value="cam-xss">cam-xss</option>';
+    infoSelect.value = 'cam-xss';
+
+    await app.displayCameraInfo('cam-xss');
+
+    const listContainer = document.getElementById('camera-capabilities-list');
+    expect(listContainer.querySelector('img')).toBeNull();
+    expect(listContainer.textContent).toContain('<img src=x onerror=alert(1)>');
+  });
+
+  test('設定ファイルインポート時にプロトタイプ汚染キー (__proto__) を無視する', async () => {
+    const { app, appReady } = await import('./app.js');
+    await appReady;
+
+    const cameraSettings = {
+      validCam: { customLabel: 'Safe Label' }
+    };
+    Object.defineProperty(cameraSettings, '__proto__', {
+      value: { polluted: true },
+      enumerable: true,
+    });
+    const maliciousJson = JSON.stringify({
+      version: 1,
+      camera_settings: cameraSettings
+    });
+
+    const file = new Blob([maliciousJson], { type: 'application/json' });
+    const importInput = document.getElementById('import-input');
+    const importModeSelect = document.getElementById('import-mode-select');
+    importModeSelect.innerHTML = '<option value="overwrite">overwrite</option>';
+    importModeSelect.value = 'overwrite';
+
+    const fileReaderMock = {
+      readAsText: function() {
+        this.onload({ target: { result: maliciousJson } });
+      }
+    };
+    const origFileReader = global.FileReader;
+    global.FileReader = vi.fn(() => fileReaderMock);
+
+    Object.defineProperty(importInput, 'files', {
+      value: [file],
+      writable: true,
+    });
+
+    importInput.dispatchEvent(new Event('change'));
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(Object.prototype.polluted).toBeUndefined();
+    expect(app.settings.validCam.customLabel).toBe('Safe Label');
+    global.FileReader = origFileReader;
   });
 
   describe('Property 3: モード切り替え前に必ずカメラ状態が保存される', () => {
