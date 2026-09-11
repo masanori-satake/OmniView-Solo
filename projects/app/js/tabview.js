@@ -3,6 +3,11 @@ import { initViewModeSwitch } from './viewModeSwitch.js';
 import { saveSessionState } from './camera.js';
 import { getTileMode, setTileMode } from './storageManager.js';
 
+/**
+ * タブ表示からサイドパネル表示へ切り替えるスイッチを初期化する。
+ *
+ * @returns {Promise<void>}
+ */
 export async function setupTabViewModeSwitch() {
   const switchContainer = document.querySelector('.view-mode-switch');
   if (!switchContainer) return;
@@ -27,6 +32,11 @@ export async function setupTabViewModeSwitch() {
   });
 }
 
+/**
+ * 保存済みのタイルモードを復元し、切り替えボタンを初期化する。
+ *
+ * @returns {Promise<void>}
+ */
 export async function setupTileModeSwitch() {
   const container = document.getElementById('tile-mode-switch-container');
   if (!container) return;
