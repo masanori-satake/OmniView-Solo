@@ -33,14 +33,13 @@ def bump_version(part='patch'):
             json.dump(data, f, indent=2, ensure_ascii=False)
             f.write('\n')
 
-    # Update app.html
-    app_html_path = 'projects/app/app.html'
-    with open(app_html_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    # Match both active tag (with attributes) and comment tag
-    new_content = re.sub(r'(<p[^>]*>Version: )\d+\.\d+\.\d+(</p>)', rf'\g<1>{new_version}\g<2>', content)
-    with open(app_html_path, 'w', encoding='utf-8') as f:
-        f.write(new_content)
+    # Update app.html and tabview.html
+    for html_path in ['projects/app/app.html', 'projects/app/tabview.html']:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        new_content = re.sub(r'(<p[^>]*>Version: )\d+\.\d+\.\d+(</p>)', rf'\g<1>{new_version}\g<2>', content)
+        with open(html_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
 
     # Update README.md badge
     with open('README.md', 'r', encoding='utf-8') as f:
