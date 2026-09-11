@@ -81,8 +81,17 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <button id="start-btn"></button>
         <button id="add-camera-nav-btn"></button>
         <button id="settings-btn"></button>
-        <div id="settings-panel" class="hidden"></div>
+        <div id="settings-panel" class="hidden">
+          <nav class="settings-tabs">
+            <button class="tab-btn active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general"></button>
+            <button class="tab-btn" data-tab="camera-info" role="tab" aria-selected="false" aria-controls="tab-camera-info"></button>
+          </nav>
+          <div class="tab-content" id="tab-general"></div>
+          <div class="tab-content hidden" id="tab-camera-info"></div>
+        </div>
         <div id="settings-overlay"></div>
+        <div id="camera-dialog" class="hidden"></div>
+        <div id="bandwidth-dialog" class="hidden"></div>
         <input type="number" id="interval-input" value="5">
         <button id="interval-up" data-i18n-title="incrementInterval"></button>
         <button id="interval-down" data-i18n-title="decrementInterval"></button>
@@ -342,6 +351,43 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         expect(document.getElementById('pin-release-time-up').getAttribute('aria-label')).toBe('Increase pin retention period');
         expect(document.getElementById('pin-release-time-down').getAttribute('aria-label')).toBe('Decrease pin retention period');
         expect(generalTabBtn.getAttribute('aria-label')).toBe('tabGeneral');
+      });
+
+      test('Escapeキー押下で表示中の設定パネルやダイアログが閉じる', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const settingsPanel = document.getElementById('settings-panel');
+        const cameraDialog = document.getElementById('camera-dialog');
+
+        settingsPanel.classList.remove('hidden');
+        expect(settingsPanel.classList.contains('hidden')).toBe(false);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        expect(settingsPanel.classList.contains('hidden')).toBe(true);
+
+        cameraDialog.classList.remove('hidden');
+        expect(cameraDialog.classList.contains('hidden')).toBe(false);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        expect(cameraDialog.classList.contains('hidden')).toBe(true);
+      });
+
+      test('設定タブ切り替え時に aria-selected 属性が正確に更新される', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const generalTab = tabBtns[0];
+        const cameraInfoTab = tabBtns[1];
+
+        expect(generalTab.getAttribute('aria-selected')).toBe('true');
+        expect(cameraInfoTab.getAttribute('aria-selected')).toBe('false');
+
+        cameraInfoTab.click();
+
+        expect(generalTab.getAttribute('aria-selected')).toBe('false');
+        expect(cameraInfoTab.getAttribute('aria-selected')).toBe('true');
       });
 
       test('createCameraSlot は生成されたカメラスロット内の全アイコンボタンに aria-label を設定する', async () => {

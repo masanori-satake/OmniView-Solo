@@ -77,6 +77,7 @@ class App {
     this.setupSettingsPanel();
     this.setupAddCameraButton();
     this.setupWelcomeCard();
+    this.setupKeyboardShortcuts();
     // Log initial device list
     this.addLog(chrome.i18n.getMessage('logAppInitialized'));
     this.logDeviceList();
@@ -165,6 +166,25 @@ class App {
   showWelcomeOrDialog() {
     this.updateWelcomeVisibility();
     this.updateAddCameraBlinking();
+  }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const settingsPanel = document.getElementById('settings-panel');
+        const cameraDialog = document.getElementById('camera-dialog');
+        const bandwidthDialog = document.getElementById('bandwidth-dialog');
+
+        if (settingsPanel && !settingsPanel.classList.contains('hidden')) {
+          settingsPanel.classList.add('hidden');
+        } else if (cameraDialog && !cameraDialog.classList.contains('hidden')) {
+          cameraDialog.classList.add('hidden');
+        } else if (bandwidthDialog && !bandwidthDialog.classList.contains('hidden')) {
+          bandwidthDialog.classList.add('hidden');
+          this.bandwidthDialogDismissed = true;
+        }
+      }
+    });
   }
 
   setupStartButton() {
@@ -409,9 +429,13 @@ class App {
 
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
+            tabBtns.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
             tabContents.forEach(c => c.classList.add('hidden'));
             btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
             document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
             if (btn.dataset.tab === 'camera-info') {
                 this.updateCameraInfoTab();
