@@ -1531,22 +1531,22 @@ body[data-view-mode="tab"] #app-header {
     z-index: 100;
     padding: 8px 16px;
     box-sizing: border-box;
-    background: rgba(253, 251, 255, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(253, 251, 255, 0.3);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
     body[data-view-mode="tab"] #app-header {
-        background: rgba(27, 27, 31, 0.75);
+        background: rgba(27, 27, 31, 0.3);
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
 }
 
 body.theme-dark[data-view-mode="tab"] #app-header {
-    background: rgba(27, 27, 31, 0.75);
+    background: rgba(27, 27, 31, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -1578,7 +1578,7 @@ body[data-view-mode="tab"] .view-mode-switch {
 }
 
 body[data-view-mode="tab"] #camera-container {
-    padding-top: 0;
+    padding-top: 64px;
     margin-top: 0;
 }
 
