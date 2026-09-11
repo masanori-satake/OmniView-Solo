@@ -97,6 +97,7 @@ class App {
             if (camera) {
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(deviceId, slot);
+                this.applySlotTileState(slot, deviceId);
                 this.container.appendChild(slot.element);
                 connectedSlotOrder.push(deviceId);
             }
@@ -783,6 +784,8 @@ class App {
     } else {
       this.reorganizeForNarrow();
     }
+
+    await this.updateCyclingAndActivationState();
   }
 
   applySlotTileState(slot, deviceId) {
@@ -1312,6 +1315,7 @@ class App {
                 await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(camera.deviceId, slot);
+                this.applySlotTileState(slot, camera.deviceId);
                 this.slotOrder.push(camera.deviceId);
                 this.container.appendChild(slot.element);
             }
@@ -1718,6 +1722,7 @@ class App {
     await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
     const slot = await this.createCameraSlot(camera);
     this.slots.set(camera.deviceId, slot);
+    this.applySlotTileState(slot, camera.deviceId);
     this.slotOrder.push(camera.deviceId);
     this.container.appendChild(slot.element);
 
@@ -1899,7 +1904,7 @@ class App {
                 }
 
                 const setting = this.settings[deviceId] || {};
-                const role = setting.defaultRole || 'person';
+                const role = this.getSlotRole(deviceId);
                 if (role === 'whiteboard') {
                     if (slot.processor) {
                         slot.processor.stop();

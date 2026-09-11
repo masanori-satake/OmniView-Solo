@@ -44,6 +44,13 @@ vi.mock('./camera.js', async (importOriginal) => {
       excludeWhiteboard: true,
     })),
     getCameras: vi.fn(async () => mockCameras),
+    startCamera: vi.fn(async () => ({
+      getTracks: () => [],
+      getVideoTracks: () => [{
+        readyState: 'live',
+        getSettings: () => ({ width: 1280, height: 720, frameRate: 30 }),
+      }],
+    })),
     loadSessionState: vi.fn(() => loadSessionStateImpl()),
     saveSessionState: vi.fn(async (order, index) => {
       executionSequence.push({ action: 'saveSessionState', order, index });
@@ -152,7 +159,11 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     const cameraModule = await import('./camera.js');
     await vi.waitFor(() => expect(cameraModule.loadSessionState).toHaveBeenCalled());
 
-    app.createCameraSlot = vi.fn(async () => ({ element: document.createElement('div') }));
+    app.createCameraSlot = vi.fn(async () => {
+      const element = document.createElement('div');
+      element.innerHTML = '<div class="video-wrapper"></div>';
+      return { element };
+    });
     app.updateCyclingAndActivationState = vi.fn(async () => {});
 
     const switchEl = document.querySelector('.view-mode-switch');
@@ -344,6 +355,69 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         buttons.forEach(btn => {
           expect(btn.getAttribute('aria-label')).toBeTruthy();
         });
+      });
+    });
+
+    describe('Tile mode', () => {
+      test('setTileMode はレイアウト更新後にカメラの循環・有効状態を再評価する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+        let resolveUpdate;
+        const updateFinished = new Promise(resolve => {
+          resolveUpdate = resolve;
+        });
+        app.updateCyclingAndActivationState = vi.fn(() => updateFinished);
+        let tileModeFinished = false;
+
+        const tileModeUpdate = app.setTileMode('tile2x2').then(() => {
+          tileModeFinished = true;
+        });
+        await Promise.resolve();
+
+        expect(app.updateCyclingAndActivationState).toHaveBeenCalledOnce();
+        expect(tileModeFinished).toBe(false);
+
+        resolveUpdate();
+        await tileModeUpdate;
+        expect(tileModeFinished).toBe(true);
+      });
+
+      test('addCamera は登録したスロットへ現在のタイル状態を適用する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+        const slot = { element: document.createElement('div') };
+        app.saveCameraSetting = vi.fn(async () => {});
+        app.createCameraSlot = vi.fn(async () => slot);
+        app.applySlotTileState = vi.fn();
+        app.updateCyclingAndActivationState = vi.fn(async () => {});
+
+        await app.addCamera({ deviceId: 'tile-cam', label: 'Tile Camera' });
+
+        expect(app.applySlotTileState).toHaveBeenCalledWith(slot, 'tile-cam');
+      });
+
+      test('activateSlot は現在のタイル状態からロールを判定する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+        const deviceId = 'whiteboard-cam';
+        const element = document.createElement('div');
+        const video = document.createElement('video');
+        Object.defineProperty(video, 'readyState', { value: 3 });
+        element.appendChild(video);
+        const slot = { element, video, stream: null, isActivating: false, processor: null };
+        app.settings[deviceId] = { defaultRole: 'whiteboard' };
+        app.tileMode = 'tile2x2';
+        app.slotOrder = [deviceId];
+        app.slots.set(deviceId, slot);
+        app.displayCameraInfo = vi.fn();
+        app.updateResolutionFpsDisplay = vi.fn();
+        app.initProcessor = vi.fn();
+        const getSlotRole = vi.spyOn(app, 'getSlotRole');
+
+        await app.activateSlot(slot, deviceId);
+
+        expect(getSlotRole).toHaveBeenCalledWith(deviceId);
+        expect(app.initProcessor).not.toHaveBeenCalled();
       });
     });
 });

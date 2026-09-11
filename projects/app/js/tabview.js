@@ -16,7 +16,7 @@ export async function setupTabViewModeSwitch() {
           const tab = await chrome.tabs.getCurrent();
           tabId = tab?.id;
         }
-      } catch (err) {
+      } catch {
         console.error('Failed to get current tab id:', err);
       }
       chrome.runtime.sendMessage({
@@ -36,24 +36,31 @@ export async function setupTileModeSwitch() {
   const initialTileMode = await getTileMode();
   await app.setTileMode(initialTileMode);
 
+  const updateSelection = (selectedMode) => {
+    buttons.forEach(button => {
+      const isSelected = button.dataset.tileMode === selectedMode;
+      button.classList.toggle('active', isSelected);
+      button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    });
+  };
+
   buttons.forEach(btn => {
     const mode = btn.dataset.tileMode;
-    const isSelected = mode === initialTileMode;
-    btn.classList.toggle('active', isSelected);
-    btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
 
     btn.addEventListener('click', async () => {
-      buttons.forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-checked', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-checked', 'true');
-
-      await setTileMode(mode);
-      await app.setTileMode(mode);
+      const previousMode = container.querySelector('.segmented-btn.active')?.dataset.tileMode || initialTileMode;
+      try {
+        await setTileMode(mode);
+        await app.setTileMode(mode);
+        updateSelection(mode);
+      } catch (err) {
+        updateSelection(previousMode);
+        app.showSnackbar(chrome.i18n.getMessage('snackbarTileModeSaveFailed') || 'タイル表示設定の保存に失敗しました');
+      }
     });
   });
+
+  updateSelection(initialTileMode);
 }
 
 // ページ初期化

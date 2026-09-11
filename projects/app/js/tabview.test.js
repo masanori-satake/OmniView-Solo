@@ -39,7 +39,7 @@ vi.mock('./camera.js', async (importOriginal) => {
       { deviceId: 'cam1', label: 'Camera 1' },
       { deviceId: 'cam2', label: 'Camera 2' },
     ]),
-    loadSessionState: vi.fn(async () => ({ slotOrder: ['cam1', 'cam2'], activeSlotIndex: 0 })),
+    loadSessionState: vi.fn(async () => ({ slotOrder: [], activeSlotIndex: 0 })),
     saveSessionState: vi.fn(async (order, index) => {
       savedSlotOrder = order;
       savedActiveIndex = index;
@@ -166,5 +166,26 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
 
     expect(app.tileMode).toBe('normal');
     expect(app.container.classList.contains('tile-mode-2x2')).toBe(false);
+  });
+
+  test('タイル表示設定の保存に失敗した場合は以前の選択を維持して Snackbar を表示する', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+    const { setTileMode } = await import('./storageManager.js');
+    const showSnackbar = vi.spyOn(app, 'showSnackbar').mockImplementation(() => {});
+
+    await setupTileModeSwitch();
+    setTileMode.mockRejectedValueOnce(new Error('storage unavailable'));
+
+    const btnNormal = document.querySelector('[data-tile-mode="normal"]');
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    btn2x2.click();
+
+    await vi.waitFor(() => expect(showSnackbar).toHaveBeenCalledWith('snackbarTileModeSaveFailed'));
+    expect(btnNormal.classList.contains('active')).toBe(true);
+    expect(btnNormal.getAttribute('aria-checked')).toBe('true');
+    expect(btn2x2.classList.contains('active')).toBe(false);
+    expect(btn2x2.getAttribute('aria-checked')).toBe('false');
+    expect(app.tileMode).toBe('normal');
   });
 });

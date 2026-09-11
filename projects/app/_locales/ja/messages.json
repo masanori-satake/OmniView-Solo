@@ -186,6 +186,9 @@
   "snackbarSwitchToTabFailed": {
     "message": "タブ表示への切り替えに失敗しました"
   },
+  "snackbarTileModeSaveFailed": {
+    "message": "タイル表示設定の保存に失敗しました"
+  },
   "snackbarImportSuccess": {
     "message": "設定をインポートしました。反映するには、必要に応じてカメラを再起動してください。"
   },
@@ -667,6 +670,9 @@
   },
   "welcomeAddCameraBtn": {
     "message": "カメラを追加"
+  },
+  "tileModeSwitchTitle": {
+    "message": "タイル表示モード"
   },
   "tileNormalBtnTitle": {
     "message": "通常表示"
