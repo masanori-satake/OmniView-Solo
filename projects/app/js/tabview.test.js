@@ -145,6 +145,24 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     expect(sentMessages).toEqual([{ type: 'switch_to_sidepanel', tabId: 999 }]);
   });
 
+  test('getCurrent が失敗してもエラーを記録し、switch_to_sidepanel を送信する', async () => {
+    const { setupTabViewModeSwitch } = await import('./tabview.js');
+    const error = new Error('tab unavailable');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chrome.tabs.getCurrent.mockRejectedValueOnce(error);
+
+    await setupTabViewModeSwitch();
+    document.querySelector('.view-mode-switch').click();
+
+    await vi.waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'switch_to_sidepanel',
+      tabId: undefined,
+    }));
+    expect(consoleError).toHaveBeenCalledWith('Failed to get current tab id:', error);
+
+    consoleError.mockRestore();
+  });
+
   test('setupTileModeSwitch が正常に動作し、タイルボタンのクリックで setTileMode が適用される', async () => {
     const { app } = await import('./app.js');
     const { setupTileModeSwitch } = await import('./tabview.js');
@@ -187,5 +205,31 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     expect(btn2x2.classList.contains('active')).toBe(false);
     expect(btn2x2.getAttribute('aria-checked')).toBe('false');
     expect(app.tileMode).toBe('normal');
+    expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(0);
+  });
+
+  test('タイル表示設定の更新中は全モードボタンを無効化する', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+    const { setTileMode } = await import('./storageManager.js');
+    let resolveSave;
+    setTileMode.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveSave = resolve;
+    }));
+
+    await setupTileModeSwitch();
+
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    const btn3x3 = document.querySelector('[data-tile-mode="tile3x3"]');
+    const saveCallCount = setTileMode.mock.calls.length;
+    btn2x2.click();
+
+    expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(3);
+    btn3x3.click();
+    expect(setTileMode).toHaveBeenCalledTimes(saveCallCount + 1);
+
+    resolveSave();
+    await vi.waitFor(() => expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(0));
+    expect(app.tileMode).toBe('tile2x2');
   });
 });

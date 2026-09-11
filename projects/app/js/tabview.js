@@ -16,7 +16,7 @@ export async function setupTabViewModeSwitch() {
           const tab = await chrome.tabs.getCurrent();
           tabId = tab?.id;
         }
-      } catch {
+      } catch (err) {
         console.error('Failed to get current tab id:', err);
       }
       chrome.runtime.sendMessage({
@@ -49,6 +49,7 @@ export async function setupTileModeSwitch() {
 
     btn.addEventListener('click', async () => {
       const previousMode = container.querySelector('.segmented-btn.active')?.dataset.tileMode || initialTileMode;
+      buttons.forEach(button => { button.disabled = true; });
       try {
         await setTileMode(mode);
         await app.setTileMode(mode);
@@ -56,6 +57,8 @@ export async function setupTileModeSwitch() {
       } catch (err) {
         updateSelection(previousMode);
         app.showSnackbar(chrome.i18n.getMessage('snackbarTileModeSaveFailed') || 'タイル表示設定の保存に失敗しました');
+      } finally {
+        buttons.forEach(button => { button.disabled = false; });
       }
     });
   });
