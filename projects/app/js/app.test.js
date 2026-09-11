@@ -82,6 +82,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         <button id="add-camera-nav-btn"></button>
         <button id="settings-btn"></button>
         <div id="settings-panel" class="hidden">
+          <div id="settings-overlay"></div>
           <nav class="settings-tabs">
             <button class="tab-btn active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general"></button>
             <button class="tab-btn" data-tab="camera-info" role="tab" aria-selected="false" aria-controls="tab-camera-info"></button>
@@ -89,9 +90,17 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
           <div class="tab-content" id="tab-general"></div>
           <div class="tab-content hidden" id="tab-camera-info"></div>
         </div>
-        <div id="settings-overlay"></div>
-        <div id="camera-dialog" class="hidden"></div>
-        <div id="bandwidth-dialog" class="hidden"></div>
+        <div id="camera-dialog" class="hidden">
+          <div id="camera-dialog-overlay"></div>
+          <div id="camera-list-container"></div>
+          <button id="dialog-cancel-btn"></button>
+          <button id="dialog-add-btn"></button>
+        </div>
+        <div id="bandwidth-dialog" class="hidden">
+          <div id="bandwidth-dialog-overlay"></div>
+          <button id="bandwidth-dialog-no-btn"></button>
+          <button id="bandwidth-dialog-yes-btn"></button>
+        </div>
         <input type="number" id="interval-input" value="5">
         <button id="interval-up" data-i18n-title="incrementInterval"></button>
         <button id="interval-down" data-i18n-title="decrementInterval"></button>
@@ -388,6 +397,76 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
 
         expect(generalTab.getAttribute('aria-selected')).toBe('false');
         expect(cameraInfoTab.getAttribute('aria-selected')).toBe('true');
+      });
+
+      test('モーダル表示中はフォーカスを閉じ込め、背景を inert にして閉じた後にフォーカスを戻す', async () => {
+        const { appReady } = await import('./app.js');
+        await appReady;
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const generalTab = document.querySelector('[data-tab="general"]');
+
+        settingsBtn.focus();
+        settingsBtn.click();
+
+        expect(document.activeElement).toBe(generalTab);
+        expect(settingsBtn.hasAttribute('inert')).toBe(true);
+
+        const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+        generalTab.dispatchEvent(tabEvent);
+        expect(tabEvent.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(generalTab);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+        expect(settingsPanel.classList.contains('hidden')).toBe(true);
+        expect(settingsBtn.hasAttribute('inert')).toBe(false);
+        expect(document.activeElement).toBe(settingsBtn);
+      });
+
+      test('設定タブの左右キー操作は端で折り返し、選択状態とパネルを同期する', async () => {
+        const { appReady } = await import('./app.js');
+        await appReady;
+
+        const generalTab = document.querySelector('[data-tab="general"]');
+        const cameraInfoTab = document.querySelector('[data-tab="camera-info"]');
+        generalTab.focus();
+        generalTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        expect(cameraInfoTab.getAttribute('aria-selected')).toBe('true');
+        expect(cameraInfoTab.getAttribute('tabindex')).toBe('0');
+        expect(generalTab.getAttribute('tabindex')).toBe('-1');
+        expect(document.activeElement).toBe(cameraInfoTab);
+        expect(document.getElementById('tab-camera-info').classList.contains('hidden')).toBe(false);
+        expect(document.getElementById('tab-general').classList.contains('hidden')).toBe(true);
+
+        cameraInfoTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        expect(document.activeElement).toBe(generalTab);
+        expect(generalTab.getAttribute('aria-selected')).toBe('true');
+      });
+
+      test('帯域幅ダイアログのキャンセルは共通クリーンアップで dismissal とフォーカスを復元する', async () => {
+        const { app, appReady } = await import('./app.js');
+        await appReady;
+
+        const trigger = document.getElementById('add-camera-nav-btn');
+        const dialog = document.getElementById('bandwidth-dialog');
+        trigger.focus();
+        app.showBandwidthDialog();
+
+        const noBtn = document.getElementById('bandwidth-dialog-no-btn');
+        const yesBtn = document.getElementById('bandwidth-dialog-yes-btn');
+        expect(document.activeElement).toBe(noBtn);
+
+        noBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+        expect(document.activeElement).toBe(yesBtn);
+        yesBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+        expect(document.activeElement).toBe(noBtn);
+        noBtn.click();
+
+        expect(dialog.classList.contains('hidden')).toBe(true);
+        expect(app.bandwidthDialogDismissed).toBe(true);
+        expect(document.activeElement).toBe(trigger);
       });
 
       test('createCameraSlot は生成されたカメラスロット内の全アイコンボタンに aria-label を設定する', async () => {
