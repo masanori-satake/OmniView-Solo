@@ -147,18 +147,22 @@ describe('processor.js パフォーマンス最適化単体テスト', () => {
         });
 
         test('getWarpedFrame は高速化された幾何変換とバイリニア補間を正確に計算する', async () => {
+            // 全画面領域マッピング（0..100%）
             const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
             const transformer = new PerspectiveTransformer(mockVideo, mockOverlayCanvas, pts, null);
 
-            const w = 20;
-            const h = 20;
+            const w = 16;
+            const h = 16;
             const inputBuffer = new Uint8ClampedArray(w * h * 4);
-            // 赤色 (RGBA: 255, 0, 0, 255) で埋める
-            for (let i = 0; i < inputBuffer.length; i += 4) {
-                inputBuffer[i] = 255;
-                inputBuffer[i + 1] = 0;
-                inputBuffer[i + 2] = 0;
-                inputBuffer[i + 3] = 255;
+            // ピクセルごと・RGBAチャネルごとに異なるパターンを作成（全チャネルが識別可能）
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = (y * w + x) * 4;
+                    inputBuffer[idx]     = (x * 15 + 10) % 256;      // Red
+                    inputBuffer[idx + 1] = (y * 15 + 20) % 256;      // Green
+                    inputBuffer[idx + 2] = (x * 8 + y * 12) % 256;   // Blue
+                    inputBuffer[idx + 3] = 200 + ((x + y) % 50);     // Alpha
+                }
             }
             const inputImg = new ImageData(inputBuffer, w, h);
 
@@ -166,12 +170,16 @@ describe('processor.js パフォーマンス最適化単体テスト', () => {
 
             expect(warped.width).toBe(w);
             expect(warped.height).toBe(h);
-            // 正解の領域内のピクセルが期待通り赤色 (255, 0, 0, 255) に変換されていること
-            const centerIdx = (Math.floor(h / 2) * w + Math.floor(w / 2)) * 4;
-            expect(warped.data[centerIdx]).toBe(255);
-            expect(warped.data[centerIdx + 1]).toBe(0);
-            expect(warped.data[centerIdx + 2]).toBe(0);
-            expect(warped.data[centerIdx + 3]).toBe(255);
+
+            // 中央付近のピクセルで各RGBAチャネルが期待通りの値・アルファ値で合成されていることを検証
+            const centerX = Math.floor(w / 2);
+            const centerY = Math.floor(h / 2);
+            const centerOidx = (centerY * w + centerX) * 4;
+
+            expect(warped.data[centerOidx]).toBe(inputBuffer[centerOidx]);         // Red
+            expect(warped.data[centerOidx + 1]).toBe(inputBuffer[centerOidx + 1]); // Green
+            expect(warped.data[centerOidx + 2]).toBe(inputBuffer[centerOidx + 2]); // Blue
+            expect(warped.data[centerOidx + 3]).toBe(inputBuffer[centerOidx + 3]); // Alpha
         });
     });
 
