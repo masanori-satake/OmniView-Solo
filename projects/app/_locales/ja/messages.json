@@ -682,5 +682,11 @@
   },
   "tile3x3BtnTitle": {
     "message": "タイル表示(3x3)"
+  },
+  "fullscreenBtnTitle": {
+    "message": "全画面表示"
+  },
+  "fullscreenExitBtnTitle": {
+    "message": "全画面表示を解除"
   }
 }

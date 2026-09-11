@@ -1515,3 +1515,97 @@ label.disabled {
                 height 0.2s cubic-bezier(0.4, 0, 0.2, 1),
                 background-color 0.2s;
 }
+
+/* Tab View Mode Header Overlay & Layout Styles */
+body[data-view-mode="tab"] #app {
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body[data-view-mode="tab"] #app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 8px 16px;
+    box-sizing: border-box;
+    background: rgba(253, 251, 255, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+    body[data-view-mode="tab"] #app-header {
+        background: rgba(27, 27, 31, 0.75);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+}
+
+body.theme-dark[data-view-mode="tab"] #app-header {
+    background: rgba(27, 27, 31, 0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+body[data-view-mode="tab"] .m3-icon-button {
+    background-color: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    color: var(--md-sys-color-on-surface);
+}
+
+body[data-view-mode="tab"] .m3-icon-button:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+body[data-view-mode="tab"] .m3-segmented-button {
+    background-color: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body[data-view-mode="tab"] .view-mode-switch {
+    background-color: rgba(0, 0, 0, 0.15);
+    padding: 4px 8px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body[data-view-mode="tab"] #camera-container {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+body[data-view-mode="tab"] #camera-container.tile-mode-2x2 {
+    padding: 0;
+    gap: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+body[data-view-mode="tab"] #camera-container.tile-mode-2x2 .camera-slot {
+    width: 50vw;
+    height: 50vh;
+    min-height: 50vh;
+    border-radius: 0;
+}
+
+body[data-view-mode="tab"] #camera-container.tile-mode-3x3 {
+    padding: 0;
+    gap: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+body[data-view-mode="tab"] #camera-container.tile-mode-3x3 .camera-slot {
+    width: 33.333vw;
+    height: 33.333vh;
+    min-height: 33.333vh;
+    border-radius: 0;
+}
