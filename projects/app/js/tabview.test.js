@@ -21,6 +21,8 @@ let sentMessages = [];
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => 'sidepanel'),
+  getTileMode: vi.fn(async () => 'normal'),
+  setTileMode: vi.fn(async () => {}),
 }));
 
 vi.mock('./camera.js', async (importOriginal) => {
@@ -55,6 +57,11 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
       <div id="app" class="layout-wide">
         <div class="view-mode-switch" role="switch">
           <div class="vms-track"></div>
+        </div>
+        <div id="tile-mode-switch-container">
+          <button class="segmented-btn active" data-tile-mode="normal"></button>
+          <button class="segmented-btn" data-tile-mode="tile2x2"></button>
+          <button class="segmented-btn" data-tile-mode="tile3x3"></button>
         </div>
         <div id="camera-container"></div>
         <div id="initial-overlay" class="hidden"></div>
@@ -136,5 +143,28 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     expect(savedSlotOrder).toEqual(['cam1', 'cam2']);
     expect(savedActiveIndex).toBe(0);
     expect(sentMessages).toEqual([{ type: 'switch_to_sidepanel', tabId: 999 }]);
+  });
+
+  test('setupTileModeSwitch が正常に動作し、タイルボタンのクリックで setTileMode が適用される', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+
+    await setupTileModeSwitch();
+
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    btn2x2.click();
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(app.tileMode).toBe('tile2x2');
+    expect(app.container.classList.contains('tile-mode-2x2')).toBe(true);
+
+    const btnNormal = document.querySelector('[data-tile-mode="normal"]');
+    btnNormal.click();
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(app.tileMode).toBe('normal');
+    expect(app.container.classList.contains('tile-mode-2x2')).toBe(false);
   });
 });

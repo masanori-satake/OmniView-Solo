@@ -667,5 +667,14 @@
   },
   "welcomeAddCameraBtn": {
     "message": "カメラを追加"
+  },
+  "tileNormalBtnTitle": {
+    "message": "通常表示"
+  },
+  "tile2x2BtnTitle": {
+    "message": "タイル表示(2x2)"
+  },
+  "tile3x3BtnTitle": {
+    "message": "タイル表示(3x3)"
   }
 }

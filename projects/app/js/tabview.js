@@ -1,6 +1,7 @@
 import { app, appReady } from './app.js';
 import { initViewModeSwitch } from './viewModeSwitch.js';
 import { saveSessionState } from './camera.js';
+import { getTileMode, setTileMode } from './storageManager.js';
 
 export async function setupTabViewModeSwitch() {
   const switchContainer = document.querySelector('.view-mode-switch');
@@ -26,6 +27,36 @@ export async function setupTabViewModeSwitch() {
   });
 }
 
+export async function setupTileModeSwitch() {
+  const container = document.getElementById('tile-mode-switch-container');
+  if (!container) return;
+
+  const buttons = container.querySelectorAll('.segmented-btn');
+
+  const initialTileMode = await getTileMode();
+  await app.setTileMode(initialTileMode);
+
+  buttons.forEach(btn => {
+    const mode = btn.dataset.tileMode;
+    const isSelected = mode === initialTileMode;
+    btn.classList.toggle('active', isSelected);
+    btn.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+
+    btn.addEventListener('click', async () => {
+      buttons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-checked', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
+
+      await setTileMode(mode);
+      await app.setTileMode(mode);
+    });
+  });
+}
+
 // ページ初期化
 await appReady;
 await setupTabViewModeSwitch();
+await setupTileModeSwitch();

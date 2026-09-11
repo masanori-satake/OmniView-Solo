@@ -667,5 +667,14 @@
   },
   "welcomeAddCameraBtn": {
     "message": "Add Camera"
+  },
+  "tileNormalBtnTitle": {
+    "message": "Normal View"
+  },
+  "tile2x2BtnTitle": {
+    "message": "Tile View (2x2)"
+  },
+  "tile3x3BtnTitle": {
+    "message": "Tile View (3x3)"
   }
 }
