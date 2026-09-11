@@ -146,22 +146,22 @@ describe('processor.js パフォーマンス最適化単体テスト', () => {
             expect(countAfter).toBeGreaterThan(countBefore);
         });
 
-        test('getWarpedFrame は高速化された幾何変換とバイリニア補間を正確に計算する', async () => {
-            // 全画面領域マッピング（0..100%）
-            const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+        test('getWarpedFrame は非整数参照座標におけるバイリニア補間と4チャネル計算を正確に処理する', async () => {
+            // 非整数の参照座標 (sx, sy) を発生させる台形変形ハンドル座標
+            const pts = [{ x: 5, y: 5 }, { x: 95, y: 10 }, { x: 90, y: 90 }, { x: 10, y: 95 }];
             const transformer = new PerspectiveTransformer(mockVideo, mockOverlayCanvas, pts, null);
 
             const w = 16;
             const h = 16;
             const inputBuffer = new Uint8ClampedArray(w * h * 4);
-            // ピクセルごと・RGBAチャネルごとに異なるパターンを作成（全チャネルが識別可能）
+            // 隣接ピクセル選択と補間重みが不変でないことを確認するため、ピクセル・RGBAごとに固有のグラデーションを作成
             for (let y = 0; y < h; y++) {
                 for (let x = 0; x < w; x++) {
                     const idx = (y * w + x) * 4;
                     inputBuffer[idx]     = (x * 15 + 10) % 256;      // Red
-                    inputBuffer[idx + 1] = (y * 15 + 20) % 256;      // Green
-                    inputBuffer[idx + 2] = (x * 8 + y * 12) % 256;   // Blue
-                    inputBuffer[idx + 3] = 200 + ((x + y) % 50);     // Alpha
+                    inputBuffer[idx + 1] = (y * 20 + 5) % 256;       // Green
+                    inputBuffer[idx + 2] = (x * 7 + y * 13) % 256;   // Blue
+                    inputBuffer[idx + 3] = 180 + ((x + y) % 70);     // Alpha
                 }
             }
             const inputImg = new ImageData(inputBuffer, w, h);
@@ -171,15 +171,53 @@ describe('processor.js パフォーマンス最適化単体テスト', () => {
             expect(warped.width).toBe(w);
             expect(warped.height).toBe(h);
 
-            // 中央付近のピクセルで各RGBAチャネルが期待通りの値・アルファ値で合成されていることを検証
-            const centerX = Math.floor(w / 2);
-            const centerY = Math.floor(h / 2);
-            const centerOidx = (centerY * w + centerX) * 4;
+            // 独立した標準的なバイリニア補間参照計算による期待値の算出
+            const expected = new Uint8ClampedArray(w * h * 4);
+            const cw169 = 1600, ch169 = 900;
+            const vRatio = w / h;
+            const cRatio = cw169 / ch169;
+            let rW = cw169, rH = ch169, xO = 0, yO = 0;
+            if (vRatio > cRatio) { rH = cw169 / vRatio; yO = (ch169 - rH) / 2; }
+            else { rW = ch169 * vRatio; xO = (cw169 - rW) / 2; }
 
-            expect(warped.data[centerOidx]).toBe(inputBuffer[centerOidx]);         // Red
-            expect(warped.data[centerOidx + 1]).toBe(inputBuffer[centerOidx + 1]); // Green
-            expect(warped.data[centerOidx + 2]).toBe(inputBuffer[centerOidx + 2]); // Blue
-            expect(warped.data[centerOidx + 3]).toBe(inputBuffer[centerOidx + 3]); // Alpha
+            const target = pts.map(p => ({
+                x: (((p.x / 100) * cw169 - xO) / rW) * w,
+                y: (((p.y / 100) * ch169 - yO) / rH) * h
+            }));
+            const corners = [{x: 0, y: 0}, {x: w, y: 0}, {x: w, y: h}, {x: 0, y: h}];
+            const { getHomography } = await import('./matrix3d-calc.js');
+            const H = getHomography(corners, target);
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const oidx = (y * w + x) * 4;
+                    const den = H[6] * x + H[7] * y + H[8];
+                    if (Math.abs(den) < 1e-9) continue;
+                    const sx = (H[0] * x + H[1] * y + H[2]) / den;
+                    const sy = (H[3] * x + H[4] * y + H[5]) / den;
+                    if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
+                        const ix = Math.floor(sx), iy = Math.floor(sy);
+                        const idx0 = (iy * w + ix) * 4;
+                        const idx1 = idx0 + w * 4;
+                        const dx = sx - ix, dy = sy - iy;
+                        const w00 = (1 - dx) * (1 - dy);
+                        const w10 = dx * (1 - dy);
+                        const w01 = (1 - dx) * dy;
+                        const w11 = dx * dy;
+                        for (let c = 0; c < 4; c++) {
+                            expected[oidx + c] = inputBuffer[idx0 + c] * w00 +
+                                                 inputBuffer[idx0 + 4 + c] * w10 +
+                                                 inputBuffer[idx1 + c] * w01 +
+                                                 inputBuffer[idx1 + 4 + c] * w11;
+                        }
+                    }
+                }
+            }
+
+            // 全ピクセル・全チャネル (RGBA) の変換結果が期待値と完全に一致することを確認
+            for (let i = 0; i < warped.data.length; i++) {
+                expect(warped.data[i]).toBe(expected[i]);
+            }
         });
     });
 
