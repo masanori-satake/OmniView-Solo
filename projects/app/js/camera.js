@@ -16,6 +16,12 @@ export async function loadCameraSettings() {
   });
 }
 
+/**
+ * カメラ設定を現行形式へ移行し、プロトタイプ汚染につながるキーを除外する。
+ *
+ * @param {Record<string, Object>} settings - ストレージから読み込んだカメラ設定
+ * @returns {Record<string, Object>} 移行済みのカメラ設定
+ */
 function migrateSettings(settings) {
   let changed = false;
   const migrated = {};
@@ -115,6 +121,13 @@ export async function saveGlobalSettings(settings) {
 
 let saveQueue = Promise.resolve();
 
+/**
+ * 指定したカメラの設定を既存設定とマージして保存する。
+ *
+ * @param {string} deviceId - 保存対象のカメラデバイス ID
+ * @param {Object} settings - 保存するカメラ設定
+ * @returns {Promise<void>} 保存処理の完了を表す Promise
+ */
 export async function saveCameraSetting(deviceId, settings) {
   // プロトタイプ汚染対策: 特殊キー (__proto__, constructor, prototype) の保存を防止
   if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
