@@ -186,6 +186,9 @@
   "snackbarSwitchToTabFailed": {
     "message": "Failed to switch to tab view"
   },
+  "snackbarTileModeSaveFailed": {
+    "message": "Failed to save the tile display setting"
+  },
   "snackbarImportSuccess": {
     "message": "Settings imported. Restart cameras if necessary to apply changes."
   },
@@ -667,5 +670,17 @@
   },
   "welcomeAddCameraBtn": {
     "message": "Add Camera"
+  },
+  "tileModeSwitchTitle": {
+    "message": "Tile Display Mode"
+  },
+  "tileNormalBtnTitle": {
+    "message": "Normal View"
+  },
+  "tile2x2BtnTitle": {
+    "message": "Tile View (2x2)"
+  },
+  "tile3x3BtnTitle": {
+    "message": "Tile View (3x3)"
   }
 }

@@ -7,7 +7,7 @@
 
 import fc from 'fast-check';
 import { describe, expect, test, vi } from 'vitest';
-import { getViewModeWithDefault, setViewMode } from './storageManager.js';
+import { getViewModeWithDefault, setViewMode, getTileModeWithDefault, setTileMode } from './storageManager.js';
 
 // ---------------------------------------------------------------------------
 // Property 1: 不正な ViewMode 値は "sidepanel" にフォールバックする
@@ -41,6 +41,29 @@ describe('Property 1: 不正な ViewMode 値は "sidepanel" にフォールバ�
       fc.property(fc.constant('tab'), (v) => getViewModeWithDefault(v) === 'tab'),
       { numRuns: 10 }
     );
+  });
+});
+
+describe('getTileModeWithDefault', () => {
+  test('null / undefined / 空文字 / 不正文字列は常に "normal" を返す', () => {
+    fc.assert(
+      fc.property(
+        fc.oneof(
+          fc.constant(null),
+          fc.constant(undefined),
+          fc.constant(''),
+          fc.string().filter((s) => s !== 'normal' && s !== 'tile2x2' && s !== 'tile3x3')
+        ),
+        (invalidValue) => getTileModeWithDefault(invalidValue) === 'normal'
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  test('"normal", "tile2x2", "tile3x3" はそのまま返す', () => {
+    expect(getTileModeWithDefault('normal')).toBe('normal');
+    expect(getTileModeWithDefault('tile2x2')).toBe('tile2x2');
+    expect(getTileModeWithDefault('tile3x3')).toBe('tile3x3');
   });
 });
 

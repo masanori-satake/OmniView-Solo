@@ -33,6 +33,7 @@ class App {
     this.cameraInfoCache = new Map();
     this.logs = [];
     this.bandwidthDialogDismissed = false;
+    this.tileMode = 'normal';
   }
 
   initI18n() {
@@ -96,6 +97,7 @@ class App {
             if (camera) {
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(deviceId, slot);
+                this.applySlotTileState(slot, deviceId);
                 this.container.appendChild(slot.element);
                 connectedSlotOrder.push(deviceId);
             }
@@ -747,6 +749,9 @@ class App {
   }
 
   getSlotRole(deviceId) {
+    if (this.tileMode && this.tileMode !== 'normal') {
+      return 'person';
+    }
     const slot = this.slots.get(deviceId);
     if (slot) {
         const roleSwitch = slot.element.querySelector('.role-switch');
@@ -756,6 +761,93 @@ class App {
     }
     const savedSetting = this.settings[deviceId] || {};
     return savedSetting.defaultRole || 'person';
+  }
+
+  async setTileMode(tileMode) {
+    this.tileMode = tileMode;
+    if (tileMode === 'tile2x2') {
+      this.container.classList.remove('tile-mode-3x3');
+      this.container.classList.add('tile-mode-2x2');
+    } else if (tileMode === 'tile3x3') {
+      this.container.classList.remove('tile-mode-2x2');
+      this.container.classList.add('tile-mode-3x3');
+    } else {
+      this.container.classList.remove('tile-mode-2x2', 'tile-mode-3x3');
+    }
+
+    for (const [deviceId, slot] of this.slots.entries()) {
+      this.applySlotTileState(slot, deviceId);
+    }
+
+    if (this.currentLayout === 'wide') {
+      this.reorganizeForWide();
+    } else {
+      this.reorganizeForNarrow();
+    }
+
+    await this.updateCyclingAndActivationState();
+  }
+
+  applySlotTileState(slot, deviceId) {
+    if (!slot) return;
+    const isTile = this.tileMode && this.tileMode !== 'normal';
+    const roleSwitch = slot.element.querySelector('.role-switch');
+    const wbControls = slot.element.querySelectorAll('.whiteboard-only');
+    const vScaleOverlay = slot.element.querySelector('.vscale-overlay');
+    const videoWrapper = slot.element.querySelector('.video-wrapper');
+
+    if (isTile) {
+      if (roleSwitch) roleSwitch.checked = false;
+      wbControls.forEach(ctrl => ctrl.classList.add('hidden'));
+      if (vScaleOverlay) vScaleOverlay.classList.add('hidden');
+      if (videoWrapper) videoWrapper.style.aspectRatio = '';
+
+      if (slot.processor) {
+        slot.processor.stop();
+        slot.processor = null;
+      }
+      slot.video.style.transform = '';
+      slot.video.style.objectFit = 'contain';
+      if (slot.processedCanvas) {
+        slot.processedCanvas.style.transform = '';
+        slot.processedCanvas.style.display = 'none';
+      }
+      const ctx = slot.canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, slot.canvas.width, slot.canvas.height);
+      }
+    } else {
+      const savedRole = this.settings[deviceId]?.defaultRole || 'person';
+      if (roleSwitch) roleSwitch.checked = (savedRole === 'whiteboard');
+
+      wbControls.forEach(ctrl => {
+        if (savedRole === 'whiteboard') {
+          ctrl.classList.remove('hidden');
+        } else {
+          ctrl.classList.add('hidden');
+        }
+      });
+
+      const vScale = parseFloat(slot.element.dataset.vScale || '1.0');
+      if (savedRole === 'whiteboard') {
+        if (vScaleOverlay) vScaleOverlay.classList.remove('hidden');
+        videoWrapper.style.aspectRatio = `16 / ${9 * vScale}`;
+      } else {
+        if (vScaleOverlay) vScaleOverlay.classList.add('hidden');
+        videoWrapper.style.aspectRatio = '16 / 9';
+      }
+
+      if (slot.updateZoomUI) {
+        const zoom = parseInt(slot.element.dataset.zoom || '1');
+        slot.updateZoomUI(zoom);
+      }
+
+      if (savedRole === 'whiteboard' && slot.element.classList.contains('active')) {
+        if (!slot.processor) {
+          slot.processor = this.initProcessor(slot, deviceId);
+        }
+      }
+    }
   }
 
   shouldCycle() {
@@ -1223,6 +1315,7 @@ class App {
                 await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
                 const slot = await this.createCameraSlot(camera);
                 this.slots.set(camera.deviceId, slot);
+                this.applySlotTileState(slot, camera.deviceId);
                 this.slotOrder.push(camera.deviceId);
                 this.container.appendChild(slot.element);
             }
@@ -1629,6 +1722,7 @@ class App {
     await this.saveCameraSetting(camera.deviceId, { zoom: 4 });
     const slot = await this.createCameraSlot(camera);
     this.slots.set(camera.deviceId, slot);
+    this.applySlotTileState(slot, camera.deviceId);
     this.slotOrder.push(camera.deviceId);
     this.container.appendChild(slot.element);
 
@@ -1810,7 +1904,7 @@ class App {
                 }
 
                 const setting = this.settings[deviceId] || {};
-                const role = setting.defaultRole || 'person';
+                const role = this.getSlotRole(deviceId);
                 if (role === 'whiteboard') {
                     if (slot.processor) {
                         slot.processor.stop();

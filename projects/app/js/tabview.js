@@ -1,7 +1,13 @@
 import { app, appReady } from './app.js';
 import { initViewModeSwitch } from './viewModeSwitch.js';
 import { saveSessionState } from './camera.js';
+import { getTileMode, setTileMode } from './storageManager.js';
 
+/**
+ * タブ表示からサイドパネル表示へ切り替えるスイッチを初期化する。
+ *
+ * @returns {Promise<void>}
+ */
 export async function setupTabViewModeSwitch() {
   const switchContainer = document.querySelector('.view-mode-switch');
   if (!switchContainer) return;
@@ -26,6 +32,51 @@ export async function setupTabViewModeSwitch() {
   });
 }
 
+/**
+ * 保存済みのタイルモードを復元し、切り替えボタンを初期化する。
+ *
+ * @returns {Promise<void>}
+ */
+export async function setupTileModeSwitch() {
+  const container = document.getElementById('tile-mode-switch-container');
+  if (!container) return;
+
+  const buttons = container.querySelectorAll('.segmented-btn');
+
+  const initialTileMode = await getTileMode();
+  await app.setTileMode(initialTileMode);
+
+  const updateSelection = (selectedMode) => {
+    buttons.forEach(button => {
+      const isSelected = button.dataset.tileMode === selectedMode;
+      button.classList.toggle('active', isSelected);
+      button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    });
+  };
+
+  buttons.forEach(btn => {
+    const mode = btn.dataset.tileMode;
+
+    btn.addEventListener('click', async () => {
+      const previousMode = container.querySelector('.segmented-btn.active')?.dataset.tileMode || initialTileMode;
+      buttons.forEach(button => { button.disabled = true; });
+      try {
+        await setTileMode(mode);
+        await app.setTileMode(mode);
+        updateSelection(mode);
+      } catch (err) {
+        updateSelection(previousMode);
+        app.showSnackbar(chrome.i18n.getMessage('snackbarTileModeSaveFailed') || 'タイル表示設定の保存に失敗しました');
+      } finally {
+        buttons.forEach(button => { button.disabled = false; });
+      }
+    });
+  });
+
+  updateSelection(initialTileMode);
+}
+
 // ページ初期化
 await appReady;
 await setupTabViewModeSwitch();
+await setupTileModeSwitch();

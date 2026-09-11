@@ -21,6 +21,8 @@ let sentMessages = [];
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => 'sidepanel'),
+  getTileMode: vi.fn(async () => 'normal'),
+  setTileMode: vi.fn(async () => {}),
 }));
 
 vi.mock('./camera.js', async (importOriginal) => {
@@ -37,7 +39,7 @@ vi.mock('./camera.js', async (importOriginal) => {
       { deviceId: 'cam1', label: 'Camera 1' },
       { deviceId: 'cam2', label: 'Camera 2' },
     ]),
-    loadSessionState: vi.fn(async () => ({ slotOrder: ['cam1', 'cam2'], activeSlotIndex: 0 })),
+    loadSessionState: vi.fn(async () => ({ slotOrder: [], activeSlotIndex: 0 })),
     saveSessionState: vi.fn(async (order, index) => {
       savedSlotOrder = order;
       savedActiveIndex = index;
@@ -55,6 +57,11 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
       <div id="app" class="layout-wide">
         <div class="view-mode-switch" role="switch">
           <div class="vms-track"></div>
+        </div>
+        <div id="tile-mode-switch-container">
+          <button class="segmented-btn active" data-tile-mode="normal"></button>
+          <button class="segmented-btn" data-tile-mode="tile2x2"></button>
+          <button class="segmented-btn" data-tile-mode="tile3x3"></button>
         </div>
         <div id="camera-container"></div>
         <div id="initial-overlay" class="hidden"></div>
@@ -136,5 +143,93 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     expect(savedSlotOrder).toEqual(['cam1', 'cam2']);
     expect(savedActiveIndex).toBe(0);
     expect(sentMessages).toEqual([{ type: 'switch_to_sidepanel', tabId: 999 }]);
+  });
+
+  test('getCurrent が失敗してもエラーを記録し、switch_to_sidepanel を送信する', async () => {
+    const { setupTabViewModeSwitch } = await import('./tabview.js');
+    const error = new Error('tab unavailable');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    chrome.tabs.getCurrent.mockRejectedValueOnce(error);
+
+    await setupTabViewModeSwitch();
+    document.querySelector('.view-mode-switch').click();
+
+    await vi.waitFor(() => expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'switch_to_sidepanel',
+      tabId: undefined,
+    }));
+    expect(consoleError).toHaveBeenCalledWith('Failed to get current tab id:', error);
+
+    consoleError.mockRestore();
+  });
+
+  test('setupTileModeSwitch が正常に動作し、タイルボタンのクリックで setTileMode が適用される', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+
+    await setupTileModeSwitch();
+
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    btn2x2.click();
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(app.tileMode).toBe('tile2x2');
+    expect(app.container.classList.contains('tile-mode-2x2')).toBe(true);
+
+    const btnNormal = document.querySelector('[data-tile-mode="normal"]');
+    btnNormal.click();
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(app.tileMode).toBe('normal');
+    expect(app.container.classList.contains('tile-mode-2x2')).toBe(false);
+  });
+
+  test('タイル表示設定の保存に失敗した場合は以前の選択を維持して Snackbar を表示する', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+    const { setTileMode } = await import('./storageManager.js');
+    const showSnackbar = vi.spyOn(app, 'showSnackbar').mockImplementation(() => {});
+
+    await setupTileModeSwitch();
+    setTileMode.mockRejectedValueOnce(new Error('storage unavailable'));
+
+    const btnNormal = document.querySelector('[data-tile-mode="normal"]');
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    btn2x2.click();
+
+    await vi.waitFor(() => expect(showSnackbar).toHaveBeenCalledWith('snackbarTileModeSaveFailed'));
+    expect(btnNormal.classList.contains('active')).toBe(true);
+    expect(btnNormal.getAttribute('aria-checked')).toBe('true');
+    expect(btn2x2.classList.contains('active')).toBe(false);
+    expect(btn2x2.getAttribute('aria-checked')).toBe('false');
+    expect(app.tileMode).toBe('normal');
+    expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(0);
+  });
+
+  test('タイル表示設定の更新中は全モードボタンを無効化する', async () => {
+    const { app } = await import('./app.js');
+    const { setupTileModeSwitch } = await import('./tabview.js');
+    const { setTileMode } = await import('./storageManager.js');
+    let resolveSave;
+    setTileMode.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveSave = resolve;
+    }));
+
+    await setupTileModeSwitch();
+
+    const btn2x2 = document.querySelector('[data-tile-mode="tile2x2"]');
+    const btn3x3 = document.querySelector('[data-tile-mode="tile3x3"]');
+    const saveCallCount = setTileMode.mock.calls.length;
+    btn2x2.click();
+
+    expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(3);
+    btn3x3.click();
+    expect(setTileMode).toHaveBeenCalledTimes(saveCallCount + 1);
+
+    resolveSave();
+    await vi.waitFor(() => expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(0));
+    expect(app.tileMode).toBe('tile2x2');
   });
 });

@@ -12,15 +12,62 @@
 /* Header */
 #app-header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
     padding: 4px 0;
+    gap: 12px;
 }
 
 .header-actions {
     display: flex;
     gap: 4px;
     margin-left: auto;
+}
+
+/* M3 Segmented Button for Tile Mode */
+#tile-mode-switch-container {
+    display: flex;
+    align-items: center;
+}
+
+.m3-segmented-button {
+    display: inline-flex;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-full);
+    overflow: hidden;
+    background-color: var(--md-sys-color-surface);
+}
+
+.segmented-btn {
+    background: none;
+    border: none;
+    border-right: 1px solid var(--md-sys-color-outline);
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--md-sys-color-on-surface-variant);
+    transition: background-color 0.2s, color 0.2s;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.segmented-btn:last-child {
+    border-right: none;
+}
+
+.segmented-btn:hover {
+    background-color: var(--md-sys-color-surface-variant);
+}
+
+.segmented-btn.active {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+}
+
+.segmented-btn .material-symbols-outlined {
+    font-size: 20px;
 }
 
 .m3-title {
@@ -910,6 +957,55 @@ video, .processed-canvas {
 
 .layout-wide .camera-slot.zoom-4 {
     width: calc(25% - 12px);
+}
+
+/* Tile View Layout Styles */
+#camera-container.tile-mode-2x2,
+#camera-container.tile-mode-3x3 {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+#camera-container.tile-mode-2x2 .camera-slot {
+    width: calc((100% - 8px) / 2);
+    height: calc((100% - 8px) / 2);
+    min-height: 180px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+}
+
+#camera-container.tile-mode-3x3 .camera-slot {
+    width: calc((100% - 16px) / 3);
+    height: calc((100% - 16px) / 3);
+    min-height: 140px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+}
+
+#camera-container.tile-mode-2x2 .video-wrapper,
+#camera-container.tile-mode-3x3 .video-wrapper {
+    aspect-ratio: unset !important;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+/* Hide zoom buttons and mode switch container in Tile View */
+#camera-container.tile-mode-2x2 .zoom-btn-overlay,
+#camera-container.tile-mode-3x3 .zoom-btn-overlay,
+#camera-container.tile-mode-2x2 .role-switch-wrapper,
+#camera-container.tile-mode-3x3 .role-switch-wrapper {
+    display: none !important;
 }
 
 #snackbar {
