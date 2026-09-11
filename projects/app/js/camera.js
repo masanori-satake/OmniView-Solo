@@ -21,6 +21,11 @@ function migrateSettings(settings) {
   const migrated = {};
 
   for (const [deviceId, s] of Object.entries(settings)) {
+    // プロトタイプ汚染対策: ストレージ由来データの特殊キー (__proto__, constructor, prototype) を除外
+    if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
+      changed = true;
+      continue;
+    }
     // Check if it's the old format
     if (s.role !== undefined && s.modes === undefined) {
       migrated[deviceId] = {
@@ -112,6 +117,10 @@ export async function saveGlobalSettings(settings) {
 let saveQueue = Promise.resolve();
 
 export async function saveCameraSetting(deviceId, settings) {
+  // プロトタイプ汚染対策: 特殊キー (__proto__, constructor, prototype) の保存を防止
+  if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
+    return saveQueue;
+  }
   saveQueue = saveQueue.then(async () => {
     const currentSettings = await loadCameraSettings();
     const existing = currentSettings[deviceId] || {};
