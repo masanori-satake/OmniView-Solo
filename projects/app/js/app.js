@@ -34,6 +34,8 @@ class App {
     this.logs = [];
     this.bandwidthDialogDismissed = false;
     this.tileMode = 'normal';
+    this.modalStack = [];
+    this.modalInertStates = new Map();
   }
 
   initI18n() {
@@ -77,6 +79,7 @@ class App {
     this.setupSettingsPanel();
     this.setupAddCameraButton();
     this.setupWelcomeCard();
+    this.setupKeyboardShortcuts();
     // Log initial device list
     this.addLog(chrome.i18n.getMessage('logAppInitialized'));
     this.logDeviceList();
@@ -165,6 +168,156 @@ class App {
   showWelcomeOrDialog() {
     this.updateWelcomeVisibility();
     this.updateAddCameraBlinking();
+  }
+
+  getModalFocusableElements(dialog) {
+    const selector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[contenteditable="true"]',
+      '[tabindex]'
+    ].join(',');
+
+    return Array.from(dialog.querySelectorAll(selector)).filter(element =>
+      element.tabIndex >= 0 &&
+      element.getAttribute('type') !== 'hidden' &&
+      !element.closest('.hidden, [hidden], [aria-hidden="true"]')
+    );
+  }
+
+  restoreModalInertStates() {
+    this.modalInertStates.forEach((wasInert, element) => {
+      if (wasInert) {
+        element.setAttribute('inert', '');
+      } else {
+        element.removeAttribute('inert');
+      }
+    });
+  }
+
+  updateModalInertness() {
+    this.restoreModalInertStates();
+
+    const activeDialog = this.modalStack.at(-1)?.dialog;
+    if (!activeDialog) {
+      this.modalInertStates.clear();
+      return;
+    }
+
+    let current = activeDialog;
+    while (current && current !== document.body) {
+      const parent = current.parentElement;
+      if (!parent) break;
+
+      Array.from(parent.children).forEach(element => {
+        if (element === current) return;
+        if (!this.modalInertStates.has(element)) {
+          this.modalInertStates.set(element, element.hasAttribute('inert'));
+        }
+        element.setAttribute('inert', '');
+      });
+      current = parent;
+    }
+  }
+
+  openModal(dialog, trigger = document.activeElement) {
+    if (!dialog) return;
+
+    let state = this.modalStack.find(modalState => modalState.dialog === dialog);
+    if (state) {
+      this.modalStack = this.modalStack.filter(modalState => modalState !== state);
+      this.modalStack.push(state);
+    } else {
+      const trapFocus = (event) => {
+        if (event.key !== 'Tab' || this.modalStack.at(-1)?.dialog !== dialog) return;
+
+        const focusableElements = this.getModalFocusableElements(dialog);
+        if (focusableElements.length === 0) {
+          event.preventDefault();
+          dialog.focus();
+          return;
+        }
+
+        const first = focusableElements[0];
+        const last = focusableElements.at(-1);
+        const focusIsOutside = !dialog.contains(document.activeElement);
+        if (event.shiftKey && (document.activeElement === first || focusIsOutside)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || focusIsOutside)) {
+          event.preventDefault();
+          first.focus();
+        }
+      };
+
+      state = { dialog, trigger, trapFocus, addedTabindex: false };
+      this.modalStack.push(state);
+      dialog.addEventListener('keydown', trapFocus);
+    }
+
+    dialog.classList.remove('hidden');
+    this.updateModalInertness();
+
+    const firstFocusable = this.getModalFocusableElements(dialog)[0];
+    if (firstFocusable) {
+      firstFocusable.focus();
+    } else {
+      if (!dialog.hasAttribute('tabindex')) {
+        dialog.setAttribute('tabindex', '-1');
+        state.addedTabindex = true;
+      }
+      dialog.focus();
+    }
+  }
+
+  closeModal(dialog) {
+    if (!dialog) return;
+
+    dialog.classList.add('hidden');
+    if (dialog.id === 'bandwidth-dialog') {
+      this.bandwidthDialogDismissed = true;
+    }
+
+    const stateIndex = this.modalStack.findIndex(state => state.dialog === dialog);
+    if (stateIndex === -1) return;
+
+    const [state] = this.modalStack.splice(stateIndex, 1);
+    dialog.removeEventListener('keydown', state.trapFocus);
+    if (state.addedTabindex) dialog.removeAttribute('tabindex');
+
+    this.modalStack.slice(stateIndex).forEach(laterState => {
+      if (state.dialog.contains(laterState.trigger)) {
+        laterState.trigger = state.trigger;
+      }
+    });
+
+    this.updateModalInertness();
+    if (stateIndex === this.modalStack.length) {
+      const returnTarget = state.trigger;
+      if (returnTarget?.isConnected && !returnTarget.closest('.hidden, [hidden], [inert]')) {
+        returnTarget.focus();
+      }
+    }
+  }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const openDialog = this.modalStack.at(-1)?.dialog || [
+          document.getElementById('settings-panel'),
+          document.getElementById('camera-dialog'),
+          document.getElementById('bandwidth-dialog')
+        ].find(dialog => dialog && !dialog.classList.contains('hidden'));
+
+        if (openDialog) {
+          e.preventDefault();
+          this.closeModal(openDialog);
+        }
+      }
+    });
   }
 
   setupStartButton() {
@@ -375,8 +528,8 @@ class App {
     };
     this.updateIntervalUI = updateIntervalUI;
 
-    settingsBtn.addEventListener('click', async () => {
-        settingsPanel.classList.remove('hidden');
+    settingsBtn.addEventListener('click', async (event) => {
+        this.openModal(settingsPanel, event.currentTarget);
         intervalInput.value = this.globalSettings.interval;
 
         excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
@@ -405,22 +558,37 @@ class App {
         this.renderLogs();
     });
 
-    overlay.addEventListener('click', () => settingsPanel.classList.add('hidden'));
+    overlay.addEventListener('click', () => this.closeModal(settingsPanel));
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.add('hidden'));
-            btn.classList.add('active');
-            document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
-            if (btn.dataset.tab === 'camera-info') {
-                this.updateCameraInfoTab();
-            }
-            if (btn.dataset.tab === 'logs') {
-                this.renderLogs();
-            }
+    const activateTab = (selectedTab, moveFocus = false) => {
+        tabBtns.forEach(tab => {
+            const selected = tab === selectedTab;
+            tab.classList.toggle('active', selected);
+            tab.setAttribute('aria-selected', String(selected));
+            tab.setAttribute('tabindex', selected ? '0' : '-1');
         });
-    });
+        tabContents.forEach(content => {
+            content.classList.toggle('hidden', content.id !== selectedTab.getAttribute('aria-controls'));
+        });
+
+        if (moveFocus) selectedTab.focus();
+        if (selectedTab.dataset.tab === 'camera-info') this.updateCameraInfoTab();
+        if (selectedTab.dataset.tab === 'logs') this.renderLogs();
+    };
+
+    const tabs = Array.from(tabBtns);
+    if (tabs.length > 0) {
+        activateTab(tabs.find(tab => tab.getAttribute('aria-selected') === 'true') || tabs[0]);
+        tabs.forEach((btn, index) => {
+            btn.addEventListener('click', () => activateTab(btn));
+            btn.addEventListener('keydown', (event) => {
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                event.preventDefault();
+                const offset = event.key === 'ArrowRight' ? 1 : -1;
+                activateTab(tabs[(index + offset + tabs.length) % tabs.length], true);
+            });
+        });
+    }
 
     const infoCameraSelect = document.getElementById('info-camera-select');
     infoCameraSelect.addEventListener('change', () => this.displayCameraInfo(infoCameraSelect.value));
@@ -1221,6 +1389,7 @@ class App {
     const listContainer = document.getElementById('camera-list-container');
     const cancelBtn = document.getElementById('dialog-cancel-btn');
     const addBtn = document.getElementById('dialog-add-btn');
+    const trigger = document.activeElement;
 
     this.cameras = await getCameras();
     if (this.cameras.length > 0 && !this.cameras[0].label) {
@@ -1290,9 +1459,9 @@ class App {
         });
     });
 
-    dialog.classList.remove('hidden');
+    this.openModal(dialog, trigger);
 
-    const closeDialog = () => dialog.classList.add('hidden');
+    const closeDialog = () => this.closeModal(dialog);
     overlay.onclick = closeDialog;
     cancelBtn.onclick = closeDialog;
 
@@ -1349,12 +1518,9 @@ class App {
 
     if (!dialog || !overlay || !noBtn || !yesBtn) return;
 
-    dialog.classList.remove('hidden');
+    this.openModal(dialog);
 
-    const closeDialog = () => {
-        dialog.classList.add('hidden');
-        this.bandwidthDialogDismissed = true;
-    };
+    const closeDialog = () => this.closeModal(dialog);
 
     overlay.onclick = closeDialog;
     noBtn.onclick = closeDialog;
