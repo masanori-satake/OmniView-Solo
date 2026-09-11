@@ -76,7 +76,52 @@ export async function setupTileModeSwitch() {
   updateSelection(initialTileMode);
 }
 
+/**
+ * 全画面表示切り替えボタンを初期化する。
+ *
+ * @returns {void}
+ */
+export function setupFullscreenToggle() {
+  const btn = document.getElementById('fullscreen-btn');
+  if (!btn) return;
+
+  const updateUI = () => {
+    const isFullscreen = !!document.fullscreenElement;
+    const iconSpan = btn.querySelector('.material-symbols-outlined');
+    const msgKey = isFullscreen ? 'fullscreenExitBtnTitle' : 'fullscreenBtnTitle';
+    const message = (typeof chrome !== 'undefined' && chrome.i18n && chrome.i18n.getMessage)
+      ? chrome.i18n.getMessage(msgKey) || (isFullscreen ? '全画面表示を解除' : '全画面表示')
+      : (isFullscreen ? '全画面表示を解除' : '全画面表示');
+
+    if (iconSpan) {
+      iconSpan.textContent = isFullscreen ? 'fullscreen_exit' : 'fullscreen';
+    }
+    btn.title = message;
+    btn.setAttribute('aria-label', message);
+  };
+
+  btn.addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle error:', err);
+    }
+  });
+
+  document.addEventListener('fullscreenchange', updateUI);
+  updateUI();
+}
+
 // ページ初期化
 await appReady;
 await setupTabViewModeSwitch();
 await setupTileModeSwitch();
+setupFullscreenToggle();

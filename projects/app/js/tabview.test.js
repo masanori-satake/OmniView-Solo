@@ -63,6 +63,9 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
           <button class="segmented-btn" data-tile-mode="tile2x2"></button>
           <button class="segmented-btn" data-tile-mode="tile3x3"></button>
         </div>
+        <button id="fullscreen-btn">
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
         <div id="camera-container"></div>
         <div id="initial-overlay" class="hidden"></div>
         <button id="start-btn"></button>
@@ -231,5 +234,48 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     resolveSave();
     await vi.waitFor(() => expect(document.querySelectorAll('.segmented-btn:disabled')).toHaveLength(0));
     expect(app.tileMode).toBe('tile2x2');
+  });
+
+  test('setupFullscreenToggle が全画面表示切り替えと fullscreenchange イベントを正しく処理する', async () => {
+    const { setupFullscreenToggle } = await import('./tabview.js');
+
+    const requestFullscreenMock = vi.fn().mockResolvedValue();
+    const exitFullscreenMock = vi.fn().mockResolvedValue();
+    document.documentElement.requestFullscreen = requestFullscreenMock;
+    document.exitFullscreen = exitFullscreenMock;
+
+    setupFullscreenToggle();
+
+    const btn = document.getElementById('fullscreen-btn');
+    const icon = btn.querySelector('.material-symbols-outlined');
+
+    expect(icon.textContent).toBe('fullscreen');
+    expect(btn.title).toBe('fullscreenBtnTitle');
+
+    btn.click();
+    expect(requestFullscreenMock).toHaveBeenCalled();
+
+    // Simulate fullscreen state entered
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: document.documentElement,
+    });
+    document.dispatchEvent(new Event('fullscreenchange'));
+
+    expect(icon.textContent).toBe('fullscreen_exit');
+    expect(btn.title).toBe('fullscreenExitBtnTitle');
+
+    btn.click();
+    expect(exitFullscreenMock).toHaveBeenCalled();
+
+    // Simulate exiting fullscreen
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: null,
+    });
+    document.dispatchEvent(new Event('fullscreenchange'));
+
+    expect(icon.textContent).toBe('fullscreen');
+    expect(btn.title).toBe('fullscreenBtnTitle');
   });
 });

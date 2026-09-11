@@ -682,5 +682,11 @@
   },
   "tile3x3BtnTitle": {
     "message": "Tile View (3x3)"
+  },
+  "fullscreenBtnTitle": {
+    "message": "Toggle Fullscreen"
+  },
+  "fullscreenExitBtnTitle": {
+    "message": "Exit Fullscreen"
   }
 }
