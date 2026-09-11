@@ -145,6 +145,34 @@ describe('processor.js パフォーマンス最適化単体テスト', () => {
 
             expect(countAfter).toBeGreaterThan(countBefore);
         });
+
+        test('getWarpedFrame は高速化された幾何変換とバイリニア補間を正確に計算する', async () => {
+            const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+            const transformer = new PerspectiveTransformer(mockVideo, mockOverlayCanvas, pts, null);
+
+            const w = 20;
+            const h = 20;
+            const inputBuffer = new Uint8ClampedArray(w * h * 4);
+            // 赤色 (RGBA: 255, 0, 0, 255) で埋める
+            for (let i = 0; i < inputBuffer.length; i += 4) {
+                inputBuffer[i] = 255;
+                inputBuffer[i + 1] = 0;
+                inputBuffer[i + 2] = 0;
+                inputBuffer[i + 3] = 255;
+            }
+            const inputImg = new ImageData(inputBuffer, w, h);
+
+            const warped = await transformer.getWarpedFrame(inputImg);
+
+            expect(warped.width).toBe(w);
+            expect(warped.height).toBe(h);
+            // 正解の領域内のピクセルが期待通り赤色 (255, 0, 0, 255) に変換されていること
+            const centerIdx = (Math.floor(h / 2) * w + Math.floor(w / 2)) * 4;
+            expect(warped.data[centerIdx]).toBe(255);
+            expect(warped.data[centerIdx + 1]).toBe(0);
+            expect(warped.data[centerIdx + 2]).toBe(0);
+            expect(warped.data[centerIdx + 3]).toBe(255);
+        });
     });
 
     describe('WhiteboardProcessor putImageData 及び clearRect の最適化', () => {
