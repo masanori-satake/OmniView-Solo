@@ -760,21 +760,42 @@ export class PerspectiveTransformer {
         const corners = [{x: 0, y: 0}, {x: outW, y: 0}, {x: outW, y: outH}, {x: 0, y: outH}];
         const H = getHomography(corners, target);
 
+        // Performance Optimization: Cache TypedArray references, pre-calculate row expressions,
+        // and unroll bilinear channel interpolation to eliminate millions of property lookups and operations in pixel loop.
+        const src = imageData.data;
+        const dst = out.data;
+        const rowBytes = w * 4;
+        const h0 = H[0], h1 = H[1], h2 = H[2];
+        const h3 = H[3], h4 = H[4], h5 = H[5];
+        const h6 = H[6], h7 = H[7], h8 = H[8];
+        const maxSx = w - 1, maxSy = h - 1;
+
         for (let y = 0; y < outH; y++) {
-            for (let x = 0; x < outW; x++) {
-                const den = H[6] * x + H[7] * y + H[8];
+            const h7_y_h8 = h7 * y + h8;
+            const h1_y_h2 = h1 * y + h2;
+            const h4_y_h5 = h4 * y + h5;
+            let oidx = y * outW * 4;
+
+            for (let x = 0; x < outW; x++, oidx += 4) {
+                const den = h6 * x + h7_y_h8;
                 if (Math.abs(den) < 1e-9) continue;
-                const sx = (H[0] * x + H[1] * y + H[2]) / den;
-                const sy = (H[3] * x + H[4] * y + H[5]) / den;
-                if (sx >= 0 && sx < w - 1 && sy >= 0 && sy < h - 1) {
-                    const ix = Math.floor(sx), iy = Math.floor(sy);
-                    const idx = (iy * w + ix) * 4, oidx = (y * outW + x) * 4;
+                const sx = (h0 * x + h1_y_h2) / den;
+                const sy = (h3 * x + h4_y_h5) / den;
+                if (sx >= 0 && sx < maxSx && sy >= 0 && sy < maxSy) {
+                    const ix = Math.floor(sx);
+                    const iy = Math.floor(sy);
+                    const idx0 = (iy * w + ix) * 4;
+                    const idx1 = idx0 + rowBytes;
                     const dx = sx - ix, dy = sy - iy;
-                    for (let c = 0; c < 4; c++) {
-                        const p00 = imageData.data[idx + c], p10 = imageData.data[idx + 4 + c];
-                        const p01 = imageData.data[idx + w * 4 + c], p11 = imageData.data[idx + w * 4 + 4 + c];
-                        out.data[oidx + c] = p00 * (1 - dx) * (1 - dy) + p10 * dx * (1 - dy) + p01 * (1 - dx) * dy + p11 * dx * dy;
-                    }
+                    const w00 = (1 - dx) * (1 - dy);
+                    const w10 = dx * (1 - dy);
+                    const w01 = (1 - dx) * dy;
+                    const w11 = dx * dy;
+
+                    dst[oidx]     = src[idx0]     * w00 + src[idx0 + 4]     * w10 + src[idx1]     * w01 + src[idx1 + 4]     * w11;
+                    dst[oidx + 1] = src[idx0 + 1] * w00 + src[idx0 + 5] * w10 + src[idx1 + 1] * w01 + src[idx1 + 5] * w11;
+                    dst[oidx + 2] = src[idx0 + 2] * w00 + src[idx0 + 6] * w10 + src[idx1 + 2] * w01 + src[idx1 + 6] * w11;
+                    dst[oidx + 3] = src[idx0 + 3] * w00 + src[idx0 + 7] * w10 + src[idx1 + 3] * w01 + src[idx1 + 7] * w11;
                 }
             }
         }
