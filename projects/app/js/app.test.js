@@ -262,7 +262,7 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     const { app, appReady } = await import('./app.js');
     await appReady;
 
-    const maliciousJson = '{"version":1,"global_settings":{"interval":8,"__proto__":{"polluted":true}},"camera_settings":{"validCam":{"customLabel":"Safe Label"},"__proto__":{"polluted":true}}}';
+    const maliciousJson = '{"version":1,"global_settings":{"interval":8,"__proto__":{"polluted":true}},"camera_settings":{"validCam":{"customLabel":"Safe Label"},"invalidNull":null,"invalidArray":[1,2],"invalidString":"bad","__proto__":{"polluted":true}}}';
 
     const file = new Blob([maliciousJson], { type: 'application/json' });
     const importInput = document.getElementById('import-input');

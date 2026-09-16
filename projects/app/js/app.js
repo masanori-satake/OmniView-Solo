@@ -734,11 +734,11 @@ class App {
                         this.globalSettings.pinReleaseTime = 3;
                     }
 
-                    try { updateIntervalUI(); } catch(e) { console.error('Error in updateIntervalUI:', e); }
-                    try { this.updatePinTimer(); } catch(e) { console.error('Error in updatePinTimer:', e); }
-                    try { await this.updateResolutionSelects(); } catch(e) { console.error('Error in updateResolutionSelects:', e); }
-                    try { await this.updateCyclingAndActivationState(); } catch(e) { console.error('Error in updateCyclingAndActivationState:', e); }
-                    try { this.updateAllResolutionFpsDisplays(); } catch(e) { console.error('Error in updateAllResolutionFpsDisplays:', e); }
+                    updateIntervalUI();
+                    this.updatePinTimer();
+                    await this.updateResolutionSelects();
+                    await this.updateCyclingAndActivationState();
+                    this.updateAllResolutionFpsDisplays();
                 }
 
                 if (data.camera_settings !== null && typeof data.camera_settings === 'object' && !Array.isArray(data.camera_settings)) {
@@ -747,6 +747,10 @@ class App {
                     for (const [deviceId, imported] of Object.entries(data.camera_settings)) {
                         // プロトタイプ汚染対策: __proto__, constructor, prototype キーを無視する
                         if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
+                            continue;
+                        }
+                        // エントリ値の検証: null, オブジェクト以外, または配列の場合はスキップ
+                        if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
                             continue;
                         }
                         if (mode === 'overwrite') {
