@@ -82,12 +82,7 @@ describe('Property 2: カメラ状態は Storage 経由でモード間で引き�
   });
 
   test('loadGlobalSettings は設定読み込み時にプロトタイプ汚染キー (__proto__, constructor, prototype) を除外する', async () => {
-    store.set('global_settings', JSON.parse(`{
-      "interval": 10,
-      "__proto__": { "polluted": true },
-      "constructor": { "polluted": true },
-      "prototype": { "polluted": true }
-    }`));
+    store.set('global_settings', JSON.parse('{"interval":10,"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true}}'));
 
     const settings = await loadGlobalSettings();
     expect(settings.interval).toBe(10);
@@ -98,12 +93,7 @@ describe('Property 2: カメラ状態は Storage 経由でモード間で引き�
   });
 
   test('loadCameraSettings は設定読み込み時にプロトタイプ汚染キー (__proto__, constructor, prototype) を除外する', async () => {
-    store.set('camera_settings', {
-      'cam1': { customLabel: 'Cam 1', role: 'person' },
-      '__proto__': { polluted: true },
-      'constructor': { polluted: true },
-      'prototype': { polluted: true }
-    });
+    store.set('camera_settings', JSON.parse('{"cam1":{"customLabel":"Cam 1","role":"person"},"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true}}'));
 
     const settings = await loadCameraSettings();
     expect(settings.cam1).toBeDefined();

@@ -84,11 +84,6 @@ export const RESOLUTION_PRESETS_2K = [
   { label: 'QVGA (4:3)',       width: 320,  height: 240  }  // 極限のフォールバック用（人物の最低限の表示用）
 ];
 
-/**
- * 保存済みのグローバル設定を読み込み、危険なプロトタイプ関連キーを除外して既定値と結合する。
- *
- * @returns {Promise<Object>} 検証済みのグローバル設定。
- */
 export async function loadGlobalSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['global_settings'], (result) => {
