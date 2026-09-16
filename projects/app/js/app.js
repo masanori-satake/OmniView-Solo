@@ -476,13 +476,15 @@ class App {
         // カメラ接続数に関わらず、自動切り替えの設定状態（cyclingEnabled）のみに基づいてインターバル入力を有効/無効にします。
         // 一貫性を保つため、enabled の判定条件を cyclingSwitch.checked の評価式（!== false）と統一します。
         const enabled = this.globalSettings.cyclingEnabled !== false;
-        intervalInput.disabled = !enabled;
-        intervalUp.disabled = !enabled;
-        intervalDown.disabled = !enabled;
-        if (enabled) {
-            intervalLabel.classList.remove('disabled');
-        } else {
-            intervalLabel.classList.add('disabled');
+        if (intervalInput) intervalInput.disabled = !enabled;
+        if (intervalUp) intervalUp.disabled = !enabled;
+        if (intervalDown) intervalDown.disabled = !enabled;
+        if (intervalLabel) {
+            if (enabled) {
+                intervalLabel.classList.remove('disabled');
+            } else {
+                intervalLabel.classList.add('disabled');
+            }
         }
 
         const cyclingEnabled = this.globalSettings.cyclingEnabled;
@@ -490,10 +492,12 @@ class App {
         if (excludeWhiteboardSwitchInput) {
             excludeWhiteboardSwitchInput.disabled = !cyclingEnabled;
         }
-        if (cyclingEnabled) {
-            excludeWhiteboardLabel.classList.remove('disabled');
-        } else {
-            excludeWhiteboardLabel.classList.add('disabled');
+        if (excludeWhiteboardLabel) {
+            if (cyclingEnabled) {
+                excludeWhiteboardLabel.classList.remove('disabled');
+            } else {
+                excludeWhiteboardLabel.classList.add('disabled');
+            }
         }
 
         const pinReleaseEnabled = !!this.globalSettings.pinReleaseEnabled;
@@ -697,15 +701,21 @@ class App {
                 const mode = importModeSelect.value;
                 this.addLog(chrome.i18n.getMessage('logImporting', [mode]));
 
-                if (data.global_settings && typeof data.global_settings === 'object') {
-                    this.globalSettings = { ...this.globalSettings, ...data.global_settings };
+                if (data.global_settings && typeof data.global_settings === 'object' && !Array.isArray(data.global_settings)) {
+                    // プロトタイプ汚染対策: __proto__, constructor, prototype キーを除外
+                    const safeGlobalSettings = {};
+                    for (const [key, value] of Object.entries(data.global_settings)) {
+                        if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+                            safeGlobalSettings[key] = value;
+                        }
+                    }
+                    this.globalSettings = { ...this.globalSettings, ...safeGlobalSettings };
                     await saveGlobalSettings(this.globalSettings);
                     this.bandwidthDialogDismissed = false;
-                    intervalInput.value = this.globalSettings.interval;
-
-                    cyclingSwitch.checked = !!this.globalSettings.cyclingEnabled;
-                    excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
-                    cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
+                    if (intervalInput) intervalInput.value = this.globalSettings.interval;
+                    if (cyclingSwitch) cyclingSwitch.checked = !!this.globalSettings.cyclingEnabled;
+                    if (excludeWhiteboardSwitch) excludeWhiteboardSwitch.checked = !!this.globalSettings.excludeWhiteboard;
+                    if (cameraResolutionFpsDisplaySwitch) cameraResolutionFpsDisplaySwitch.checked = !!this.globalSettings.cameraResolutionFpsDisplay;
 
                     if (wbAutoFocusSwitch) {
                         wbAutoFocusSwitch.checked = !!this.globalSettings.wbAutoFocusEnabled;
@@ -724,11 +734,11 @@ class App {
                         this.globalSettings.pinReleaseTime = 3;
                     }
 
-                    updateIntervalUI();
-                    this.updatePinTimer();
-                    await this.updateResolutionSelects();
-                    await this.updateCyclingAndActivationState();
-                    this.updateAllResolutionFpsDisplays();
+                    try { updateIntervalUI(); } catch(e) { console.error('Error in updateIntervalUI:', e); }
+                    try { this.updatePinTimer(); } catch(e) { console.error('Error in updatePinTimer:', e); }
+                    try { await this.updateResolutionSelects(); } catch(e) { console.error('Error in updateResolutionSelects:', e); }
+                    try { await this.updateCyclingAndActivationState(); } catch(e) { console.error('Error in updateCyclingAndActivationState:', e); }
+                    try { this.updateAllResolutionFpsDisplays(); } catch(e) { console.error('Error in updateAllResolutionFpsDisplays:', e); }
                 }
 
                 if (data.camera_settings !== null && typeof data.camera_settings === 'object' && !Array.isArray(data.camera_settings)) {

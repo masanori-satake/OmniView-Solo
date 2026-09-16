@@ -101,7 +101,17 @@ export async function loadGlobalSettings() {
         pinReleaseEnabled: true,
         pinReleaseTime: 3
       };
-      resolve({ ...defaults, ...(result?.global_settings || {}) });
+      const rawSettings = result?.global_settings;
+      const safeSettings = {};
+      if (rawSettings && typeof rawSettings === 'object' && !Array.isArray(rawSettings)) {
+        for (const [key, value] of Object.entries(rawSettings)) {
+          // プロトタイプ汚染対策: ストレージ由来の特殊キー (__proto__, constructor, prototype) を除外
+          if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+            safeSettings[key] = value;
+          }
+        }
+      }
+      resolve({ ...defaults, ...safeSettings });
     });
   });
 }

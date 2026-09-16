@@ -9,7 +9,7 @@
  */
 import { describe, test, beforeEach, expect } from 'vitest';
 import fc from 'fast-check';
-import { saveSessionState, loadSessionState, loadCameraSettings, saveCameraSetting } from './camera.js';
+import { saveSessionState, loadSessionState, loadCameraSettings, saveCameraSetting, loadGlobalSettings } from './camera.js';
 
 // chrome.storage.local をインメモリ Map でモックする
 const store = new Map();
@@ -79,6 +79,22 @@ describe('Property 2: カメラ状態は Storage 経由でモード間で引き�
       ),
       { numRuns: 100 }
     );
+  });
+
+  test('loadGlobalSettings は設定読み込み時にプロトタイプ汚染キー (__proto__, constructor, prototype) を除外する', async () => {
+    store.set('global_settings', {
+      interval: 10,
+      '__proto__': { polluted: true },
+      'constructor': { polluted: true },
+      'prototype': { polluted: true }
+    });
+
+    const settings = await loadGlobalSettings();
+    expect(settings.interval).toBe(10);
+    expect(Object.prototype.hasOwnProperty.call(settings, '__proto__')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(settings, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(settings, 'prototype')).toBe(false);
+    expect(Object.prototype.polluted).toBeUndefined();
   });
 
   test('loadCameraSettings は設定読み込み時にプロトタイプ汚染キー (__proto__, constructor, prototype) を除外する', async () => {
