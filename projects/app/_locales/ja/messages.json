@@ -1,9 +1,9 @@
 {
   "extensionName": {
-    "message": "OmniView-Solo"
+    "message": "OmniView-Solo - オンライン会議・授業用 ホワイトボード画像補正"
   },
   "extensionDescription": {
-    "message": "リモート授業やハイブリッド会議の教材（ノート、テキスト、スケッチブック等）やホワイトボードを非常に見やすくし、UXを向上させるアシスタント"
+    "message": "リモート授業やオンライン会議で斜めに映ったホワイトボードを正面から見たきれいな長方形に画像補正。人の写り込みもクリアにして1クリック共有できます。"
   },
   "addCameraNavBtn": {
     "message": "カメラ追加"

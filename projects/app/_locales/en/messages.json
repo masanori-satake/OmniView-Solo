@@ -1,9 +1,9 @@
 {
   "extensionName": {
-    "message": "OmniView-Solo"
+    "message": "OmniView-Solo Whiteboard Perspective Corrector"
   },
   "extensionDescription": {
-    "message": "Assistant making whiteboards and teaching materials highly readable for remote classes and hybrid meetings."
+    "message": "Transform angled whiteboard camera feeds into clear, front-facing images for remote classes & meetings. Copy in 1 click."
   },
   "addCameraNavBtn": {
     "message": "Add Camera"
