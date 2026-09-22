@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node scripts/verify_build.js && vitest run",
-    "build": "python3 scripts/check_version.py && python3 scripts/check_messages.py && python3 scripts/create_package.py",
+    "build": "python3 scripts/check_version.py && python3 scripts/check_messages.py",
     "version:bump": "python3 scripts/bump_version.py",
     "icons": "python3 scripts/generate_png_icons.py"
   },
