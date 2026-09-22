@@ -1,0 +1,18 @@
+name: 'バージョン更新確認 (Version Bump Check)'
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projects/app/**'
+
+permissions:
+  contents: read
+
+jobs:
+  version-bump:
+    name: '共通バージョン確認実行 (Execute Base Version Bump)'
+    uses: masanori-satake/common-workflows/.github/workflows/base-version-bump.yml@v1
+    with:
+      # OmniView-Solo はマニフェストが manifest.chrome.json のため base 既定を上書きする
+      manifest_path: 'projects/app/manifest.chrome.json'

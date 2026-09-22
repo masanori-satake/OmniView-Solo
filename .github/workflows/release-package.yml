@@ -1,0 +1,22 @@
+name: 'リリースパッケージ公開 (Release Package)'
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: '共通リリース処理実行 (Execute Base Release)'
+    uses: masanori-satake/common-workflows/.github/workflows/base-release.yml@v1
+    permissions:
+      contents: write
+    # npm run build (= check_version.py → check_messages.py → create_package.py) が releases/*.zip を生成。
+    # アイコンはコミット済みPNGを同梱するため、リリース時の再生成(generate_icons)は行わない。
+    # （OmniView のアイコン生成は projects/app/assets 出力 + web への同期という固有処理のため、
+    #   共通 generate-icons action は使用せず、ローカルの npm run icons で管理する。）
