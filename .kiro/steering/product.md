@@ -26,7 +26,7 @@ OmniView-Solo は、リモート授業やハイブリッド会議のUXを向上�
 
 ## バージョン
 
-現在のバージョン: 1.0.7（`projects/app/version.json` および `manifest.chrome.json` で管理）
+現在のバージョン: 1.0.7（`projects/app/version.json` および `manifest.json` で管理）
 
 ## ターゲットユーザー
 

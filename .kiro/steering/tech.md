@@ -52,7 +52,7 @@ npm run icons         # SVG → 各サイズ PNG アイコン生成
 npm run version:bump  # バージョン番号をインクリメント
 ```
 
-## マニフェスト主要設定（`manifest.chrome.json`）
+## マニフェスト主要設定（`manifest.json`）
 
 - `permissions`: `sidePanel`, `storage`, `clipboardWrite`, `videoCapture`
 - `side_panel.default_path`: `app.html`

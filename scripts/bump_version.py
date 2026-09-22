@@ -21,7 +21,7 @@ def bump_version(part='patch'):
 
     import re
     # Update all files
-    for filepath in ['package.json', 'package-lock.json', 'projects/app/version.json', 'projects/app/manifest.chrome.json']:
+    for filepath in ['package.json', 'package-lock.json', 'projects/app/version.json', 'projects/app/manifest.json']:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
 

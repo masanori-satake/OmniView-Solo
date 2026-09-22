@@ -16,7 +16,11 @@ jobs:
     uses: masanori-satake/common-workflows/.github/workflows/base-release.yml@v1
     permissions:
       contents: write
-    # npm run build (= check_version.py → check_messages.py → create_package.py) が releases/*.zip を生成。
-    # アイコンはコミット済みPNGを同梱するため、リリース時の再生成(generate_icons)は行わない。
-    # （OmniView のアイコン生成は projects/app/assets 出力 + web への同期という固有処理のため、
-    #   共通 generate-icons action は使用せず、ローカルの npm run icons で管理する。）
+    with:
+      # リリース ZIP は base-release 側で {リポジトリ名}-v{version}.zip に統一生成する（方式A）。
+      # マニフェストは projects/app/manifest.json に統一済みのため manifest_rename は不要。
+      package_source_dir: 'projects/app'
+    # npm run build (= check_version.py → check_messages.py) はリリース前の整合性検証のみを行い、
+    # ZIP 生成は base-release(package-extension) に委譲する。
+    # アイコンはコミット済みPNGを同梱するため generate_icons は使用しない
+    # （OmniView のアイコン生成は assets 出力 + web 同期という固有処理のため npm run icons で管理）。

@@ -20,7 +20,7 @@ def check_consistency():
         ver_file = json.load(f)
         ver_file_version = ver_file['version']
 
-    with open('projects/app/manifest.chrome.json', 'r') as f:
+    with open('projects/app/manifest.json', 'r') as f:
         manifest = json.load(f)
         manifest_version = manifest['version']
 

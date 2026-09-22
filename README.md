@@ -5,7 +5,7 @@
 # OmniView-Solo - Whiteboard Perspective Corrector & Enhancer
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-published-blue)](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam)
-[![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.chrome.json)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.json)
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-brightgreen)](SECURITY.md)
 [![Version](https://img.shields.io/badge/version-1.1.6-blue)](https://github.com/masanori-satake/OmniView-Solo)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
