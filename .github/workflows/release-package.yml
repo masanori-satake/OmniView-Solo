@@ -18,9 +18,8 @@ jobs:
       contents: write
     with:
       # リリース ZIP は base-release 側で {リポジトリ名}-v{version}.zip に統一生成する（方式A）。
+      # マニフェストは projects/app/manifest.json に統一済みのため manifest_rename は不要。
       package_source_dir: 'projects/app'
-      # ZIP 内では manifest.chrome.json を manifest.json にリネームして同梱する。
-      manifest_rename: 'manifest.chrome.json:manifest.json'
     # npm run build (= check_version.py → check_messages.py) はリリース前の整合性検証のみを行い、
     # ZIP 生成は base-release(package-extension) に委譲する。
     # アイコンはコミット済みPNGを同梱するため generate_icons は使用しない

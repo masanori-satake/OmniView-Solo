@@ -27,7 +27,7 @@ OmniView-Solo/
 
 ```
 projects/app/
-├── manifest.chrome.json       # MV3 マニフェスト（Chrome 用）
+├── manifest.json              # MV3 マニフェスト（Chrome 用）
 ├── app.html                   # サイドパネルのエントリーポイント
 ├── permission.html            # カメラ権限要求ページ
 ├── version.json               # バージョン管理ファイル
