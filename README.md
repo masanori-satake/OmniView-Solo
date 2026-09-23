@@ -4,12 +4,14 @@
 
 # OmniView-Solo - Whiteboard Perspective Corrector & Enhancer
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-published-blue)](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam)
-[![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.json)
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Local-brightgreen)](SECURITY.md)
-[![Version](https://img.shields.io/badge/version-1.1.6-blue)](https://github.com/masanori-satake/OmniView-Solo)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/jnkmbcicplfobgllfljekhlaofkdooam?logo=google-chrome&logoColor=white&label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/omniview-solo/jnkmbcicplfobgllfljekhlaofkdooam)
+[![version](https://img.shields.io/badge/version-1.1.6-blue)](projects/app/manifest.json)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![CI](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml/badge.svg)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/ci.yml)
+[![Privacy: 100% Local](https://img.shields.io/badge/Privacy-100%25%20Local-brightgreen)](#-privacy--security)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange)](projects/app/manifest.json)
+[![Tests](https://img.shields.io/github/actions/workflow/status/masanori-satake/OmniView-Solo/code-quality.yml?branch=main&label=Tests)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/code-quality.yml)
+[![Coverage](https://img.shields.io/github/actions/workflow/status/masanori-satake/OmniView-Solo/coverage.yml?branch=main&label=Coverage)](https://github.com/masanori-satake/OmniView-Solo/actions/workflows/coverage.yml)
+[![Pure Vanilla JS](https://img.shields.io/badge/Pure%20Vanilla%20JS-Zero%20Dependencies-informational?logo=javascript&logoColor=white)](#-privacy--security)
 
 An essential **chrome-extension** for remote classes, online lectures, and hybrid meetings. OmniView-Solo works as a powerful **whiteboard-enhancer** that performs real-time **perspective-transform** and **image-correction** on angled camera feeds, transforming distorted whiteboards, notebooks, and teaching materials into crisp, front-facing rectangular images ready for instant 1-click sharing.
 
