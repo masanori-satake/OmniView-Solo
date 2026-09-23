@@ -50,6 +50,7 @@ vi.mock('./camera.js', async (importOriginal) => {
 
 describe('tabview.js - TabView ViewModeSwitch integration', () => {
   beforeEach(() => {
+    vi.resetModules();
     savedSlotOrder = [];
     savedActiveIndex = -1;
     sentMessages = [];
@@ -134,7 +135,6 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
     loadSessionStateImpl = async () => {
       throw new Error('storage read failed');
     };
-    vi.resetModules();
 
     const cameraModule = await import('./camera.js');
     const storageManager = await import('./storageManager.js');
