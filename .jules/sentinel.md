@@ -17,3 +17,8 @@
 **脆弱性:** JSON 設定インポート処理 (`projects/app/js/app.js`) およびグローバル設定のストレージ読み込み処理 (`projects/app/js/camera.js`) において、`global_settings` のオブジェクト結合時に型チェック (`!Array.isArray`) およびプロトタイプ汚染キー (`__proto__`, `constructor`, `prototype`) のフィルタリング処理が不十分であったため、悪意あるインポートデータ等によりオブジェクトのプロトタイプが汚染されるリスクが存在した。
 **学び:** 設定データのマージ処理では、一見安全に見えるオブジェクトの展開スプレッド構文 (`{ ...defaults, ...settings }`) でも、入力オブジェクトの固有キーに `__proto__` 等が含まれていると汚染を引き起こす可能性がある。
 **予防策:** 外部インポートおよびストレージ由来のオブジェクトをマージ・適用する全ての処理で、`!Array.isArray` の明示的な型確認と `__proto__` / `constructor` / `prototype` の除外ループを通した安全なオブジェクト再構築を行う。
+
+## 2026/04/04 - セッション状態の読み込みおよび設定移行処理における型検証・プロトタイプ汚染防止
+**Vulnerability:** `loadSessionState` および `migrateSettings`（`projects/app/js/camera.js`）において、`chrome.storage.local` から取得した `session_state` や `camera_settings` に対する厳格なオブジェクト型チェック (`!Array.isArray`) やプロトタイプ汚染キー（`__proto__`, `constructor`, `prototype`）のフィルタリングが欠落していた。これにより、汚染されたストレージデータや不正なデータ型によりプロトタイプ汚染や予期せぬ実行時エラーが発生するリスクが存在した。
+**Learning:** 拡張機能ストレージ由来のデータであっても、同期エラーや外部・別コンテキストからのデータ書き込みにより想定外のデータ構造やプロトタイプ汚染キーが含まれる可能性がある。
+**Prevention:** ストレージからオブジェクトを取得する全ての読み込み・移行関数で、`typeof x === 'object' && !Array.isArray(x)` による型検証と `__proto__` / `constructor` / `prototype` キーの除外ループを徹底する。

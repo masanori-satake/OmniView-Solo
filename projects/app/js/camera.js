@@ -20,6 +20,10 @@ function migrateSettings(settings) {
   let changed = false;
   const migrated = {};
 
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return migrated;
+  }
+
   for (const [deviceId, s] of Object.entries(settings)) {
     // プロトタイプ汚染対策: ストレージ由来データの特殊キー (__proto__, constructor, prototype) を除外
     if (deviceId === '__proto__' || deviceId === 'constructor' || deviceId === 'prototype') {
@@ -66,7 +70,19 @@ export async function saveSessionState(slotOrder, activeSlotIndex) {
 export async function loadSessionState() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['session_state'], (result) => {
-      resolve(result.session_state || null);
+      const rawSession = result?.session_state;
+      if (!rawSession || typeof rawSession !== 'object' || Array.isArray(rawSession)) {
+        resolve(null);
+        return;
+      }
+      const safeSession = {};
+      for (const [key, value] of Object.entries(rawSession)) {
+        // プロトタイプ汚染対策: ストレージ由来データの特殊キー (__proto__, constructor, prototype) を除外
+        if (key !== '__proto__' && key !== 'constructor' && key !== 'prototype') {
+          safeSession[key] = value;
+        }
+      }
+      resolve(safeSession);
     });
   });
 }
