@@ -120,6 +120,42 @@ describe('Property 2: カメラ状態は Storage 経由でモード間で引き�
     if (loaded !== null) throw new Error(`Expected null, got ${JSON.stringify(loaded)}`);
   });
 
+  test('loadSessionState はセッション状態読み込み時にプロトタイプ汚染キー (__proto__, constructor, prototype) を除外する', async () => {
+    store.set('session_state', JSON.parse('{"slotOrder":["cam1"],"activeSlotIndex":0,"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true}}'));
+
+    const loaded = await loadSessionState();
+    expect(loaded.slotOrder).toEqual(['cam1']);
+    expect(loaded.activeSlotIndex).toBe(0);
+    expect(Object.prototype.hasOwnProperty.call(loaded, '__proto__')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(loaded, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(loaded, 'prototype')).toBe(false);
+    expect(Object.prototype.polluted).toBeUndefined();
+  });
+
+  test('loadSessionState は session_state が配列やプリミティブ型の場合に null を返す', async () => {
+    store.set('session_state', ['cam1', 'cam2']);
+    let loaded = await loadSessionState();
+    expect(loaded).toBeNull();
+
+    store.set('session_state', 'invalid_string');
+    loaded = await loadSessionState();
+    expect(loaded).toBeNull();
+
+    store.set('session_state', 12345);
+    loaded = await loadSessionState();
+    expect(loaded).toBeNull();
+  });
+
+  test('loadCameraSettings は camera_settings が配列やプリミティブ型の場合に空オブジェクトを返す', async () => {
+    store.set('camera_settings', ['invalid']);
+    let settings = await loadCameraSettings();
+    expect(settings).toEqual({});
+
+    store.set('camera_settings', 'invalid_string');
+    settings = await loadCameraSettings();
+    expect(settings).toEqual({});
+  });
+
   test('上書き保存後は最新の slotOrder のみが読み込まれる', async () => {
     /**
      * Validates: Requirements 3.1, 3.2
