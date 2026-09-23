@@ -74,15 +74,6 @@ class App {
     this.addLog(chrome.i18n.getMessage('logGlobalSettings', [String(this.globalSettings.cyclingEnabled), String(this.globalSettings.interval)]));
     this.cameras = await getCameras();
 
-    let session;
-    try {
-      session = await loadSessionState();
-    } catch (error) {
-      this.showSnackbar(chrome.i18n.getMessage('snackbarStorageError') || 'ストレージの読み込みに失敗しました');
-      this.setupSessionLoadFailureRecovery();
-      return false;
-    }
-
     this.setupStartButton();
     this.setupResizeObserver();
     this.setupSettingsPanel();
@@ -98,6 +89,9 @@ class App {
     });
 
     // Restore session state
+
+    const session = await loadSessionState();
+
     if (session && session.slotOrder && session.slotOrder.length > 0) {
         const connectedSlotOrder = [];
         // Recreate slots
@@ -141,8 +135,6 @@ class App {
     if (document.body.dataset.viewMode !== 'tab') {
       await this.setupViewModeSwitch();
     }
-
-    return true;
   }
 
   async setupViewModeSwitch() {
@@ -335,23 +327,6 @@ class App {
       overlay.classList.add('hidden');
       this.showWelcomeOrDialog();
     });
-  }
-
-  setupSessionLoadFailureRecovery() {
-    const overlay = document.getElementById('initial-overlay');
-    const btn = document.getElementById('start-btn');
-    if (!overlay || !btn) return;
-
-    const label = btn.querySelector('[data-i18n]') || btn;
-    const retryLabel = chrome.i18n.getMessage('retrySessionLoadBtn') || '再読み込み';
-    label.textContent = retryLabel;
-    if (label.dataset) label.dataset.i18n = 'retrySessionLoadBtn';
-    overlay.classList.remove('hidden');
-    btn.addEventListener('click', () => this.reloadPage(), { once: true });
-  }
-
-  reloadPage() {
-    window.location.reload();
   }
 
   setupAddCameraButton() {

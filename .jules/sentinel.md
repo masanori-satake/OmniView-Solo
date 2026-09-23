@@ -18,7 +18,7 @@
 **学び:** 設定データのマージ処理では、一見安全に見えるオブジェクトの展開スプレッド構文 (`{ ...defaults, ...settings }`) でも、入力オブジェクトの固有キーに `__proto__` 等が含まれていると汚染を引き起こす可能性がある。
 **予防策:** 外部インポートおよびストレージ由来のオブジェクトをマージ・適用する全ての処理で、`!Array.isArray` の明示的な型確認と `__proto__` / `constructor` / `prototype` の除外ループを通した安全なオブジェクト再構築を行う。
 
-## 2026/04/04 - セッション状態の読み込みおよび設定移行処理の堅牢化
-**Vulnerability:** `migrateSettings`（`projects/app/js/camera.js`）において、`camera_settings` の各エントリがオブジェクトであることを検証せずに `s.role` を読み取っていたため、エントリが `null` の場合に `TypeError` が発生し、設定の読み込みに失敗するリスクが存在した。
+## 2026/04/04 - セッション状態の読み込みおよび設定移行処理における型検証・プロトタイプ汚染防止
+**Vulnerability:** `loadSessionState` および `migrateSettings`（`projects/app/js/camera.js`）において、`chrome.storage.local` から取得した `session_state` や `camera_settings` に対する厳格なオブジェクト型チェック (`!Array.isArray`) やプロトタイプ汚染キー（`__proto__`, `constructor`, `prototype`）のフィルタリングが欠落していた。これにより、汚染されたストレージデータや不正なデータ型によりプロトタイプ汚染や予期せぬ実行時エラーが発生するリスクが存在した。
 **Learning:** 拡張機能ストレージ由来のデータであっても、同期エラーや外部・別コンテキストからのデータ書き込みにより想定外のデータ構造やプロトタイプ汚染キーが含まれる可能性がある。
-**Prevention:** ストレージからオブジェクトを取得する全ての読み込み・移行関数で、`x !== null && typeof x === 'object' && !Array.isArray(x)` により `null` と配列を明示的に拒否し、`__proto__` / `constructor` / `prototype` キーの除外ループを徹底する。
+**Prevention:** ストレージからオブジェクトを取得する全ての読み込み・移行関数で、`typeof x === 'object' && !Array.isArray(x)` による型検証と `__proto__` / `constructor` / `prototype` キーの除外ループを徹底する。

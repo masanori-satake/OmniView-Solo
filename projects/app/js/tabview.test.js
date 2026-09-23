@@ -18,7 +18,6 @@ if (!global.navigator.mediaDevices) {
 let savedSlotOrder = [];
 let savedActiveIndex = -1;
 let sentMessages = [];
-let loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
 
 vi.mock('./storageManager.js', () => ({
   getViewMode: vi.fn(async () => 'sidepanel'),
@@ -40,7 +39,7 @@ vi.mock('./camera.js', async (importOriginal) => {
       { deviceId: 'cam1', label: 'Camera 1' },
       { deviceId: 'cam2', label: 'Camera 2' },
     ]),
-    loadSessionState: vi.fn(() => loadSessionStateImpl()),
+    loadSessionState: vi.fn(async () => ({ slotOrder: [], activeSlotIndex: 0 })),
     saveSessionState: vi.fn(async (order, index) => {
       savedSlotOrder = order;
       savedActiveIndex = index;
@@ -50,11 +49,9 @@ vi.mock('./camera.js', async (importOriginal) => {
 
 describe('tabview.js - TabView ViewModeSwitch integration', () => {
   beforeEach(() => {
-    vi.resetModules();
     savedSlotOrder = [];
     savedActiveIndex = -1;
     sentMessages = [];
-    loadSessionStateImpl = async () => ({ slotOrder: [], activeSlotIndex: 0 });
 
     document.body.innerHTML = `
       <div id="app" class="layout-wide">
@@ -129,28 +126,6 @@ describe('tabview.js - TabView ViewModeSwitch integration', () => {
 
     const switchEl = document.querySelector('.view-mode-switch');
     expect(switchEl.getAttribute('aria-checked')).toBe('false');
-  });
-
-  test('アプリ初期化に失敗した場合はモード切り替えを登録しない', async () => {
-    loadSessionStateImpl = async () => {
-      throw new Error('storage read failed');
-    };
-
-    const cameraModule = await import('./camera.js');
-    const storageManager = await import('./storageManager.js');
-    cameraModule.saveSessionState.mockClear();
-    storageManager.setTileMode.mockClear();
-
-    await import('./tabview.js');
-
-    const switchEl = document.querySelector('.view-mode-switch');
-    switchEl.click();
-    document.querySelector('[data-tile-mode="tile2x2"]').click();
-
-    expect(switchEl.getAttribute('aria-checked')).toBeNull();
-    expect(cameraModule.saveSessionState).not.toHaveBeenCalled();
-    expect(storageManager.setTileMode).not.toHaveBeenCalled();
-    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
 
   test('スイッチを sidepanel に変更した際、saveSessionState → switch_to_sidepanel 送信が実行される', async () => {

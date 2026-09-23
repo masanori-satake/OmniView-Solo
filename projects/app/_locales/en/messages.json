@@ -159,9 +159,6 @@
   "startBtn": {
     "message": "Start Camera"
   },
-  "retrySessionLoadBtn": {
-    "message": "Reload Session"
-  },
   "dialogHeader": {
     "message": "Add Camera"
   },

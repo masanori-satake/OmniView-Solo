@@ -58,6 +58,7 @@ export async function setupTileModeSwitch() {
     const mode = btn.dataset.tileMode;
 
     btn.addEventListener('click', async () => {
+      if (btn.disabled) return;
       const previousMode = container.querySelector('.segmented-btn.active')?.dataset.tileMode || initialTileMode;
       buttons.forEach(button => { button.disabled = true; });
       try {
@@ -121,9 +122,7 @@ export function setupFullscreenToggle() {
 }
 
 // ページ初期化
-const initialized = await appReady;
-if (initialized) {
-  await setupTabViewModeSwitch();
-  await setupTileModeSwitch();
-}
+await appReady;
+await setupTabViewModeSwitch();
+await setupTileModeSwitch();
 setupFullscreenToggle();

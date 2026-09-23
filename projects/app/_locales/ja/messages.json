@@ -159,9 +159,6 @@
   "startBtn": {
     "message": "カメラを起動"
   },
-  "retrySessionLoadBtn": {
-    "message": "セッションを再読み込み"
-  },
   "dialogHeader": {
     "message": "カメラ追加"
   },
