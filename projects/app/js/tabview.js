@@ -121,7 +121,9 @@ export function setupFullscreenToggle() {
 }
 
 // ページ初期化
-await appReady;
-await setupTabViewModeSwitch();
-await setupTileModeSwitch();
+const initialized = await appReady;
+if (initialized) {
+  await setupTabViewModeSwitch();
+  await setupTileModeSwitch();
+}
 setupFullscreenToggle();

@@ -79,7 +79,8 @@ class App {
       session = await loadSessionState();
     } catch (error) {
       this.showSnackbar(chrome.i18n.getMessage('snackbarStorageError') || 'ストレージの読み込みに失敗しました');
-      return;
+      this.setupSessionLoadFailureRecovery();
+      return false;
     }
 
     this.setupStartButton();
@@ -140,6 +141,8 @@ class App {
     if (document.body.dataset.viewMode !== 'tab') {
       await this.setupViewModeSwitch();
     }
+
+    return true;
   }
 
   async setupViewModeSwitch() {
@@ -332,6 +335,23 @@ class App {
       overlay.classList.add('hidden');
       this.showWelcomeOrDialog();
     });
+  }
+
+  setupSessionLoadFailureRecovery() {
+    const overlay = document.getElementById('initial-overlay');
+    const btn = document.getElementById('start-btn');
+    if (!overlay || !btn) return;
+
+    const label = btn.querySelector('[data-i18n]') || btn;
+    const retryLabel = chrome.i18n.getMessage('retrySessionLoadBtn') || '再読み込み';
+    label.textContent = retryLabel;
+    if (label.dataset) label.dataset.i18n = 'retrySessionLoadBtn';
+    overlay.classList.remove('hidden');
+    btn.addEventListener('click', () => this.reloadPage(), { once: true });
+  }
+
+  reloadPage() {
+    window.location.reload();
   }
 
   setupAddCameraButton() {
