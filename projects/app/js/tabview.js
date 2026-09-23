@@ -122,7 +122,11 @@ export function setupFullscreenToggle() {
 }
 
 // ページ初期化
-await appReady;
+try {
+  await appReady;
+} catch (err) {
+  console.error('[OmniView-Solo] appReady 失敗:', err);
+}
 await setupTabViewModeSwitch();
 await setupTileModeSwitch();
 setupFullscreenToggle();
