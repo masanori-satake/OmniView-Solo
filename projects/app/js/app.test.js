@@ -209,6 +209,22 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     expect(window.close).toHaveBeenCalledOnce();
   });
 
+  test('セッション状態の読み込みに失敗した場合は保存処理を有効化しない', async () => {
+    loadSessionStateImpl = async () => {
+      throw new Error('storage read failed');
+    };
+    const cameraModule = await import('./camera.js');
+    cameraModule.saveSessionState.mockClear();
+
+    const { appReady } = await import('./app.js');
+    await appReady;
+
+    document.querySelector('.view-mode-switch').click();
+    expect(cameraModule.saveSessionState).not.toHaveBeenCalled();
+    expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+    expect(document.getElementById('snackbar-message').textContent).toBe('snackbarStorageError');
+  });
+
   test('タブ作成に失敗した場合はサイドパネル表示へ戻して Snackbar を表示する', async () => {
     mockSwitchResponse = { ok: false, error: 'tab creation failed' };
     const { appReady } = await import('./app.js');

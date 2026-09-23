@@ -68,8 +68,13 @@ export async function saveSessionState(slotOrder, activeSlotIndex) {
 }
 
 export async function loadSessionState() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     chrome.storage.local.get(['session_state'], (result) => {
+      const error = chrome.runtime?.lastError;
+      if (error) {
+        reject(error);
+        return;
+      }
       const rawSession = result?.session_state;
       if (!rawSession || typeof rawSession !== 'object' || Array.isArray(rawSession)) {
         resolve(null);

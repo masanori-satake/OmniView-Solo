@@ -74,6 +74,14 @@ class App {
     this.addLog(chrome.i18n.getMessage('logGlobalSettings', [String(this.globalSettings.cyclingEnabled), String(this.globalSettings.interval)]));
     this.cameras = await getCameras();
 
+    let session;
+    try {
+      session = await loadSessionState();
+    } catch (error) {
+      this.showSnackbar(chrome.i18n.getMessage('snackbarStorageError') || 'ストレージの読み込みに失敗しました');
+      return;
+    }
+
     this.setupStartButton();
     this.setupResizeObserver();
     this.setupSettingsPanel();
@@ -89,9 +97,6 @@ class App {
     });
 
     // Restore session state
-
-    const session = await loadSessionState();
-
     if (session && session.slotOrder && session.slotOrder.length > 0) {
         const connectedSlotOrder = [];
         // Recreate slots

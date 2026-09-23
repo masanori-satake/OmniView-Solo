@@ -126,10 +126,22 @@ describe('Property 2: カメラ状態は Storage 経由でモード間で引き�
     const loaded = await loadSessionState();
     expect(loaded.slotOrder).toEqual(['cam1']);
     expect(loaded.activeSlotIndex).toBe(0);
+    expect(Object.getPrototypeOf(loaded)).toBe(Object.prototype);
     expect(Object.prototype.hasOwnProperty.call(loaded, '__proto__')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(loaded, 'constructor')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(loaded, 'prototype')).toBe(false);
     expect(Object.prototype.polluted).toBeUndefined();
+  });
+
+  test('loadSessionState はストレージ読み込みエラー時に reject する', async () => {
+    const storageError = new Error('storage read failed');
+    chrome.runtime = { lastError: storageError };
+
+    try {
+      await expect(loadSessionState()).rejects.toBe(storageError);
+    } finally {
+      delete chrome.runtime;
+    }
   });
 
   test('loadSessionState は session_state が配列やプリミティブ型の場合に null を返す', async () => {
