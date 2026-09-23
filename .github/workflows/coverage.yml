@@ -1,0 +1,19 @@
+name: 'カバレッジ計測 (Coverage)'
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: 'カバレッジ計測実行 (Execute Coverage)'
+    uses: masanori-satake/common-workflows/.github/workflows/base-coverage.yml@v1

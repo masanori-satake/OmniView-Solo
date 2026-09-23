@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "test": "node scripts/verify_build.js && vitest run",
+    "coverage": "vitest run --coverage --coverage.reporter=json-summary --coverage.reporter=text",
     "build": "python3 scripts/check_version.py && python3 scripts/check_messages.py",
     "version:bump": "python3 scripts/bump_version.py",
     "icons": "python3 scripts/generate_png_icons.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^10.0.2",
     "fast-check": "^3.23.2",
     "jsdom": "^29.1.1",
