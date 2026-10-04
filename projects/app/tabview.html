@@ -62,6 +62,9 @@
                     <button class="tab-btn" data-tab="logs" data-i18n-tooltip="tabLogs" role="tab" aria-selected="false" aria-controls="tab-logs">
                         <span class="material-symbols-outlined">description</span>
                     </button>
+                    <button class="tab-btn" data-tab="solo" data-i18n-tooltip="tabSolo" role="tab" aria-selected="false" aria-controls="tab-solo">
+                        <span class="material-symbols-outlined">extension</span>
+                    </button>
                     <button class="tab-btn" data-tab="about" data-i18n-tooltip="tabAbout" role="tab" aria-selected="false" aria-controls="tab-about">
                         <span class="material-symbols-outlined">info</span>
                     </button>
@@ -242,10 +245,55 @@
                         <!-- Logs will be injected here -->
                     </div>
                 </div>
+                <div class="tab-content hidden" id="tab-solo" role="tabpanel">
+                    <div class="solo-container">
+                        <!-- Category 1: Productivity -->
+                        <div class="solo-category">
+                            <h3 class="solo-category-title" data-i18n="soloCategoryProductivity">作業効率化</h3>
+                            <div class="solo-badge-list">
+                                <a href="https://chromewebstore.google.com/detail/quicklog-solo-local-task/kllhfalcincleolgoepnailfjendigdh" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/quicklog-solo.svg" alt="QuickLog-Solo" class="solo-badge-img">
+                                </a>
+                                <a href="https://chromewebstore.google.com/detail/flexpaste-solo-smart-clip/egmememialdjhohecnfkimpablkjfabg" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/flexpaste-solo.svg" alt="FlexPaste-Solo" class="solo-badge-img">
+                                </a>
+                                <a href="https://chromewebstore.google.com/detail/replace-solo-microsoft-lo/iblfnonogpkajjfjfljngdaclhdinlfb" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/replace-solo.svg" alt="Replace-Solo" class="solo-badge-img">
+                                </a>
+                                <a href="https://chromewebstore.google.com/detail/tabmagnet-solo-smart-tab/lffgddghjafcjpfjdpknhfbonhnkdlmc" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/tabmagnet-solo.svg" alt="TabMagnet-Solo" class="solo-badge-img">
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Category 2: Education & Meeting Support -->
+                        <div class="solo-category">
+                            <h3 class="solo-category-title" data-i18n="soloCategoryEducationMeeting">会議/授業支援</h3>
+                            <div class="solo-badge-list">
+                                <a href="https://chromewebstore.google.com/detail/omniview-solo-whiteboard/jnkmbcicplfobgllfljekhlaofkdooam" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/omniview-solo.svg" alt="OmniView-Solo" class="solo-badge-img">
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Category 3: Developer Tools -->
+                        <div class="solo-category">
+                            <h3 class="solo-category-title" data-i18n="soloCategoryDeveloper">開発者向け</h3>
+                            <div class="solo-badge-list">
+                                <a href="https://chromewebstore.google.com/detail/issues-solo-jira-issues-s/cehkajdhieihmoghbneckifpkoafmbco" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/issues-solo.svg" alt="Issues-Solo" class="solo-badge-img">
+                                </a>
+                                <a href="https://chromewebstore.google.com/detail/actionsboard-solo-github/oofegjdjnldkikigimkadlleaiolionm" target="_blank" rel="noopener noreferrer" class="solo-badge-link">
+                                    <img src="assets/badges/solo/actionsboard-solo.svg" alt="ActionsBoard-Solo" class="solo-badge-img">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="tab-content hidden" id="tab-about" role="tabpanel">
                     <div class="about-info">
                         <p><strong>OmniView-Solo</strong></p>
-                        <p data-i18n="aboutVersion">Version: 1.1.7</p>
+                        <p data-i18n="aboutVersion">Version: 1.2.0</p>
                         <p data-i18n="aboutDesc">リモート授業やハイブリッド会議のUXを向上させるローカル完結型ツール</p>
                         <hr>
                         <p><strong data-i18n="aboutDataTitle">データの保存場所とリスク</strong></p>

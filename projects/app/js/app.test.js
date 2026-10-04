@@ -86,9 +86,13 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
           <nav class="settings-tabs">
             <button class="tab-btn active" data-tab="general" role="tab" aria-selected="true" aria-controls="tab-general"></button>
             <button class="tab-btn" data-tab="camera-info" role="tab" aria-selected="false" aria-controls="tab-camera-info"></button>
+            <button class="tab-btn" data-tab="solo" role="tab" aria-selected="false" aria-controls="tab-solo"></button>
+            <button class="tab-btn" data-tab="about" role="tab" aria-selected="false" aria-controls="tab-about"></button>
           </nav>
           <div class="tab-content" id="tab-general"></div>
           <div class="tab-content hidden" id="tab-camera-info"></div>
+          <div class="tab-content hidden" id="tab-solo"></div>
+          <div class="tab-content hidden" id="tab-about"></div>
         </div>
         <div id="camera-dialog" class="hidden">
           <div id="camera-dialog-overlay"></div>
@@ -423,8 +427,12 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
 
         const generalTab = document.querySelector('[data-tab="general"]');
         const cameraInfoTab = document.querySelector('[data-tab="camera-info"]');
+        const soloTab = document.querySelector('[data-tab="solo"]');
+        const aboutTab = document.querySelector('[data-tab="about"]');
         generalTab.focus();
-        generalTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+
+        // ArrowRight moves from general to camera-info
+        generalTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 
         expect(cameraInfoTab.getAttribute('aria-selected')).toBe('true');
         expect(cameraInfoTab.getAttribute('tabindex')).toBe('0');
@@ -433,9 +441,22 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
         expect(document.getElementById('tab-camera-info').classList.contains('hidden')).toBe(false);
         expect(document.getElementById('tab-general').classList.contains('hidden')).toBe(true);
 
-        cameraInfoTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        // ArrowLeft moves back to general
+        cameraInfoTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
         expect(document.activeElement).toBe(generalTab);
         expect(generalTab.getAttribute('aria-selected')).toBe('true');
+
+        // ArrowLeft from general wraps around to about (last tab in fixture)
+        generalTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        expect(document.activeElement).toBe(aboutTab);
+        expect(aboutTab.getAttribute('aria-selected')).toBe('true');
+        expect(document.getElementById('tab-about').classList.contains('hidden')).toBe(false);
+
+        // ArrowLeft from about moves to solo
+        aboutTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        expect(document.activeElement).toBe(soloTab);
+        expect(soloTab.getAttribute('aria-selected')).toBe('true');
+        expect(document.getElementById('tab-solo').classList.contains('hidden')).toBe(false);
       });
 
       test('帯域幅ダイアログのキャンセルは共通クリーンアップで dismissal とフォーカスを復元する', async () => {

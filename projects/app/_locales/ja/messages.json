@@ -20,8 +20,20 @@
   "tabLogs": {
     "message": "ログ"
   },
+  "tabSolo": {
+    "message": "Solo"
+  },
   "tabAbout": {
     "message": "About"
+  },
+  "soloCategoryProductivity": {
+    "message": "作業効率化"
+  },
+  "soloCategoryEducationMeeting": {
+    "message": "会議/授業支援"
+  },
+  "soloCategoryDeveloper": {
+    "message": "開発者向け"
   },
   "cameraConnectionTitle": {
     "message": "カメラ接続"
