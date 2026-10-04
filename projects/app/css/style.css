@@ -1054,6 +1054,55 @@ video, .processed-canvas {
     margin: 12px 0;
 }
 
+/* Solo Tab */
+.solo-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.solo-category {
+    margin-bottom: 24px;
+}
+
+.solo-category:last-child {
+    margin-bottom: 0;
+}
+
+.solo-category-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--md-sys-color-primary);
+    margin: 0 0 12px 0;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    padding-bottom: 4px;
+    text-align: left;
+}
+
+.solo-badge-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.solo-badge-link {
+    display: inline-flex;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.solo-badge-link:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.solo-badge-img {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+
 /* Dialog */
 #camera-dialog, #bandwidth-dialog {
     position: fixed;
