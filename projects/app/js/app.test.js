@@ -274,13 +274,13 @@ describe('app.js - SidePanel ViewModeSwitch integration', () => {
     importModeSelect.innerHTML = '<option value="overwrite">overwrite</option>';
     importModeSelect.value = 'overwrite';
 
-    const fileReaderMock = {
-      readAsText: function() {
+    class FileReaderMock {
+      readAsText() {
         this.onload({ target: { result: maliciousJson } });
       }
-    };
+    }
     const origFileReader = global.FileReader;
-    global.FileReader = vi.fn(() => fileReaderMock);
+    global.FileReader = FileReaderMock;
 
     Object.defineProperty(importInput, 'files', {
       value: [file],
