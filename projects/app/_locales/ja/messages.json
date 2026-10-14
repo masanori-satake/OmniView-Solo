@@ -2,6 +2,9 @@
   "extensionName": {
     "message": "OmniView-Solo - オンライン会議・授業用 ホワイトボード画像補正"
   },
+  "extensionShortName": {
+    "message": "OmniView"
+  },
   "extensionDescription": {
     "message": "リモート授業やオンライン会議で斜めに映ったホワイトボードを正面から見たきれいな長方形に画像補正。人の写り込みもクリアにして1クリック共有できます。"
   },
