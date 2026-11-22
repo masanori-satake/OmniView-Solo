@@ -24,7 +24,7 @@
     "message": "ログ"
   },
   "tabSolo": {
-    "message": "Solo"
+    "message": "Solo/Duo"
   },
   "tabAbout": {
     "message": "About"
@@ -37,6 +37,9 @@
   },
   "soloCategoryDeveloper": {
     "message": "開発者向け"
+  },
+  "soloCategoryEditor": {
+    "message": "エディタ拡張"
   },
   "cameraConnectionTitle": {
     "message": "カメラ接続"
