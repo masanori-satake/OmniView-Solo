@@ -24,7 +24,7 @@
     "message": "Logs"
   },
   "tabSolo": {
-    "message": "Solo"
+    "message": "Solo/Duo"
   },
   "tabAbout": {
     "message": "About"
@@ -37,6 +37,9 @@
   },
   "soloCategoryDeveloper": {
     "message": "For Developers"
+  },
+  "soloCategoryEditor": {
+    "message": "Editor Extensions"
   },
   "cameraConnectionTitle": {
     "message": "Camera Connection"
