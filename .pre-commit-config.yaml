@@ -18,7 +18,7 @@ repos:
   - id: mixed-line-ending
     args: ['--fix=lf']
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.50.0
+  rev: v0.50.1
   hooks:
   - id: markdownlint
     args: ["--config", ".markdownlint.json"]
@@ -34,4 +34,4 @@ repos:
     name: create-package
     entry: python3 scripts/create_package.py
     language: system
-    stages: [push]
+    stages: [pre-push]
